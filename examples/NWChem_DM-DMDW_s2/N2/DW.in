@@ -1,0 +1,18 @@
+# ABINIT Input
+target_list { s2 }
+usehandlers { Nwchem Dmdw }
+cell_struc_xyz_red { 
+    N        0.000000    0.000000    0.545585
+    N        0.000000    0.000000   -0.545585
+}
+nwchem.basis {
+* library "aug-cc-pVTZ"
+}
+dmdw.ioflag 0
+dmdw.nlanc  1
+dmdw.tempgrid {3 100.0 300.0}
+dmdw.paths {
+1
+2 0 0 3.0
+}
+

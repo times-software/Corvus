@@ -1,0 +1,228 @@
+#!/usr/bin/env python
+
+# Take advantage of Python 3 print function
+from __future__ import print_function
+
+import sys
+import corvus.controls as cc
+
+from corvutils import parsnip as pnip
+
+# Define a few things to make the output a bit cleaner
+Manual_Filename = 'Corvus_Manual.txt'
+Doc_Contents_Dir = 'Doc_Contents'
+Desc_Filename = Doc_Contents_Dir+'/'+'Corvus_Description.txt'
+InstInst_Filename = Doc_Contents_Dir+'/'+'Corvus_Install.txt'
+Examples_Filename = Doc_Contents_Dir+'/'+'Corvus_Examples.txt'
+InpSyntax_Filename = Doc_Contents_Dir+'/'+'Corvus_InpSyntax.txt'
+Blank_line = '\n'
+Separator1_char = '='
+Separator2_char = '-'
+Page_width = 80
+Separator1 = Page_width*Separator1_char
+Separator2 = Page_width*Separator2_char
+
+# Se use the type indicators from parsnip to create a dictionary we can use
+# to replace with more user friendly names
+InpTypes_Map = {
+  pnip.Str_Typ_Indicat : 'String',
+  pnip.Boo_Typ_Indicat : 'Boolean',
+  pnip.Int_Typ_Indicat : 'Integer',
+  pnip.Flt_Typ_Indicat : 'Float',
+  pnip.Aut_Typ_Indicat : 'Auto',
+  pnip.Pass_Indicat    : 'Pass',
+}
+
+import pprint
+pp_debug = pprint.PrettyPrinter(indent=4)
+
+def Format_Doc(System,token_name,handler_name):
+
+# Debug: FDV
+# print(token_name)
+# print(System[token_name])
+  
+# Separate the documentation information from the configuration content
+  token_cont = System[token_name][-2]
+  token_doc = ''
+  for line in System[token_name][0:-2]:
+    if line != pnip.Doc_Chars:
+      token_doc = token_doc + line + '\n'
+  token_doc = token_doc.strip()
+
+# Debug: FDV
+# print(token_cont)
+# print(token_doc)
+
+# Process the token content into format and defaults
+  token_default = ''
+  token_format  = ''
+  for line in token_cont.split('\n'):
+    line = line.strip()
+    DF_Sep_Ind = line.find(pnip.DF_Sep)
+    token_default = token_default+line[0:DF_Sep_Ind] + '\n'
+    token_format  = token_format +line[DF_Sep_Ind+len(pnip.DF_Sep):len(line)] + '\n'
+
+# Clean up the format and default strings into something nicer for the manual
+# For the format we strip everything. If we are left with null then we change to
+# 'None' so it is more clear.
+  token_default = token_default.strip()
+
+# For the format we remove the trailing newline and change the format
+# indicators into something more user friendly
+# NOTE: FDV
+# This piece of code is not totally satisfactory, but it should work if the
+# expected format of the token formats is not changed in the future.
+  token_format  = token_format[0:-1]
+  token_format_new = ''
+  for c in token_format:
+    To_Add = c
+    for Type in InpTypes_Map.keys():
+      if c == Type:
+        To_Add = InpTypes_Map[Type]
+    token_format_new = token_format_new + To_Add
+  token_format = token_format_new
+
+# Format things nicely for printing
+  print('{0}:'.format(token_name))
+  print("{0}".format(1*Blank_line),end='')
+  print('Description:')
+  if token_doc != '':
+    print(token_doc)
+  else:
+    if handler_name == 'General':
+      print('No description available for this variable')
+      print('Please contact the code developers')
+    else:
+      print('No description available for this variable')
+      print('Please contact review the equivalent variable in the '+handler_name+' manual')
+  print("{0}".format(1*Blank_line),end='')
+  print('Format:')
+  print('{0} {{\n{1}\n}}'.format(token_name,token_format))
+  print("{0}".format(1*Blank_line),end='')
+  print('Default:')
+  if token_default != '':
+    print('{0} {{\n{1}\n}}'.format(token_name,token_default))
+  else:
+    print('None')
+
+def Print_Doc_Header():
+  
+  from pkg_resources import get_distribution
+
+# For now, we get a minimal amount of information from the Corvus package setup
+  corvus_pkg = get_distribution('corvus')
+  corvus_metadata = corvus_pkg.get_metadata('PKG-INFO').encode('ascii','ignore')
+  corvus_info = pnip.parseMetaData(corvus_metadata)
+
+# Debug: FDV
+# pp_debug.pprint(corvus_info)
+
+# Print the cover page:
+  print("{0}".format(Separator1))
+  print("{0}".format(4*Blank_line),end='')
+  print("{0}".format(corvus_info['Name'].capitalize().center(Page_width)))
+  print("{0}".format(1*Blank_line),end='')
+  print("{0}".format(corvus_info['Summary'].center(Page_width)))
+  print("{0}".format(1*Blank_line),end='')
+  print("{0}".format(('Version: '+corvus_info['Version']).capitalize().center(Page_width)))
+  print("{0}".format(1*Blank_line),end='')
+  print("{0}".format(('Web: '+corvus_info['Home-page']).capitalize().center(Page_width)))
+  print("{0}".format(('E-Mail: '+corvus_info['Author-email']).capitalize().center(Page_width)))
+  print("{0}".format(2*Blank_line),end='')
+  print("{0}".format(corvus_info['Author'].center(Page_width)))
+  print("{0}".format(4*Blank_line),end='')
+  print("{0}".format(Separator1))
+
+# Read the description blurb and print
+  print("{0}".format(1*Blank_line),end='')
+  print("{0}".format(open(Desc_Filename).read()),end='')
+  print("{0}".format(1*Blank_line),end='')
+  print("{0}".format(Separator1))
+
+# Read the installation instructions and print
+  print("{0}".format(1*Blank_line),end='')
+  print("{0}".format(open(InstInst_Filename).read()),end='')
+  print("{0}".format(1*Blank_line),end='')
+
+def Print_Doc_Examples():
+
+# Read the examples and print
+  print("{0}".format(1*Blank_line),end='')
+  print("{0}".format(open(Examples_Filename).read()),end='')
+  print("{0}".format(1*Blank_line),end='')
+
+if __name__=='__main__': 
+
+# Redirect all output to the manual file
+  sys.stdout = open(Manual_Filename,'w')
+
+  Corvus_config = {}
+  cc.configure(Corvus_config)
+# pp_debug.pprint(Corvus_config)
+
+  System_Config_File = cc.checkFile(Corvus_config['parsnipConf'])
+
+# system = pip.parse(conf, inp, mode=['read','UseDefaults'])
+  with open(System_Config_File, 'r') as config:
+    System = pnip.readConfig_for_Doc(config).asDict()
+
+# Debug: FDV
+# pp_debug.pprint(System)
+
+# Get the available handler names, in lowercase, to use when recognizing the
+# different tags
+  availableHandlers_Names    = [ h.__name__ for h in cc.availableHandlers() ]
+  availableHandlers_Names_lc = [ h.lower() for h in availableHandlers_Names ] 
+
+# Debug: FDV
+# pp_debug.pprint(availableHandlers_Names)
+
+# Debug: FDV
+# print System['target_list']
+# print System['title']
+# sys.exit()
+
+# Before printing the tags, we need to print a header and intro for the manual
+  Print_Doc_Header()
+
+# Process the generic input tokens
+
+# Print a header for the generic tokens
+  print("{0}".format(Separator1))
+  print("{0}".format(1*Blank_line),end='')
+  print("{0}".format(open(InpSyntax_Filename).read()),end='')
+  print("{0}".format(1*Blank_line),end='')
+  print("{0}".format('General Input Variables'.center(Page_width),end=''))
+  print("{0}".format(Separator2))
+
+# Debug: FDV
+# for token_name in ['target_list','scratch']:
+  for token_name in System.keys():
+    token_name_list = token_name.split('.')
+    if not token_name_list[0] in availableHandlers_Names_lc:
+      Format_Doc(System,token_name,'General')
+      print("{0}".format(1*Blank_line),end='')
+      print("{0}".format(Separator2))
+
+# Debug: FDV
+# sys.exit()
+
+  for handler_name in availableHandlers_Names:
+
+# Print a header for the handler specific tokens
+    print("{0}".format(Separator2))
+    print("{0}".format(1*Blank_line),end='')
+    print("{0}".format((handler_name+' Handler Input Variables').center(Page_width),end=''))
+    print("{0}".format(Separator2))
+
+    for token_name in System.keys():
+      token_name_list = token_name.split('.')
+      if token_name_list[0] == handler_name.lower():
+        Format_Doc(System,token_name,handler_name)
+        print("{0}".format(1*Blank_line),end='')
+        print("{0}".format(Separator2))
+
+# Here we should add the printing of something like an examples section
+  Print_Doc_Examples()
+

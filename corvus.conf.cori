@@ -1,0 +1,16 @@
+[Executables]
+dmdw     : /global/u2/f/fvila/src/Feff/GitHub/feff9.cori/src/DMDW/dmdw_standalone/bin
+feff     : /global/u2/f/fvila/src/Feff/GitHub/feff9.cori/bin/Seq
+feffrixs : /global/u2/f/fvila/src/Feff/RIXS_3-26-2014.cori/feff90/bin/MPI
+abinit   : /global/common/cori/software/abinit/8.4.4/gnu/haswell/bin/abinit
+nwchem   : /global/common/cori/software/nwchem/6.6/bin/nwchem
+orca     : /global/u2/f/fvila/src/orca_4_0_1_2_linux_x86-64_openmpi202
+gaussian :
+vasp     : 
+
+[Defaults]
+prefix      : Corvus
+inputsuffix : .inp
+savesuffix  : .nest
+checkpoints : off
+parallelrun :

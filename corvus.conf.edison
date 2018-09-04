@@ -1,0 +1,14 @@
+[Executables]
+dmdw     : /global/u2/f/fvila/src/Feff/GitHub/feff9/src/DMDW/dmdw_standalone/bin
+feff     : /global/u2/f/fvila/src/Feff/GitHub/feff9/bin/Seq
+abinit   : /global/common/edison/software/abinit/8.4.4/gnu/sandybridge/bin/abinit
+nwchem   : /global/common/sw/cray/cnl6/ivybridge/nwchem/6.6/intel/17.0.2.174/kdw3gtl/bin/nwchem
+gaussian :
+vasp     : 
+
+[Defaults]
+prefix      : Corvus
+inputsuffix : .inp
+savesuffix  : .nest
+checkpoints : off
+parallelrun :

@@ -1,0 +1,8 @@
+# ABINIT Input
+target_list { xas }
+usehandlers { Nwchem }
+cell_struc_xyz_red { 
+N    0.00000000    0.00000000    -0.61250955
+O    0.00000000    0.00000000    0.53250955
+}
+nwchem.xas.xrayenergywin { -20.0 -16.0 }

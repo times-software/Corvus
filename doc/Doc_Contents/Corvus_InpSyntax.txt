@@ -1,0 +1,5 @@
+The input syntax in Corvus uses the following rules:
+
+
+The following is a comprehensive list of currently implemented input
+variables:

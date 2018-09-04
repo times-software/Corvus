@@ -1,0 +1,7 @@
+# ABINIT Input
+target_list { ene_int }
+usehandlers { Nwchem }
+cell_struc_xyz_red { 
+H  0.0 0.0 0.0
+H  0.0 0.0 0.7425
+}

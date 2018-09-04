@@ -1,0 +1,10 @@
+# ABINIT Input
+target_list { opt_xasavg   }
+usehandlers { Nwchem }
+cell_struc_xyz_red { 
+N	0.0000000	0.0000000	0.3206510
+O	0.0000000	1.0971160	-0.1402850
+O	0.0000000	-1.0971160	-0.1402850
+}
+nwchem.qmd.nstep_nucl { 40 }
+nwchem.xas.xrayenergywin { -20.0 -16.0 }

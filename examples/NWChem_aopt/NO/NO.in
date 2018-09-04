@@ -1,0 +1,10 @@
+# ABINIT Input
+target_list { aopt  }
+usehandlers { Nwchem }
+#nwchem.basis {
+#* library "aug-cc-pVTZ"
+#}
+cell_struc_xyz_red { 
+N  0.0 0.0 0.0
+O  0.0 0.0 1.2000
+}

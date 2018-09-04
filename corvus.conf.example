@@ -1,0 +1,16 @@
+[Executables]
+dmdw     : <path to dmdw dir>
+feff     : <path to feff executables dir>
+feffrixs : <path to feff RIXS executables dir>
+abinit   : <path to abinit executables dir>
+nwchem   : <path to nwchem executables dir>
+orca     : <path to orca executables dir>
+gaussian : <path to gaussian executables dir>
+vasp     : <path to vasp executables dir>
+
+[Defaults]
+prefix      : Corvus
+inputsuffix : .inp
+savesuffix  : .nest
+checkpoints : off
+parallelrun :

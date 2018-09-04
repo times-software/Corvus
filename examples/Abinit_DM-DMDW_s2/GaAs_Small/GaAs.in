@@ -1,0 +1,47 @@
+# Define the target property
+target_list {
+s2
+}
+
+usehandlers { Abinit Dmdw }
+
+cell_scaling_abc {
+10.68394459291 10.68394459291 10.68394459291
+}
+
+cell_vectors {
+0.0 0.5 0.5
+0.5 0.0 0.5
+0.5 0.5 0.0
+}
+
+cell_struc_xyz_red {
+Ga -0.125 -0.125 -0.125
+As  0.125  0.125  0.125
+}
+
+# ABINIT Input
+mac_diel_const 1.0E+06
+pw_encut 30.0
+pspfiles {
+Ga 31-Ga.LDA.fhi
+As 33-As.LDA.fhi
+}
+nkpoints {
+8 8 8
+}
+nqpoints {
+4 4 4
+}
+
+dmdw.paths {
+1
+2 1 0 3.0
+2 2 0 3.0
+}
+
+dmdw.tempgrid {
+300 1.0 300.0
+}
+
+dmdw.nlanc 8
