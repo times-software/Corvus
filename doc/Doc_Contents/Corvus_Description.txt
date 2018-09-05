@@ -1,3 +1,72 @@
-THIS FILE SHOULD CONTAIN THE CORVUS DESCRIPTION
+Introduction
 
-Leaving blank for now, need to fill later
+Corvus is a Python package designed for managing workflows of physical
+simulations that span multiple scientific codes. It is intended to accommodate a
+spectrum of users. At one end, a beginner user only interested in running a
+specific type of calculation can be provided with a pre-built workflow and
+concern themselves only with modifying their input; at the other end, an expert
+user can utilize the internal tools to build their own custom scientific
+workflows. The Python language allows us to provide a tool that can act as an
+executable program and an accessible library, satisfying either type of user.
+
+Corvus primary goal, is to provide a tool that does not require users to develop
+their own workflows. To this end, Corvus is a general software framework aimed
+at a broad user base that enables the development of scientific workflows,
+with particular focus on the interfacing of non-databound, computationally
+intensive, heterogeneous scientific codes.
+
+Corvus philosophy:
+
+General: The Corvus framework is able to encode a broad range of scientific
+workflows. It abstracts as many operations as possible into reusable modules
+(Handlers) that can be interconnected by means of data-sharing.
+
+Intelligent: The Corvus framework is capable of making intelligent decisions and
+checks, thus reducing the burden on beginner users. Workflows are built solely
+from established input dependencies of the supported scientific codes.
+
+Extensible: The Corvus framework supports growth through modularity, connecting
+parts requiring minimal interfacing. This allows developers to build certain
+sections without affecting others.
+
+Sustainable: Corvus development is hosted on GitHub, thus facilitating
+collaboration between developers. To maximize sustainability, Corvus is divided
+into two layers: A high-level layer containing the highly-abstracted operations,
+and a low-level one that localizes the code-dependence.
+
+Portable: Given that it is developed in Python, Corvus is, for the most part,
+platform-independent. Platform dependence is localized at or below the point of
+contact between the Corvus framework and the codes that it interconnects. This
+means that only the external executables and the way they are executed depend on
+the platform.
+
+Easy for users: The input syntax in Corvus is as independent from the
+interconnected codes as possible, unifying properties and parameters that are
+common to many codes. The input is heavily biased towards "physical", easy to
+understand input parameters. It minimizes the need to input "expert" control
+parameters by aggressively using defaults and smart automated decision making.
+
+Easy for developers: The separation of the framework into high- and low-level
+layers facilitates development for both core framework developers as well as
+casual developers that want to extend the capabilities of the framework to new
+workflows.
+
+Corvus Structure
+
+Corvus is designed around two main layers: (1) a top level infrastructure that
+interacts with the user and executes the various steps defined in the workflow,
+and (2) lower level code that interacts with the external scientific software to
+produce the desired output that is then translated into the physical properties
+required by the workflow. This stratification allows Corvus to separate the
+implementation details specific to each external software package from the
+general workflow controls, to permit generic and modular workflow structures
+that can handle a wide variety of calculations. 
+
+Corvus relies on workflows consisting of a sequence of modular steps, each
+providing part of the information needed to compute a desired physical property.
+These individual steps, or "Exchanges", take a set of input properties, pass it
+down to external programs which then pass newly calculated output properties
+back up to a central "System" database. The code that deals with the external
+software is separated into independent components, or "Handlers", that are
+specific to each external scientific program.
+

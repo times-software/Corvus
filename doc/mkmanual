@@ -163,6 +163,10 @@ if __name__=='__main__':
 
   System_Config_File = cc.checkFile(Corvus_config['parsnipConf'])
 
+# Debug: FDV
+# print(System_Config_File)
+# sys.exit()
+
 # system = pip.parse(conf, inp, mode=['read','UseDefaults'])
   with open(System_Config_File, 'r') as config:
     System = pnip.readConfig_for_Doc(config).asDict()
@@ -198,7 +202,7 @@ if __name__=='__main__':
 
 # Debug: FDV
 # for token_name in ['target_list','scratch']:
-  for token_name in System.keys():
+  for token_name in sorted(System.keys()):
     token_name_list = token_name.split('.')
     if not token_name_list[0] in availableHandlers_Names_lc:
       Format_Doc(System,token_name,'General')
@@ -216,7 +220,7 @@ if __name__=='__main__':
     print("{0}".format((handler_name+' Handler Input Variables').center(Page_width),end=''))
     print("{0}".format(Separator2))
 
-    for token_name in System.keys():
+    for token_name in sorted(System.keys()):
       token_name_list = token_name.split('.')
       if token_name_list[0] == handler_name.lower():
         Format_Doc(System,token_name,handler_name)

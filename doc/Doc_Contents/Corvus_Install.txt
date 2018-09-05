@@ -1,3 +1,82 @@
-THIS FILE SHOULD CONTAIN THE CORVUS INSTALLATION INSTRUCTIONS
+How to obtain Corvus
 
-Leaving blank for now, need to fill later
+At present, the stable version of Corvus can be obtained by contacting the
+developers at feff@uw.edu. In the near future it will also be available for
+download from the Feff or TIMES websites.
+
+Alternatively, developers can get access to Corvus by cloning its GitHub repo
+with
+
+git clone https://github.com/feffgroup/Corvus.git
+
+after being accepted as a Corvus developer.
+
+How to install Corvus
+
+After downloading the code, the Corvus directory should look like:
+
+################################################################################
+MANIFEST.in
+README.md
+bin/
+corvus.conf.cori
+corvus.conf.edison
+corvus.conf.example
+doc/
+examples/
+setup.py
+src/
+################################################################################
+
+To install Corvus follow these steps:
+
+1) Copy the "corvus.conf.example" to "corvus.conf" and open it. It should look
+like this:
+
+################################################################################
+[Executables]
+dmdw     : <path to dmdw dir>
+feff     : <path to feff executables dir>
+feffrixs : <path to feff RIXS executables dir>
+abinit   : <path to abinit executables dir>
+nwchem   : <path to nwchem executables dir>
+orca     : <path to orca executables dir>
+gaussian : <path to gaussian executables dir>
+vasp     : <path to vasp executables dir>
+
+[Defaults]
+prefix      : Corvus
+inputsuffix : .inp
+savesuffix  : .nest
+checkpoints : off
+parallelrun :
+################################################################################
+
+(Alternatively, the "corvus.conf.cori" or "corvus.conf.edison" used in the Cori
+and Edison systems at NERSC can be used as starting points.)
+
+Replace the "<value>" entries with the paths to the corresponding executables.
+If desired, change the defaults for run prefix, input and save suffixes. By
+default Corvus does not checkpoint, but this can be turned on here. In addition,
+a default can be also set for the parallel run commend used in the target
+system. This facilitates the submission of jobs for users.
+
+2) Use the Python setup utility do:
+
+python setup.py install --prefix=/path/to/corvus
+
+where "/path/to/corvus" is the path where the scripts, modules, examples and
+documentation will be installed.
+
+3) To make Corvus visible to Python, add the
+
+/path/to/corvus/lib/python2.7/site-packages
+
+value to the Python path in the appropriate way for the target system.
+
+4) In the same way, add the
+
+/path/to/corvus/bin
+
+directory to the systems executable path. This makes the "run-corvus" script
+visible throughout the system.

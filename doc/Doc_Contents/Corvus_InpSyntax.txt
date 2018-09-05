@@ -1,5 +1,44 @@
-The input syntax in Corvus uses the following rules:
+Input Structure
+
+The input of Corvus is very simple: All input variables (i.e. tokens) have the
+following possible structures:
+
+################################################################################
+! comment
+token1 {value} # comment
+token2 {value value value}
+token3 {
+        value  # comment
+        value  ! comment
+       }
+token4  value
+################################################################################
+
+Each token can be followed by a single value, or by a group of values enclosed
+in curly brackets. Any input in a line after the "!" or "#" characters is
+considered a comment.
+
+Depending on the input variable, the values must have the following possible
+types:
+
+Integer: Any integer number, for example, 42, -10, 0, 1
+
+Float:   Any real number, for example, -10.0, 20.5, -1.0e+10
+
+Boolean: A logical value with the possible values of 0, 1, True, False, .true.,
+         .false., T and F
+
+String:  A string is a collection of alphanumeric characters without any spaces,
+	 basically any other value that is not an Integer, Float or Boolean.
+
+In addition to these types, Corvus has two other possible types that are
+important for developers as they affect the internal handling of the data:
+
+Auto:    This type indicates that Corvus will attempt to determine the type of
+         the data automatically.
+
+Pass:    The data is passed to the Handlers "as is" (i.e. as a string with
+	 exactly the same formatting that is put between the curly brackets).
 
 
-The following is a comprehensive list of currently implemented input
-variables:
+The following are all the currently available input variables in Corvus.
