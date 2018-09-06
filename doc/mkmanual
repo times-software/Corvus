@@ -48,7 +48,7 @@ def Format_Doc(System,token_name,handler_name):
   for line in System[token_name][0:-2]:
     if line != pnip.Doc_Chars:
       token_doc = token_doc + line + '\n'
-  token_doc = token_doc.strip()
+  token_doc = token_doc.rstrip()
 
 # Debug: FDV
 # print(token_cont)
@@ -174,9 +174,14 @@ if __name__=='__main__':
 # Debug: FDV
 # pp_debug.pprint(System)
 
-# Get the available handler names, in lowercase, to use when recognizing the
-# different tags
+# Get the available handler names
   availableHandlers_Names    = [ h.__name__ for h in cc.availableHandlers() ]
+
+# Sort the handlers' names in alphabetical order so they appear like that
+# in the manual
+  availableHandlers_Names = sorted(availableHandlers_Names)
+
+# Create a lowercase list to use when recognizing the different tags
   availableHandlers_Names_lc = [ h.lower() for h in availableHandlers_Names ] 
 
 # Debug: FDV

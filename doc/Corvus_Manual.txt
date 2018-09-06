@@ -230,7 +230,7 @@ The following are all the currently available input variables in Corvus.
 absorbing_atom:
 
 Description:
-Index of the absorbing atom for core spectroscopies such as XANES, EXAFS and
+ Index of the absorbing atom for core spectroscopies such as XANES, EXAFS and
  XES.
 
 Format:
@@ -247,7 +247,7 @@ absorbing_atom {
 cell_scaling_abc:
 
 Description:
-Scaling of the a, b an c axes of the simulation cell, in Angstroms.
+ Scaling of the a, b an c axes of the simulation cell, in Angstroms.
 
 Format:
 cell_scaling_abc {
@@ -261,7 +261,7 @@ None
 cell_scaling_iso:
 
 Description:
-Unitless isotropic scaling of the unit cell.
+ Unitless isotropic scaling of the unit cell.
 
 Format:
 cell_scaling_iso {
@@ -277,7 +277,7 @@ cell_scaling_iso {
 cell_struc_opt_flags:
 
 Description:
-Toggle the optimization of the x, y and z coordinates of each atom in the
+ Toggle the optimization of the x, y and z coordinates of each atom in the
  system.
 
 Format:
@@ -293,7 +293,7 @@ None
 cell_struc_xyz_red:
 
 Description:
-Structure of the simulation cell in reduced coordinates if the system is
+ Structure of the simulation cell in reduced coordinates if the system is
  extended and has periodic boundary conditions.
 
 Format:
@@ -309,7 +309,7 @@ None
 cell_vectors:
 
 Description:
-Normalized simulation cell vector directions. These vectors are scaled using
+ Normalized simulation cell vector directions. These vectors are scaled using
  the "cell_scaling_iso" and "cell_scaling_abc" input variables to generate the
  simulation cell.
 
@@ -327,7 +327,7 @@ None
 charge:
 
 Description:
-Net charge of the system.
+ Net charge of the system.
 
 Format:
 charge {
@@ -343,7 +343,7 @@ charge {
 cluster:
 
 Description:
-Structure of the system is the system is not extended (i. e. is a molecule or
+ Structure of the system is the system is not extended (i. e. is a molecule or
  cluster). The coordinates are in Angstroms.
 
 Format:
@@ -359,7 +359,7 @@ None
 constant_volume:
 
 Description:
-Keep the simulation cell volume constant in cell optimizations.
+ Keep the simulation cell volume constant in cell optimizations.
 
 Format:
 constant_volume {
@@ -390,7 +390,7 @@ None
 ismetal:
 
 Description:
-Toggle whether the system should be treated as a metal or as an insulator.
+ Toggle whether the system should be treated as a metal or as an insulator.
 
 Format:
 ismetal {
@@ -406,7 +406,7 @@ False
 keep_symm:
 
 Description:
-Toggle the preservation of initial symmetry in optimizations.
+ Toggle the preservation of initial symmetry in optimizations.
 
 Format:
 keep_symm {
@@ -422,7 +422,7 @@ True
 mac_diel_const:
 
 Description:
-Approximate value of the macroscopic dielectric constant of the system used in
+ Approximate value of the macroscopic dielectric constant of the system used in
  some methods to accelerate convergence of the SCF cycle.
 
 Format:
@@ -437,7 +437,7 @@ None
 method:
 
 Description:
-Method used to compute the target. This variable is somewhat context-dependent
+ Method used to compute the target. This variable is somewhat context-dependent
  and is ccurrently not fully implemented.
  Current possible values are:
     dft, mp2, ccsd
@@ -456,7 +456,7 @@ dft
 multiplicity:
 
 Description:
-Multiplicity of the system.
+ Multiplicity of the system.
 
 Format:
 multiplicity {
@@ -472,7 +472,7 @@ multiplicity {
 nkpoints:
 
 Description:
-Define the number of k-point in each direction of the grid for reciprocal
+ Define the number of k-point in each direction of the grid for reciprocal
  space simulations.
 
 Format:
@@ -489,7 +489,7 @@ nkpoints {
 nqpoints:
 
 Description:
-Define the number of q-point perturbations in each direction of the grid for
+ Define the number of q-point perturbations in each direction of the grid for
  density functional perturbation theory (DFPT) simulations.
 
 Format:
@@ -504,7 +504,7 @@ None
 pspfiles:
 
 Description:
-List of pseudopotentials for each atom in the system. Each line contains
+ List of pseudopotentials for each atom in the system. Each line contains
  the label for the atoms (usually the element % name) and the name of the file
  with the pseudopotential. The required format for the files will depend on the
  Handler used.
@@ -522,7 +522,7 @@ None
 pw_encut:
 
 Description:
-Planwave energy cutoff for reciprocal space simulations, in au.
+ Planwave energy cutoff for reciprocal space simulations, in au.
 
 Format:
 pw_encut {
@@ -538,7 +538,7 @@ pw_encut {
 scf_conv:
 
 Description:
-Convergence threshold for SCF cycles (HF, DFT, etc) in au. The value set by
+ Convergence threshold for SCF cycles (HF, DFT, etc) in au. The value set by
  this variable might be internally overridden if the target requires tighter
  convergence settings.
 
@@ -556,7 +556,7 @@ scf_conv {
 scratch:
 
 Description:
-Directory for disk scratch for those Handlers that require large amounts of
+ Directory for disk scratch for those Handlers that require large amounts of
  disk. If the directory is not present or it can not be created, Corvus reverts
  to the default.
  NOTE: This input variable is not fully implemented yet.
@@ -575,7 +575,7 @@ scratch {
 spectral_broadening:
 
 Description:
-Broadening used in some spectroscopic methods.
+ Broadening used in some spectroscopic methods.
 
 Format:
 spectral_broadening {
@@ -591,7 +591,7 @@ spectral_broadening {
 target_list:
 
 Description:
-Space separated list with all the targets required for this calculation.
+ Space separated list with all the targets required for this calculation.
 
 Format:
 target_list {
@@ -606,7 +606,7 @@ None
 title:
 
 Description:
-Title of this calculation.
+ Title of this calculation.
 
 Format:
 title {
@@ -623,7 +623,7 @@ This is a Corvus calculation
 usehandlers:
 
 Description:
-Explicitely declare what Handlers are to be used in the generation of the
+ Explicitely declare what Handlers are to be used in the generation of the
  Workflow. This helps the current simple Workflow generator when a given target
  is provided by more than one Handler.
  Current possible values are:
@@ -641,7 +641,7 @@ None
 xc:
 
 Description:
-Exchange-correlation functional to use if the "method" selected is "dft".
+ Exchange-correlation functional to use if the "method" selected is "dft".
  Current possible values are:
     lda, pbe, b3lyp
 
@@ -654,6 +654,191 @@ Default:
 xc {
 lda
 }
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+                         Abinit Handler Input Variables                         
+--------------------------------------------------------------------------------
+abinit.ng2qpt:
+
+Description:
+ Equivalent to Abinit's (anaddb) ng2qpt input variable: Defines the number of
+ q-point perturbations in each direction of the finer grid for density
+ functional perturbation theory (DFPT) simulations. Please refer to the
+ Abinit manual for further details.
+
+Format:
+abinit.ng2qpt {
+ Integer Integer Integer
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+abinit.ngqpt:
+
+Description:
+ Equivalent to Abinit's ngqpt input variable: Defines the number of q-point
+ perturbations in each direction of the grid for density functional
+ perturbation theory (DFPT) simulations, and is that equivalent to the general
+ "nqpoints" Corvus input variable. Please refer to the Abinit manual for
+ further details.
+
+ NOTE: This code-specific input variable will be replaced by the general
+ "nqpoints" variable in the future.
+
+Format:
+abinit.ngqpt {
+ Integer Integer Integer
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+abinit.verbatim:
+
+Description:
+ The content of this input variable is passed as is (i. e. "verbatim") into the
+ input of all Abinit calculations, and it is meant to help with any Abinit
+ input that is currently not implemented in Corvus. Thus, it should be used
+ carfully to avoid inconsistencies with the automatically generated input.
+ Users should refed to the Abinit manual for information on this extra input.
+
+Format:
+abinit.verbatim {
+ Pass
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+                          Dmdw Handler Input Variables                          
+--------------------------------------------------------------------------------
+dmdw.ioflag:
+
+Description:
+ Set the amount of output printed by DMDW. Possible values are:
+   0: Terse, prints out only the desired result (s^2, u^2, etc).
+   1: Verbose, prints out the pole frequencies and weights, as well as
+      estimates of the Einstein temperatures for each path.
+ Please refer to the DMDW section of the Feff manual for further details.
+
+ NOTE: The current format described below is temporary for compatibility with
+ previous versions of Corvus. This will be changed to "Integer" in the future.
+
+Format:
+dmdw.ioflag {
+ Pass
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+dmdw.nlanc:
+
+Description:
+ Set the number of Lanczos poles (i. e. iterations) in DMDW. Larger values
+ usually improve convergence of the target quantity. However, the number of
+ poles should not exceed the dimensions of the subspace spanned by the
+ projection of the path into the appropriate eigenmodes of the Hessian. This
+ means that this variable should always be less than 3*N-6, where N is the
+ number of atoms in the system. In practice, a value of 6-8 is sufficient to
+ obtain converged mean square relative displacements (MSRD, or s^2) for EXAFS.
+ For crystallographic mean square displacements (MSD, or u^2) at least 16 poles
+ are usually needed. Please refer to the DMDW section of the Feff manual for
+ further details.
+
+ NOTE: The current format described below is temporary for compatibility with
+ previous versions of Corvus. This will be changed to "Integer" in the future.
+
+Format:
+dmdw.nlanc {
+ Pass
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+dmdw.paths:
+
+Description:
+ Set up the path descriptors that will generate the list of paths for which
+ properties will be calculated. The list has the following form:
+   <Number of descriptors>
+     <Descriptor 1>
+     <Descriptor 2>
+    .
+    .
+
+ Each descriptor has the form:
+   <Number of atoms in path> <Atom index 1> ... <Max. path length (Ang)>
+
+ The atom indices can take the value 0 which acts as a wildcard for all atoms
+ in the system.
+
+ Examples:
+
+ 2
+ 2 1 0   3.0
+ 3 2 0 5 6.0
+
+ This section defines 2 paths descriptors. The first one generates all paths
+ with two atoms, starting in atom 1 and going to all other atoms in the
+ systems, but subject to a maximum effective path length of 3.0 Ang. The
+ second one generates all paths with three atoms, starting in atom 2 and
+ ending in atom 5, while passing trhough all other atoms in the system, but
+ with a maximum effective length of 6.0 Ang.
+ Using the same syntax atoms can be selected to compute their u^2. For example
+ the paths section
+
+ 1
+ 1 0 0.0
+
+ will produce u^2 for all atoms in the system. Please refer to the DMDW
+ section of the Feff manual for further details.
+
+ NOTE: The current format described below is temporary for compatibility with
+ previous versions of Corvus.
+
+Format:
+dmdw.paths {
+ Pass
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+dmdw.tempgrid:
+
+Description:
+ Set up the temperature grid to compute the thermal properties in DMDW. It has
+ the following form:
+
+   <Number of temperature> <Min. temp.> <Max. temp.>
+
+ If the number of desired temperatures is just one, the maximum temperature
+ input is not needed. Please refer to the DMDW section of the Feff manual for
+ further details.
+
+ NOTE: The current format described below is temporary for compatibility with
+ previous versions of Corvus.
+
+Format:
+dmdw.tempgrid {
+ Pass
+}
+
+Default:
+None
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -693,7 +878,8 @@ None
 feff.atoms:
 
 Description:
-ATOMS
+
+ ATOMS
  x1  y1  z1 ipot1
  x2  y2  z2 ipot2
  .
@@ -840,7 +1026,8 @@ None
 feff.control:
 
 Description:
-CONTROL ipot ixsph ifms ipaths igenfmt iff2x Standard
+
+ CONTROL ipot ixsph ifms ipaths igenfmt iff2x Standard
 
  The CONTROL card lets you run one or more of the feff program modules separately. There
  is a switch for each of six parts of feff : 0 means not to run that module, 1 means to
@@ -1267,7 +1454,7 @@ None
 feff.hole:
 
 Description:
-DEPRICATED: Use EDGE card instead.
+ DEPRICATED: Use EDGE card instead.
 
  HOLE ihole s02
 
@@ -1593,7 +1780,8 @@ None
 feff.overlap:
 
 Description:
-OVERLAP ipot
+
+ OVERLAP ipot
 
  The OVERLAP card can be used to construct approximate overlapped atom potentials when
  atomic coordinates are not known or specified. If the atomic positions are listed following the
@@ -2253,145 +2441,19 @@ None
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
-                          Dmdw Handler Input Variables                          
---------------------------------------------------------------------------------
-dmdw.ioflag:
-
-Description:
-No description available for this variable
-Please contact review the equivalent variable in the Dmdw manual
-
-Format:
-dmdw.ioflag {
- Pass
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-dmdw.mustar:
-
-Description:
-No description available for this variable
-Please contact review the equivalent variable in the Dmdw manual
-
-Format:
-dmdw.mustar {
- Float
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-dmdw.nlanc:
-
-Description:
-No description available for this variable
-Please contact review the equivalent variable in the Dmdw manual
-
-Format:
-dmdw.nlanc {
- Pass
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-dmdw.paths:
-
-Description:
-No description available for this variable
-Please contact review the equivalent variable in the Dmdw manual
-
-Format:
-dmdw.paths {
- Pass
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-dmdw.tempgrid:
-
-Description:
-No description available for this variable
-Please contact review the equivalent variable in the Dmdw manual
-
-Format:
-dmdw.tempgrid {
- Pass
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
-                         Abinit Handler Input Variables                         
---------------------------------------------------------------------------------
-abinit.ng2qpt:
-
-Description:
-No description available for this variable
-Please contact review the equivalent variable in the Abinit manual
-
-Format:
-abinit.ng2qpt {
- Integer Integer Integer
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-abinit.ngqpt:
-
-Description:
-No description available for this variable
-Please contact review the equivalent variable in the Abinit manual
-
-Format:
-abinit.ngqpt {
- Integer Integer Integer
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-abinit.verbatim:
-
-Description:
-No description available for this variable
-Please contact review the equivalent variable in the Abinit manual
-
-Format:
-abinit.verbatim {
- Pass
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
-                          Vasp Handler Input Variables                          
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
                          Nwchem Handler Input Variables                         
 --------------------------------------------------------------------------------
 nwchem.basis:
 
 Description:
-No description available for this variable
-Please contact review the equivalent variable in the Nwchem manual
+ Set the Gaussian basis set to be used in the NWChem calculations. The format
+ is the same as in NWChem:
+
+ <Atom label> <Basis set name>
+  .
+  .
+
+ Please refer to the NWChem manual for further details.
 
 Format:
 nwchem.basis {
@@ -2406,8 +2468,11 @@ None
 nwchem.charge:
 
 Description:
-No description available for this variable
-Please contact review the equivalent variable in the Nwchem manual
+ Set the net charge of the system for an NWChem DFT simulation.
+ NOTE: This input variable will be superseded in the future by the more
+ general "charge" variable.
+
+ Please refer to the NWChem manual for further details.
 
 Format:
 nwchem.charge {
@@ -2436,8 +2501,11 @@ None
 nwchem.mult:
 
 Description:
-No description available for this variable
-Please contact review the equivalent variable in the Nwchem manual
+ Set the multiplicity of the system for an NWChem DFT simulation.
+ NOTE: This input variable will be superseded in the future by the more
+ general "multiplicity" variable.
+
+ Please refer to the NWChem manual for further details.
 
 Format:
 nwchem.mult {
@@ -2451,8 +2519,9 @@ None
 nwchem.qmd.dt_nucl:
 
 Description:
-No description available for this variable
-Please contact review the equivalent variable in the Nwchem manual
+ Set the time step for nuclear motion in a quantum MD simulation.
+
+ Please refer to the NWChem manual for further details.
 
 Format:
 nwchem.qmd.dt_nucl {
@@ -2466,8 +2535,9 @@ None
 nwchem.qmd.nstep_nucl:
 
 Description:
-No description available for this variable
-Please contact review the equivalent variable in the Nwchem manual
+ Set the number of nuclear motion steps in a quantum MD simulation.
+
+ Please refer to the NWChem manual for further details.
 
 Format:
 nwchem.qmd.nstep_nucl {
@@ -2481,8 +2551,9 @@ None
 nwchem.qmd.print_xyz:
 
 Description:
-No description available for this variable
-Please contact review the equivalent variable in the Nwchem manual
+ Toggle printing of xyz coordinates in a quantum MD simulation.
+
+ Please refer to the NWChem manual for further details.
 
 Format:
 nwchem.qmd.print_xyz {
@@ -2511,8 +2582,9 @@ None
 nwchem.qmd.targ_temp:
 
 Description:
-No description available for this variable
-Please contact review the equivalent variable in the Nwchem manual
+ Set the target temperature in a quantum MD simulation.
+
+ Please refer to the NWChem manual for further details.
 
 Format:
 nwchem.qmd.targ_temp {
@@ -2526,8 +2598,9 @@ None
 nwchem.qmd.thermostat:
 
 Description:
-No description available for this variable
-Please contact review the equivalent variable in the Nwchem manual
+ Set the thermostat type to be used in a quantum MD simulation.
+
+ Please refer to the NWChem manual for further details.
 
 Format:
 nwchem.qmd.thermostat {
@@ -2616,8 +2689,11 @@ None
 nwchem.xc:
 
 Description:
-No description available for this variable
-Please contact review the equivalent variable in the Nwchem manual
+ Set the exchange correlation potential for an NWChem DFT simulation.
+ NOTE: This input variable will be superseded in the future by the more
+ general "xc" variable.
+
+ Please refer to the NWChem manual for further details.
 
 Format:
 nwchem.xc {

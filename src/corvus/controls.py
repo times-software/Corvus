@@ -16,7 +16,10 @@ def availableHandlers():
     from nwchem import Nwchem
     from orca import Orca
 
-    return [Feff, FeffRixs, Dmdw, Abinit, Vasp, Nwchem, Orca]
+# Commenting out Vasp for now since we have no content in the manual for it for
+# now. I will readd once I include Scott's Handler.
+#   return [Feff, FeffRixs, Dmdw, Abinit, Vasp, Nwchem, Orca]
+    return [Feff, FeffRixs, Dmdw, Abinit, Nwchem, Orca]
 
 def configure(config):
     from ConfigParser import RawConfigParser
