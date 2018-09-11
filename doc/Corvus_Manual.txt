@@ -904,7 +904,7 @@ feff.cfaverage:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.cfaverage {
@@ -919,7 +919,7 @@ feff.cgrid:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.cgrid {
@@ -983,7 +983,7 @@ feff.cif:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.cif {
@@ -998,7 +998,7 @@ feff.compton:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.compton {
@@ -1013,7 +1013,7 @@ feff.config:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.config {
@@ -1048,7 +1048,7 @@ feff.coordinates:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.coordinates {
@@ -1099,7 +1099,7 @@ feff.corval:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.corval {
@@ -1131,7 +1131,7 @@ feff.crpa:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.crpa {
@@ -1181,7 +1181,7 @@ feff.density:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.density {
@@ -1265,7 +1265,7 @@ feff.egrid:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.egrid {
@@ -1304,7 +1304,7 @@ feff.elnes:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.elnes {
@@ -1336,7 +1336,7 @@ feff.equivalence:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.equivalence {
@@ -1398,7 +1398,7 @@ feff.exelfs:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.exelfs {
@@ -1415,7 +1415,7 @@ feff.extpot:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.extpot {
@@ -1489,7 +1489,7 @@ feff.fullspectrum:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.fullspectrum {
@@ -1523,7 +1523,7 @@ feff.hubbard:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.hubbard {
@@ -1615,7 +1615,7 @@ feff.kmesh:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.kmesh {
@@ -1630,7 +1630,7 @@ feff.lattice:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.lattice {
@@ -1646,7 +1646,7 @@ feff.ldec:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.ldec {
@@ -1680,7 +1680,7 @@ feff.ljmax:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.ljmax {
@@ -1695,7 +1695,7 @@ feff.magic:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.magic {
@@ -1710,7 +1710,7 @@ feff.mbconv:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.mbconv {
@@ -1750,7 +1750,7 @@ Description:
  (le2 = 0, default), dipole and magnetic dipole (le2 = 1), dipole and quadrupole (le2 = 2).
  This cannot be used with NRIXS and is not supported with EXELFS and ELNES.
  The additional field l2lp can be used to calculate individual dipolar contributions coming
- from L → L + 1 (l2lp = 1) and from L → L − 1 (l2lp = −1). Notice that in polarization
+ from L -> L + 1 (l2lp = 1) and from L -> L − 1 (l2lp = −1). Notice that in polarization
  dependent data there is also a cross term, which is calculated only when l2lp = 0
 
 Format:
@@ -1797,7 +1797,7 @@ feff.nrixs:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.nrixs {
@@ -1829,7 +1829,7 @@ feff.numdens:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.numdens {
@@ -1906,7 +1906,7 @@ feff.pmbse:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.pmbse {
@@ -1935,6 +1935,42 @@ None
 feff.potentials:
 
 Description:
+ feff.potentials{
+   ipot iz pot_label lfms1 lfms2 stoichiometry
+   ...
+ }
+ Set unique potentials for FEFF calculation.
+
+Format:
+feff.potentials {
+ Integer Integer String Integer Integer Float
+ ...
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+feff.preps:
+
+Description:
+ feff.preps{ PrintEpsilon }
+ Print dielectric function as calculated by feff.opcons.
+
+Format:
+feff.preps {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+feff.print:
+
+Description:
+ feff.pring{ ipr_pot ipr_xsph ipr_fms ipr_path ipr_genfmt ipr_ff2x }
+ Set print level for each module of FEFF.
  pot 
  0 write ‘pot.bin’ only
  1 add ‘misc.dat’
@@ -1974,37 +2010,6 @@ Description:
    files
 
 Format:
-feff.potentials {
- Integer Integer String Integer Integer Float
- ...
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-feff.preps:
-
-Description:
- feff.preps{ PrintEpsilon }
- Print dielectric function as calculated by feff.opcons.
-
-Format:
-feff.preps {
- Boolean
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-feff.print:
-
-Description:
- feff.pring{ ipr_pot ipr_xsph ipr_fms ipr_path ipr_genfmt ipr_ff2x }
- Set print level for each module of FEFF.
-
-Format:
 feff.print {
  Integer Integer Integer Integer Integer Integer
 }
@@ -2017,7 +2022,7 @@ feff.rconv:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.rconv {
@@ -2032,7 +2037,7 @@ feff.real:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.real {
@@ -2047,7 +2052,7 @@ feff.reciprocal:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.reciprocal {
@@ -2062,7 +2067,7 @@ feff.restart:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.restart {
@@ -2077,7 +2082,7 @@ feff.rgrid:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.rgrid {
@@ -2092,7 +2097,7 @@ feff.rhozzp:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.rhozzp {
@@ -2107,7 +2112,7 @@ feff.rixs:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.rixs {
@@ -2122,7 +2127,7 @@ feff.rlprint:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.rlprint {
@@ -2233,7 +2238,7 @@ feff.screen:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.screen {
@@ -2249,7 +2254,7 @@ feff.scxc:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.scxc {
@@ -2324,7 +2329,7 @@ feff.sgroup:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.sgroup {
@@ -2371,7 +2376,7 @@ feff.siggk:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.siggk {
@@ -2423,7 +2428,7 @@ feff.strfac:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.strfac {
@@ -2453,7 +2458,7 @@ feff.target:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.target {
@@ -2486,7 +2491,7 @@ feff.temperature:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Feff manual
+Please review the equivalent variable in the Feff manual
 
 Format:
 feff.temperature {
@@ -2631,7 +2636,7 @@ nwchem.iter:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Nwchem manual
+Please review the equivalent variable in the Nwchem manual
 
 Format:
 nwchem.iter {
@@ -2712,7 +2717,7 @@ nwchem.qmd.snapstep:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Nwchem manual
+Please review the equivalent variable in the Nwchem manual
 
 Format:
 nwchem.qmd.snapstep {
@@ -2759,7 +2764,7 @@ nwchem.xas.alpha:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Nwchem manual
+Please review the equivalent variable in the Nwchem manual
 
 Format:
 nwchem.xas.alpha {
@@ -2774,7 +2779,7 @@ nwchem.xas.nroots:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Nwchem manual
+Please review the equivalent variable in the Nwchem manual
 
 Format:
 nwchem.xas.nroots {
@@ -2789,7 +2794,7 @@ nwchem.xas.vec:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Nwchem manual
+Please review the equivalent variable in the Nwchem manual
 
 Format:
 nwchem.xas.vec {
@@ -2804,7 +2809,7 @@ nwchem.xas.xrayenergywin:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Nwchem manual
+Please review the equivalent variable in the Nwchem manual
 
 Format:
 nwchem.xas.xrayenergywin {
@@ -2819,7 +2824,7 @@ nwchem.xaselem:
 
 Description:
 No description available for this variable
-Please contact review the equivalent variable in the Nwchem manual
+Please review the equivalent variable in the Nwchem manual
 
 Format:
 nwchem.xaselem {

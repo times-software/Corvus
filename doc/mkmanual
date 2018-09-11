@@ -95,7 +95,7 @@ def Format_Doc(System,token_name,handler_name):
       print('Please contact the code developers')
     else:
       print('No description available for this variable')
-      print('Please contact review the equivalent variable in the '+handler_name+' manual')
+      print('Please review the equivalent variable in the '+handler_name+' manual')
   print("{0}".format(1*Blank_line),end='')
   print('Format:')
   print('{0} {{\n{1}\n}}'.format(token_name,token_format))
