@@ -888,7 +888,7 @@ Description:
  .
  .
 
- Specify atomic positions in cartesian coordinates (in ˚Angstroms) and unique potential indices of
+ Specify atomic positions in cartesian coordinates (in Angstroms) and unique potential indices of
 
 Format:
 feff.atoms {
@@ -1372,17 +1372,17 @@ Description:
  ixc is an index specifying the potential model to use for the fine structure and the optional
  ixc0 is the index of the model to use for the background function.
  The calculated potential can be corrected by adding a constant shift to the Fermi level given
- by vr0 and to a pure imaginary “optical” potential (i.e., uniform decay) given by vi0. Typical
- errors in feff’s self-consistent Fermi level estimate are about 1 eV. (The CORRECTIONS
+ by vr0 and to a pure imaginary "optical" potential (i.e., uniform decay) given by vi0. Typical
+ errors in feff's self-consistent Fermi level estimate are about 1 eV. (The CORRECTIONS
  card in Section 4.5.7 is similar but allows the user to make small changes in vi0 and vr0 after
  the rest of the calculation is completed, for example in a fitting process.)
 
  Indices for the available exchange models:
- 0 Hedin–Lundqvist + a constant imaginary part
- 1 Dirac–Hara + a constant imaginary part
+ 0 Hedin-Lundqvist + a constant imaginary part
+ 1 Dirac-Hara + a constant imaginary part
  2 ground state + a constant imaginary part
- 3 Dirac–Hara + HL imag part + a constant imaginary part
- 5 Partially nonlocal: Dirac–Fock for core + HL for valence electrons + a constant imaginary
+ 3 Dirac-Hara + HL imag part + a constant imaginary part
+ 5 Partially nonlocal: Dirac-Fock for core + HL for valence electrons + a constant imaginary
    part
 
 Format:
@@ -1540,18 +1540,18 @@ Description:
  feff.interstitial{ inters vtot }
  The construction of the interstitial potential and density may be changed by using this card.
  inters=1 might be useful when only the surroundings of the absorbing atom are specified in
- ‘feff.inp’.
+ 'feff.inp'.
  inters
        inters defines how to find the interstitial potential. inters=0 (default): the interstitial
-       potential is found by averaging over the entire extended cluster in ‘feff.inp’. 
+       potential is found by averaging over the entire extended cluster in 'feff.inp'. 
        inters=1: the interstitial potential is found locally around the absorbing atom.
  vtot
        the volume per atom normalized by ratmin3
        (vtot=(volume per atom)/ratmin3), where
        ratmin is the shortest bond for the absorbing atom. This quantity defines the total
        volume (needed to calculate the interstitial density) of the extended cluster specified in
-       ‘feff.inp’. If vtot ≤ 0 then the total volume is calculated as a sum of Norman sphere
-       volumes. Otherwise, total volume = nat ∗ (vtot ∗ ratmin3), where nat is the number of
+       'feff.inp'. If vtot <= 0 then the total volume is calculated as a sum of Norman sphere
+       volumes. Otherwise, total volume = nat * (vtot * ratmin3), where nat is the number of
        atoms in an extended cluster.
 
 Format:
@@ -1728,7 +1728,7 @@ Description:
  Use many-pole model self-energy. This requires the loss function, which can be 
  provided externally, or approximated using feff.opcons.
  ipl - Set method for self-energy inclusion.
-       1: use an “average” self-energy which is applied to the whole system (default). 
+       1: use an "average" self-energy which is applied to the whole system (default). 
        2: use a density dependendent self-energy which is
           different at every point inside the muffin-tin radius.
 
@@ -1750,7 +1750,7 @@ Description:
  (le2 = 0, default), dipole and magnetic dipole (le2 = 1), dipole and quadrupole (le2 = 2).
  This cannot be used with NRIXS and is not supported with EXELFS and ELNES.
  The additional field l2lp can be used to calculate individual dipolar contributions coming
- from L -> L + 1 (l2lp = 1) and from L -> L − 1 (l2lp = −1). Notice that in polarization
+ from L -> L + 1 (l2lp = 1) and from L -> L - 1 (l2lp = -1). Notice that in polarization
  dependent data there is also a cross term, which is calculated only when l2lp = 0
 
 Format:
@@ -1877,7 +1877,7 @@ feff.pcriteria:
 Description:
  feff.pcriteria{ pcritk pcrith }
  Set criteria for filtering in pathfinder.
- The keep-criterion pcritk looks at the amplitude of χ (in the plane wave approximation)
+ The keep-criterion pcritk looks at the amplitude of chi (in the plane wave approximation)
  for the current path and compares it to a single scattering path of the same effective length.
  To set this value, consider the maximum degeneracy you expect and divide your plane wave
  criterion by this number. For example, in fcc Cu, typical degeneracies are 196 for paths with
@@ -1972,41 +1972,41 @@ Description:
  feff.pring{ ipr_pot ipr_xsph ipr_fms ipr_path ipr_genfmt ipr_ff2x }
  Set print level for each module of FEFF.
  pot 
- 0 write ‘pot.bin’ only
- 1 add ‘misc.dat’
- 2 add ‘potNN.dat’
- 3 add ‘atomNN.dat’
+ 0 write 'pot.bin' only
+ 1 add 'misc.dat'
+ 2 add 'potNN.dat'
+ 3 add 'atomNN.dat'
  
  xsph 
- 0 write ‘phase.bin’ and ‘xsect.bin’ only
- 1 add ‘axafs.dat’ and ‘phase.dat’
- 2 add ‘phaseNN.dat’ and ‘phminNN.dat’
- 3 add ‘ratio.dat’ (for XMCD normalization) and ‘emesh.dat’.
+ 0 write 'phase.bin' and 'xsect.bin' only
+ 1 add 'axafs.dat' and 'phase.dat'
+ 2 add 'phaseNN.dat' and 'phminNN.dat'
+ 3 add 'ratio.dat' (for XMCD normalization) and 'emesh.dat'.
  
  fms 
- 0 write ‘gg.bin’
- 1 write ‘gg.dat’
+ 0 write 'gg.bin'
+ 1 write 'gg.dat'
  
  path 
- 0 write ‘paths.dat’ only
- 1 add ‘crit.dat’
- 3 add ‘fbeta’ files (plane wave |f(β)| approximations)
- 5 Write only ‘crit.dat’ and do not write ‘paths.dat’. (This is useful
-   genfmt 0 write ‘list.dat’, and write ‘feff.bin’ with all paths with importance
+ 0 write 'paths.dat' only
+ 1 add 'crit.dat'
+ 3 add 'fbeta' files (plane wave |f(\beta)| approximations)
+ 5 Write only 'crit.dat' and do not write 'paths.dat'. (This is useful
+   genfmt 0 write 'list.dat', and write 'feff.bin' with all paths with importance
    greater than or equal to two thirds of the curved wave importance
    criterion
- 1 write all paths to ‘feff.bin’
+ 1 write all paths to 'feff.bin'
 
  genfmt 
- 0 write ‘list.dat’, and write ‘feff.bin’ with all paths with importance
+ 0 write 'list.dat', and write 'feff.bin' with all paths with importance
    greater than or equal to two thirds of the curved wave importance
    criterion
- 1 write all paths to ‘feff.bin’
+ 1 write all paths to 'feff.bin'
  
  ff2x 
- 0 write ‘chi.dat’ and ‘xmu.dat’
- 2 add ‘chipNNNN.dat’ (χ(k) for each path individually)
- 3 add ‘feffNNNN.dat’ and ‘files.dat’, and do not add ‘chipNNNN.dat’
+ 0 write 'chi.dat' and 'xmu.dat'
+ 2 add 'chipNNNN.dat' (chi(k) for each path individually)
+ 3 add 'feffNNNN.dat' and 'files.dat', and do not add 'chipNNNN.dat'
    files
 
 Format:
@@ -2396,9 +2396,9 @@ Description:
  spin-dependent effects, including XMCD and SPXAS.
  ispin meaning
   2 spin-up SPXAS and LDOS
- −2 spin-down SPXAS and LDOS
+ -2 spin-down SPXAS and LDOS
   1 spin-up portion of XMCD calculations
- −1 spin-down portion of XMCD calculations
+ -1 spin-down portion of XMCD calculations
 
 Format:
 feff.spin {
