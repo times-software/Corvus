@@ -2,6 +2,7 @@
 
 # Take advantage of Python 3 print function
 from __future__ import print_function
+from datetime import datetime
 
 import sys
 import corvus.controls as cc
@@ -11,6 +12,7 @@ from corvutils import parsnip as pnip
 # Define a few things to make the output a bit cleaner
 Manual_Filename = 'Corvus_Manual.txt'
 Doc_Contents_Dir = 'Doc_Contents'
+LicInfo_Filename = Doc_Contents_Dir+'/'+'Corvus_License.txt'
 Desc_Filename = Doc_Contents_Dir+'/'+'Corvus_Description.txt'
 InstInst_Filename = Doc_Contents_Dir+'/'+'Corvus_Install.txt'
 Examples_Filename = Doc_Contents_Dir+'/'+'Corvus_Examples.txt'
@@ -131,7 +133,16 @@ def Print_Doc_Header():
   print("{0}".format(('E-Mail: '+corvus_info['Author-email']).capitalize().center(Page_width)))
   print("{0}".format(2*Blank_line),end='')
   print("{0}".format(corvus_info['Author'].center(Page_width)))
-  print("{0}".format(4*Blank_line),end='')
+  print("{0}".format(2*Blank_line),end='')
+  print("{0}".format(Separator1))
+
+# Read the license info and print
+  print("{0}".format(1*Blank_line),end='')
+  year = datetime.today().year
+  print("{0}".format('Copyright (c) '+str(year)+' '+corvus_info['Author']))
+  print("{0}".format(1*Blank_line),end='')
+  print("{0}".format(open(LicInfo_Filename).read()),end='')
+  print("{0}".format(1*Blank_line),end='')
   print("{0}".format(Separator1))
 
 # Read the description blurb and print
@@ -234,4 +245,25 @@ if __name__=='__main__':
 
 # Here we should add the printing of something like an examples section
   Print_Doc_Examples()
+
+# One final point before we leave: Here we update the license in the root dir
+# Doing it here makes it easy to maintain. Maybe we should comment it out
+# in the future, but for now this works.
+
+  from pkg_resources import get_distribution
+
+# For now, we get a minimal amount of information from the Corvus package setup
+  corvus_pkg = get_distribution('corvus')
+  corvus_metadata = corvus_pkg.get_metadata('PKG-INFO').encode('ascii','ignore')
+  corvus_info = pnip.parseMetaData(corvus_metadata)
+
+# Redirect all output to the manual file
+  License_Filename = '../LICENSE.md'
+  sys.stdout = open(License_Filename,'w')
+
+# Read the license info and print
+  year = datetime.today().year
+  print("{0}".format('Copyright (c) '+str(year)+' '+corvus_info['Author']))
+  print("{0}".format(1*Blank_line),end='')
+  print("{0}".format(open(LicInfo_Filename).read()),end='')
 

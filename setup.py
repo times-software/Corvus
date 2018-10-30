@@ -6,7 +6,7 @@ import sys
 Examples_Dir = 'examples'
 
 Examples_Data = []
-for root, dirs, files in  walk(Examples_Dir):
+for root, dirs, files in walk(Examples_Dir):
   for file in files:
     Examples_Data.append((root,[root+'/'+file]))
 
@@ -18,9 +18,9 @@ for root, dirs, files in  walk(Examples_Dir):
 setup(name='corvus',
       version='0.9.0',
       description='Property-driven Scientific Workflow Manager',
-      author='S. Story, F. D. Vila, J. J. Kas, S. D. Pemmaraju',
+      author='S. Story, F. D. Vila, J. J. Kas, S. D. Pemmaraju, J. J. Rehr',
       author_email='feff@uw.edu',
-      maintainer='S. Story, F. D. Vila, J. J. Kas, S. D. Pemmaraju',
+      maintainer='S. Story, F. D. Vila, J. J. Kas, S. D. Pemmaraju, J. J. Rehr',
       maintainer_email='feff@uw.edu',
       url='http://feffproject.org',
       scripts=['bin/run-corvus'],
