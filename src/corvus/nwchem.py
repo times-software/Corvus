@@ -47,6 +47,10 @@ class Nwchem(Handler):
         return 'Nwchem Handler'
 
     @staticmethod
+    def Produces():
+      return implemented
+
+    @staticmethod
     def canProduce(output):
         if isinstance(output, list) and output and isinstance(output[0], basestring):
             return strlistkey(output) in implemented

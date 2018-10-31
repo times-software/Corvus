@@ -259,6 +259,27 @@ def printAndExit(msg):
     sys.stderr.flush()
     sys.exit()
 
+def Available_Handlers_and_Targets():
+
+  import pprint
+  pp_debug = pprint.PrettyPrinter(indent=4)
+
+  for h in availableHandlers():
+    print 'Handler: {0}'.format(h.__name__)
+    Implemented = h.Produces()
+#   key_len = max([ len(key) for key in Implemented.keys() ])
+#   fmt = '  {:' + str(key_len) + 's} <-'
+    fmt = '  {:s} <-'
+    for prop in sorted(Implemented.keys()):
+      strng = '  ' + prop + ' <-'
+      print strng,
+      first = 0
+      for req in Implemented[prop]['req']:
+        print first*(len(strng)+1)*' ' + req
+        first = 1
+      print ''
+    print 64*'-' 
+
 # Handles command line arguments and runs through workflow
 def oneshot(argv):
     import getopt, pickle
@@ -277,8 +298,8 @@ def oneshot(argv):
 #   shortopts = 'crt:i:w:s:j:'
 #   longopts = ['target=','input=','workflow=','checkpoints','resume','save=',
 #               'jump=','prefix=','parallelrun=']
-    shortopts = 'hcr:i:w:s:j:'
-    longopts = ['help','input=','workflow=','checkpoints','resume','save=',
+    shortopts = 'ahcr:i:w:s:j:'
+    longopts = ['avail','help','input=','workflow=','checkpoints','resume','save=',
                 'jump=','prefix=','parallelrun=']
     try:
         opts, args = getopt.getopt(argv[1:], shortopts, longopts)
@@ -310,6 +331,9 @@ def oneshot(argv):
             saveFile = checkFile(arg)
         elif opt in ('-r', '--resume'):
             resume = True
+        elif opt in ('-a', '--avail'):
+            Available_Handlers_and_Targets()
+            sys.exit()
         elif opt in ('-h', '--help'):
             usage()
             sys.exit()
