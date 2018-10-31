@@ -237,7 +237,9 @@ def usage():
     print "Usage: corvus.py [options]"
     print "       Possible options:"
 #uncommented print line below, Krsna
-    print "         -t, --target      [comma-separated list]"
+# Commented again by FDV: We do not acquire targets though the CLI anymore.
+#   print "         -t, --target      [comma-separated list]"
+    print "         -h, --help"
     print "         -w, --workflow    [filename]"
     print "         -i, --input       [filename]"  
     print "         -c, --checkpoints"  
@@ -275,8 +277,8 @@ def oneshot(argv):
 #   shortopts = 'crt:i:w:s:j:'
 #   longopts = ['target=','input=','workflow=','checkpoints','resume','save=',
 #               'jump=','prefix=','parallelrun=']
-    shortopts = 'cr:i:w:s:j:'
-    longopts = ['input=','workflow=','checkpoints','resume','save=',
+    shortopts = 'hcr:i:w:s:j:'
+    longopts = ['help','input=','workflow=','checkpoints','resume','save=',
                 'jump=','prefix=','parallelrun=']
     try:
         opts, args = getopt.getopt(argv[1:], shortopts, longopts)
@@ -308,6 +310,9 @@ def oneshot(argv):
             saveFile = checkFile(arg)
         elif opt in ('-r', '--resume'):
             resume = True
+        elif opt in ('-h', '--help'):
+            usage()
+            sys.exit()
         elif opt in ('-j', '--jump'):
             if not arg.isdigit():
                 printAndExit('Resume index should be a positive integer.')
