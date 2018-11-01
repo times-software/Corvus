@@ -46,6 +46,8 @@ def configure(config):
 # Modified by FDV
     config['parsnipConf'] = os.path.join(utilpath, 'parsnip.corvus.config')
     config['parsnipForm'] = os.path.join(utilpath, 'parsnip.corvus.formats')
+    config['debug']   = int(rcp.get('Defaults','debug'))
+    config['verbose'] = int(rcp.get('Defaults','verbose'))
     
 # Here we add a check to see if we are running under Cygwin. In Cygwin
 # executables have a ".exe" extension. We also define all the different
@@ -240,6 +242,8 @@ def usage():
 # Commented again by FDV: We do not acquire targets though the CLI anymore.
 #   print "         -t, --target      [comma-separated list]"
     print "         -h, --help"
+    print "         -v, --verbose"
+    print "         -d, --debug"
     print "         -w, --workflow    [filename]"
     print "         -i, --input       [filename]"  
     print "         -c, --checkpoints"  
@@ -298,8 +302,8 @@ def oneshot(argv):
 #   shortopts = 'crt:i:w:s:j:'
 #   longopts = ['target=','input=','workflow=','checkpoints','resume','save=',
 #               'jump=','prefix=','parallelrun=']
-    shortopts = 'ahcr:i:w:s:j:'
-    longopts = ['avail','help','input=','workflow=','checkpoints','resume','save=',
+    shortopts = 'v:d:ahcr:i:w:s:j:'
+    longopts = ['verbose','debug=','avail','help','input=','workflow=','checkpoints','resume','save=',
                 'jump=','prefix=','parallelrun=']
     try:
         opts, args = getopt.getopt(argv[1:], shortopts, longopts)
@@ -308,7 +312,13 @@ def oneshot(argv):
         usage()
         sys.exit(2)
 
+# Debug
+#   print opts
+#   sys.exit()
+
     ### Read user options ###
+    Verbose_Opt = {'opt':False,'val':0}
+    Debug_Opt   = {'opt':False,'val':0}
     resume = checkpoints = False
     jumpPoint = 0
 # Modified by FDV:
@@ -334,6 +344,14 @@ def oneshot(argv):
         elif opt in ('-a', '--avail'):
             Available_Handlers_and_Targets()
             sys.exit()
+        elif opt in ('-v', '--verbose'):
+            if not arg.isdigit():
+                printAndExit('Verbose argument should be a positive integer.')
+            Verbose_Opt = {'opt':True,'val':int(arg)}
+        elif opt in ('-d', '--debug'):
+            if not arg.isdigit():
+                printAndExit('Debug argument should be a positive integer.')
+            Debug_Opt = {'opt':True,'val':int(arg)}
         elif opt in ('-h', '--help'):
             usage()
             sys.exit()
@@ -350,6 +368,10 @@ def oneshot(argv):
     config = {}
     configure(config)
     # Overwrite defaults as requested
+    if Verbose_Opt['opt']:
+        config['verbose'] = Verbose_Opt['val']
+    if Debug_Opt['opt']:
+        config['debug'] = Debug_Opt['val'] 
     if pathPrefix is not None:
         config['pathprefix'] = pathPrefix
         config['inputFile'] = config['pathprefix'] + config['inputsuffix']
@@ -362,13 +384,10 @@ def oneshot(argv):
         config['checkpoints'] = checkpoints
     if parallelRun is not None:
         config['parallelRun'] = parallelRun
-#DASb
-#line below uncommented by Krsna
-    print config
-#DASe
-# Debug: FDV
-#   pp_debug.pprint(config)
-#   sys.exit()
+
+# Print the configuration state to be used in this run
+    if config['debug'] > 0:
+      pp_debug.pprint(config)
 
     system = {}
     workflowStart = 0
