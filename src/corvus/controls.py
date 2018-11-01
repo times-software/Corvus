@@ -242,8 +242,8 @@ def usage():
 # Commented again by FDV: We do not acquire targets though the CLI anymore.
 #   print "         -t, --target      [comma-separated list]"
     print "         -h, --help"
-    print "         -v, --verbose"
-    print "         -d, --debug"
+    print "         -v, --verbose     [verbose level: 0, 1, ...]"
+    print "         -d, --debug       [debug level: 0, 1, ...]"
     print "         -w, --workflow    [filename]"
     print "         -i, --input       [filename]"  
     print "         -c, --checkpoints"  
