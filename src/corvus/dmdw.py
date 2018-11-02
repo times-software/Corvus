@@ -99,7 +99,7 @@ class Dmdw(Handler):
         dir = config['xcDir']
         out = open(os.path.join(dir, 'corvus.DMDW.stdout'), 'w')
         err = open(os.path.join(dir, 'corvus.DMDW.stderr'), 'w')
-        p = subprocess.Popen([config['dmdw']], cwd=dir, stdout=out, stderr=err)
+        p = subprocess.Popen([config['dmdw_standalone']], cwd=dir, stdout=out, stderr=err)
         p.wait()
         out.close()
         err.close()

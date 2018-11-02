@@ -57,7 +57,7 @@ def configure(config):
                              'ff2x','fms','fullspectrum','genfmt','ldos',
                              'mkgtr','opconsat','path','pot','rdinp','rhorrp',
                              'rixs','screen','sfconv','xsph'],
-                   'dmdw'  :['dmdw'],
+                   'dmdw'  :['dmdw_standalone'],
                    'orca'  :['orca'],
                    'abinit':['abinit','anaddb','mrgddb','mrggkk'],
                    'vasp'  :['vasp_gam','vasp_std'],
@@ -109,23 +109,28 @@ def generateWorkflow(target, handlers, desc=''):
 # handlers requested by the user
     availableHandlers_map = { h.__name__:h for h in availableHandlers() }
 # Debug: FDV
-    pp_debug.pprint(availableHandlers_map)
+#   print 'availableHandlers_map = '
+#   pp_debug.pprint(availableHandlers_map)
 #   sys.exit()
 
 # Now we create the useHandlers list from the input and the available ones
     useHandlers = []
 # Debug: FDV
-    print handlers
-    print availableHandlers_map.keys()
+    print 'handlers = ', handlers
+    print 'availableHandlers_map.keys = ', availableHandlers_map.keys()
+#   sys.exit()
     for handler_name in handlers:
       if handler_name in availableHandlers_map.keys():
         useHandlers.append(availableHandlers_map[handler_name])
-        print useHandlers
+# Debug: FDV
+#       print useHandlers
       else:
         print("Handler %s not in list of available handlers:" % (handler_name))
         for s in availableHandlers_map.keys():
           print("%s" % s)
         sys.exit()
+# Debug: FDV
+#   sys.exit()
 
 # Debuf: FDV
 #   pp_debug.pprint(availableHandlers)
@@ -166,7 +171,10 @@ def generateWorkflow(target, handlers, desc=''):
        targets = set([t])
        while len(targets) > 0:
            noMatch = True
-           for h in availableHandlers():
+# Modified by FDV
+# NOTE: Can't believe I missed this. 
+#          for h in availableHandlers():
+           for h in useHandlers:
                #print "Checking Handler: " # Debug JJK
                #print h # Debug JJK
                htargets = [t for t in targets if h.canProduce(t)]
