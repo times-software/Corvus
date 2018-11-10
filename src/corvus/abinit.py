@@ -110,6 +110,9 @@ class Abinit(Handler):
 #   def run(config, files):
     def run(config, input, output):
 
+        if config['verbose'] > 0:
+          print 'Entering Handler {0}'.format(Abinit.__name__)
+
 # Modified by FDV:
 # Bringing generateInput into run
         files = generateInput(config, input, output)
@@ -155,6 +158,9 @@ class Abinit(Handler):
 # Modified by FDV:
 # Bringing translateOutput into run
         translateOutput(config, input, output)
+
+        if config['verbose'] > 0:
+          print 'Done with Handler {0}'.format(Abinit.__name__)
     
     @staticmethod
     def cleanup(config):    

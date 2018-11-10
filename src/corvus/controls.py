@@ -4,6 +4,16 @@ import sys, os
 import pprint
 pp_debug = pprint.PrettyPrinter(indent=4)
 
+# Define a few things to make the output a bit cleaner
+# NOTE FDV: Later I will put this in a module that can be loaded where needed
+#           so we can keep it consisten over the whole code.
+Blank_line = '\n'
+Separator1_char = '='
+Separator2_char = '-'
+Page_width = 80
+Separator1 = Page_width*Separator1_char
+Separator2 = Page_width*Separator2_char
+
 # Define the available handlers by hand here
 # Note FDV: There should be a way to do this automatically, but can't think of
 # one right now
@@ -97,14 +107,15 @@ def initializeSystem(config, system):
 #   sys.exit()
 
 # Basic Workflow Generator
-def generateWorkflow(target, handlers, desc=''):
+def generateWorkflow(config,target, handlers, desc=''):
     from structures import Workflow
 
-# Note FDV: Moving to top so this is available throughout
-# Define the available handlers by hand here
-#   availableHandlers = [Feff, FeffRixs, Dmdw, Abinit, Vasp, Nwchem, Orca]
-    #availableHandlers = [Nwchem, Dmdw]
-    #availableHandlers = [Abinit, Dmdw]
+# NOTE FDV:
+# At some point we will have to put some printouts during the generation of the
+# workflow, to make it more inforamtive and easier to troubleshoot. For now I
+# just simply added the config variable to the interface of the function so we
+# can control output later.
+
 # From the handlers list we generate a mapping dictionary to identify the 
 # handlers requested by the user
     availableHandlers_map = { h.__name__:h for h in availableHandlers() }
@@ -116,8 +127,8 @@ def generateWorkflow(target, handlers, desc=''):
 # Now we create the useHandlers list from the input and the available ones
     useHandlers = []
 # Debug: FDV
-    print 'handlers = ', handlers
-    print 'availableHandlers_map.keys = ', availableHandlers_map.keys()
+#   print 'handlers = ', handlers
+#   print 'availableHandlers_map.keys = ', availableHandlers_map.keys()
 #   sys.exit()
     for handler_name in handlers:
       if handler_name in availableHandlers_map.keys():
@@ -165,6 +176,7 @@ def generateWorkflow(target, handlers, desc=''):
 ##   workflow.sequence[0]({1:'a'},{1:'a'},berp)
 ##   sys.exit()
 #-----------------------------------------------------------------------------
+
     maintargets = workflow.getRequiredInput()
     #print "Done printing ri" # Debug JJK
     for t in maintargets:
@@ -250,6 +262,7 @@ def usage():
 # Commented again by FDV: We do not acquire targets though the CLI anymore.
 #   print "         -t, --target      [comma-separated list]"
     print "         -h, --help"
+    print "         -a, --avail"
     print "         -v, --verbose     [verbose level: 0, 1, ...]"
     print "         -d, --debug       [debug level: 0, 1, ...]"
     print "         -w, --workflow    [filename]"
@@ -295,14 +308,6 @@ def Available_Handlers_and_Targets():
 # Handles command line arguments and runs through workflow
 def oneshot(argv):
     import getopt, pickle
-
-# Debug:FDV
-# Test the writeDict function in abinit
-#   from abinit import writeDict
-# Create a test dictionary
-#   dict={'aa':'12\n34','a':1,'b':[[1],[2]],'c':[[1]],'d':[1,2]}
-#   writeDict(dict,'pepe')
-#   sys.exit()
 
 # Modified by FDV:
 # Removing the target option from the cli. From now on we do it through the
@@ -393,9 +398,17 @@ def oneshot(argv):
     if parallelRun is not None:
         config['parallelRun'] = parallelRun
 
+# Added by FDV:
+# Improving the output a bit
+    if config['verbose'] > 0:
+      print_header()
+
 # Print the configuration state to be used in this run
     if config['debug'] > 0:
+      print ''
+      print 'Current config dictionary:'
       pp_debug.pprint(config)
+      print ''
 
     system = {}
     workflowStart = 0
@@ -410,11 +423,9 @@ def oneshot(argv):
     # Update System with any user input
     initializeSystem(config, system)
 #DASb
-    print 'system = ', system
+    if config['debug'] == 10:
+      print 'system = ', system
 #DASe
-# Debug: FDV
-#   print(system['target_list'])
-#   sys.exit()
 
 # Added by FDV
 # At this point we set the target list based on the content of the input file,
@@ -437,11 +448,13 @@ def oneshot(argv):
 # Here we should probably add a check to see if the target list if empty, but
 # I don't think it can happen. Leaving for future
 
-# Debug: FDV
-#print check targetList usehandlers by Krsna
-    print targetList
-    print handlerList
-#   sys.exit()
+    if config['verbose'] > 0:
+      print 'List of requested targets:'
+      print targetList
+      print ''
+      print 'List of requested handlers:'
+      print handlerList
+      print ''
 
     # Set up Workflow or read from file
     if workflowFile is not None:
@@ -450,17 +463,22 @@ def oneshot(argv):
     elif not resume:
         # Create Workflow
         autodesc = 'Calculate ' + ', '.join(targetList[0])
-        workflow = generateWorkflow(targetList, handlerList, desc=autodesc)
+        workflow = generateWorkflow(config,targetList, handlerList, desc=autodesc)
 
-# Debug: FDV
-#Krsna uncommented line below
-    print workflow
-#   sys.exit()
+    if config['verbose'] > 0:
+      print 'Workflow for this calculation:'
+      print workflow
+      print ''
 
     # Check for any missing user input
     required = set(workflow.getRequiredInput())
-# Debug: FDV
-#   print required
+
+# NOTE FDV: This is already printed at the end of workflow above.
+#   if config['debug'] > 0:
+#     print 'List of required user inputs:'
+#     print required
+#     print ''
+
     missing = list(required.difference(set(system.keys())))
     if len(missing) > 0:
         printAndExit('Error: missing user input for ' + str(missing))
@@ -474,9 +492,15 @@ def oneshot(argv):
 
     # Save intial state
     saveState = {'system':system,'workflow':workflow}
+
+    if config['verbose'] > 0:
+      print "{0}".format(Separator1)
+      print "{0}".format('Starting Workflow Sequence'.center(Page_width))
+      print "{0}".format(Separator2)
+#     print "{0}".format(1*Blank_line),
+
     # Run Workflow
     i = max(0, workflowStart)
-    print workflow.sequence
     while i < len(workflow.sequence):
         if config['checkpoints']:
             saveState['system'] = system
@@ -485,7 +509,14 @@ def oneshot(argv):
                 pickle.dump(saveState, saveFile, pickle.HIGHEST_PROTOCOL)
         
         config['xcIndex'] = i + 1
+        if config['verbose'] > 0:
+          print 'Workflow Step [{0}]:'.format(i+1)
         workflow.sequence[i].go(config, system)
+        if config['verbose'] > 0:
+          if i == len(workflow.sequence)-1:
+            print "{0}".format(Separator1)
+          else:
+            print "{0}".format(Separator2)
         i += 1
     # Save completed state
     saveState['system'] = system
@@ -498,4 +529,32 @@ def oneshot(argv):
             prettyprint(token, config, system)
         else: 
             printAndExit('Error: target [' + token + '] not produced')
+
+def print_header():
+
+  from pkg_resources import get_distribution
+  from corvutils import parsnip as pnip
+  from datetime import datetime
+
+# For now, we get a minimal amount of information from the Corvus package setup
+  corvus_pkg = get_distribution('corvus')
+  corvus_metadata = corvus_pkg.get_metadata('PKG-INFO').encode('ascii','ignore')
+  corvus_info = pnip.parseMetaData(corvus_metadata)
+
+# Print the cover page:
+  print "{0}".format(Separator1) 
+  print "{0}".format(1*Blank_line),
+  print "{0}".format(corvus_info['Name'].capitalize().center(Page_width))
+  print "{0}".format(1*Blank_line),
+  print "{0}".format(corvus_info['Summary'].center(Page_width))
+  print "{0}".format(1*Blank_line),
+  print "{0}".format(('Version: '+corvus_info['Version']).capitalize().center(Page_width))
+  print "{0}".format(1*Blank_line),
+  print "{0}".format(('Web: '+corvus_info['Home-page']).capitalize().center(Page_width))
+  print "{0}".format(('E-Mail: '+corvus_info['Author-email']).capitalize().center(Page_width))
+  print "{0}".format(1*Blank_line),
+  print "{0}".format(corvus_info['Author'].center(Page_width))
+  print "{0}".format(1*Blank_line),
+  print "{0}".format(Separator1)
+  print "{0}".format(1*Blank_line),
 

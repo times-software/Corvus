@@ -95,6 +95,10 @@ class Dmdw(Handler):
 # Change to move the methods to the internal par of run
 #   def run(config, files):
     def run(config, input, output):
+
+        if config['verbose'] > 0:
+          print 'Entering Handler {0}'.format(Dmdw.__name__)
+
         files = generateInput(config, input, output)
         dir = config['xcDir']
         out = open(os.path.join(dir, 'corvus.DMDW.stdout'), 'w')
@@ -107,6 +111,9 @@ class Dmdw(Handler):
 # Modified by FDV:
 # Bringing translateOutput into run
         translateOutput(config, input, output)
+
+        if config['verbose'] > 0:
+          print 'Done with Handler {0}'.format(Dmdw.__name__)
 
     @staticmethod
     def cleanup(config):
@@ -494,8 +501,8 @@ def generateInput(config, input, output):
     else:
         return "DMDW Input Error: unrecognized property flag: " + propflag
 
-    print 'lines'
-    print lines
+#   print 'lines'
+#   print lines
     writeList(lines, os.path.join(dir, dmdwInputFile))
     return [dmdwInputFile]
 

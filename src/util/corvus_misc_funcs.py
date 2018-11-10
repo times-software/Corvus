@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# Debug: FDV
+import pprint
+pp_debug = pprint.PrettyPrinter(indent=4)
+
 atomicSymbols = [
     'H' ,    'He',    'Li',    'Be',    'B' ,    'C' ,    'N' ,    'O' ,
     'F' ,    'Ne',    'Na',    'Mg',    'Al',    'Si',    'P' ,    'S' ,
@@ -99,6 +103,96 @@ def StrList2Str(Line_List):
     Str = Str + ' '.join(Line) + '\n'
 
   return Str.rstrip()
+
+# This helper function simplifies the calls to the external subprocesses and
+# handles the printing to stdout and stderr depending on the verbosity
+# requested
+def subp(config,exe,cwdir,out,err):
+
+  import sys, subprocess
+
+  if config['verbose'] > 0:
+    p = subprocess.Popen(exe, cwd=cwdir,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    for line in p.stdout:
+      sys.stdout.write(line)
+      out.write(line)
+    for line in p.stderr:
+      sys.stdout.write(line)
+      err.write(line)
+  else:
+    p = subprocess.Popen(exe, cwd=cwdir, stdout=out, stderr=err)
+  p.wait()
+
+# Helper function to create a gnupllot script that plots data
+# NOTE FDV: This current implementation is a hack. We need to improve it to
+# make it more flexible. For now we assume the data file has comments defined
+# by "#" and then a series of lines of data with the same number of columns.
+def Make_Gnuplot(filename,Ctrl):
+
+  import sys, os
+  import corvutils.pyparsing as pp
+
+# Debug: FDV
+# print filename
+# pp_debug.pprint(Ctrl)
+
+# NOTE FDV: This is not the best way to parse this data, but I want to get
+# something going quickly. Will need to make a bit prettier later once I learn
+# more about pyparsing
+  Comm_Chars ='#'
+  commentGrammar = pp.Word(Comm_Chars) + pp.restOfLine
+  num = pp.Word(pp.nums + ".+-ED")
+  row = pp.OneOrMore(num)
+  input = open(filename, 'r').read()
+  input = commentGrammar.suppress().transformString(input)
+  data = []
+  for line in input.split('\n'):
+    if line != '':
+      data.append(row.parseString(line).asList())
+
+# Sanity checks
+  nCol = [ len(row) for row in data ]
+  if min(nCol) != max(nCol):
+    print "Error in Make_Gnuplot: Variable number of columns"
+    sys.exit()
+  nCol = min(nCol)
+
+# NOTE FDV:
+# Here I should make sure that I print to the right directory. For now I will
+# assume (as it is usually correct) that the cwd is the Corvus running
+# directory. This can be checked by uncommenting the following two lines
+# cwd = os.getcwd()
+# print cwd
+
+  for key, value in Ctrl.iteritems():
+    xcol = value[0][0]
+    ycol = value[0][1]
+    xlab = value[1][0]
+    ylab = value[1][1]
+    if xcol < 1 or xcol > nCol:
+      print 'Error in Make_Gnuplot: Wrong x column index for data ', key
+      sys.exit()
+    if ycol < 1 or ycol > nCol:
+      print 'Error in Make_Gnuplot: Wrong x column index for data ', key
+      sys.exit()
+    file = open(key+".gplot","w")
+#  Write a simple file header with some info.
+# NOTE FDV: We should add more info here
+    file.write('# Corvus run output: '+key+'\n')
+    file.write('# Data: '+xlab+' '+ylab+'\n')
+    file.write('$DATA << EOD'+'\n')
+    for line in data:
+      file.write(line[xcol-1]+' '+line[ycol-1]+'\n')
+    file.write('EOD'+'\n')
+    file.write('set grid\n')
+    file.write('set xlabel "'+xlab+'"'+'\n')
+    file.write('set ylabel "'+ylab+'"'+'\n')
+    file.write('plot $DATA with lines title '+'"'+ylab+'"'+'\n')
+    file.write('pause -1\n')
+    file.close()
+
+# Debug: FDV
+  sys.exit()
 
 # Should add testing when this is executed
 def main():

@@ -88,6 +88,9 @@ class FeffRixs(Handler):
     @staticmethod
     def run(config, input, output):
         
+        if config['verbose'] > 0:
+          print 'Entering Handler {0}'.format(FeffRixs.__name__)
+
         # Set directory to feff executables.
         feffdir = config['feffrixs']
         
@@ -109,6 +112,9 @@ class FeffRixs(Handler):
                out.close()
                err.close()
                output[target] = dir
+
+        if config['verbose'] > 0:
+          print 'Done with Handler {0}'.format(FeffRixs.__name__)
 
     @staticmethod
     def cleanup(config):
