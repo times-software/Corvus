@@ -179,15 +179,14 @@ def Make_Gnuplot(filename,Ctrl):
 #  Write a simple file header with some info.
 # NOTE FDV: We should add more info here
     file.write('# Corvus run output: '+key+'\n')
-    file.write('# Data: '+xlab+' '+ylab+'\n')
-    file.write('$DATA << EOD'+'\n')
-    for line in data:
-      file.write(line[xcol-1]+' '+line[ycol-1]+'\n')
-    file.write('EOD'+'\n')
     file.write('set grid\n')
     file.write('set xlabel "'+xlab+'"'+'\n')
     file.write('set ylabel "'+ylab+'"'+'\n')
-    file.write('plot $DATA with lines title '+'"'+ylab+'"'+'\n')
+    file.write('# Data: '+xlab+' '+ylab+'\n')
+    file.write('plot "-" with lines title '+'"'+ylab+'"'+'\n')
+    for line in data:
+      file.write(line[xcol-1]+' '+line[ycol-1]+'\n')
+    file.write('e'+'\n')
     file.write('pause -1\n')
     file.close()
 
