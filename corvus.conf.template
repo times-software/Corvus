@@ -14,5 +14,3 @@ inputsuffix : .inp
 savesuffix  : .nest
 checkpoints : off
 parallelrun :
-debug       : 0
-verbose     : 0

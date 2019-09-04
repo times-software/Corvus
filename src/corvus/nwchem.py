@@ -17,7 +17,7 @@ implemented = {}
 basics = ['cell_struc_xyz_red']
 strlistkey = lambda L:','.join(sorted(L))
 subs = lambda L:[{L[j] for j in range(len(L)) if 1<<j&k} for k in range(1,1<<len(L))]
-for s in subs(['ene_int','aopt','qmd','xas','dynmat']):
+for s in subs(['ene_int','aopt','qmd','xas','dynmat','opt_dynmat']):
     key = strlistkey(s)
     autodesc = 'Get ' + ', '.join(s) + ' using Nwchem'
     input = basics
@@ -45,10 +45,6 @@ implemented['user_xasavg'] = {'type':'Exchange','out':['user_xasavg'],'req':basi
 class Nwchem(Handler):
     def __str__(self):
         return 'Nwchem Handler'
-
-    @staticmethod
-    def Produces():
-      return implemented
 
     @staticmethod
     def canProduce(output):
@@ -121,17 +117,16 @@ class Nwchem(Handler):
 #   def run(config, files):
     def run(config, input, output):
 
-        if config['verbose'] > 0:
-          print 'Entering Handler {0}'.format(Nwchem.__name__)
-
 # Modified by FDV:
 # Bringing generateInput into run
         files = generateInput(config, input, output)
+#       print files
+#       sys.exit()
         # Run by looping through input files
         dir = config['xcDir']
         for f in files:
-#           print f
-#           print 'hellofile'
+	    print f
+	    print 'hellofile'
             (num, tool, desc, suffix) = filesGrammar.parseString(f)
             if config['parallelRun']:
                 if tool == 'nwchem':
@@ -144,12 +139,10 @@ class Nwchem(Handler):
                 
             inp = open(os.path.join(dir, f), 'r')
             log = open(os.path.join(dir, '.'.join([num,tool,desc,'out'])), 'w')
-            if config['debug'] > 0:
-              print 'Running with input files:'
-              print os.path.join(dir, f)
+	    print executable,dir,log
             p = subprocess.Popen(executable, cwd=dir, stdin=None, stdout=log, stderr=log)
-#           print 'hello2'
-#           print files
+	    print 'hello2'
+	    print files
             p.wait()
             inp.close()
             log.close()
@@ -157,10 +150,6 @@ class Nwchem(Handler):
 # Modified by FDV:
 # Bringing translateOutput into run
         translateOutput(config, input, output)
-
-        if config['verbose'] > 0:
-          print 'Done with Handler {0}'.format(Nwchem.__name__)
-
 		
     @staticmethod
     def cleanup(config):    
@@ -407,7 +396,7 @@ def baseInput(input):
 # Hack to get better DMs
     dict['addendum'] = 'scf'+'\n'+'thresh 1e-10'+'\n'+'end'+'\n'+'driver'+'\n'+'tight'+'\n'+'maxiter 80'+'\n'+'end'
 
-#   print dict
+    print dict
     return dict
 
 def optInput(input):
@@ -421,9 +410,16 @@ def optInput(input):
 def dynmatInput(input):
     dict = baseInput(input)
     sp = ' '
+    seq3 = ('task','dft')
+    seq3_ = str(sp.join(seq3))
+    dict['task'] = 'task dft freq\n'
+    return dict
+
+def opt_dynmatInput(input):
+    dict = baseInput(input)
+    sp = ' '
     seq3 = ('task','dft','optimize')
     seq3_ = str(sp.join(seq3))
-#   dict['task'] = seq3_
     dict['task'] = 'task dft optimize\ntask dft freq\n'
     return dict
 
@@ -533,6 +529,7 @@ def xasInput(input):
     dict['method2'] = xas['method1'] + xas['cis'] + '\n' + seq_nrootsj + '\n' + xas['trip'] + '\n' + maxvecs + '\n' + xas['end'] + '\n'
     seqtask = ('task', 'tddft')
     dict['task'] = str(b.join(seqtask))
+    print dict
     return dict
 
 def elphonInput(input):
@@ -671,7 +668,7 @@ def getdynmat(input,file):
   dym['nAt'] = nAtoms
 
 # Debug
-# pp_debug.pprint(input['cell_struc_xyz_red'])
+  pp_debug.pprint(input['cell_struc_xyz_red'])
 # sys.exit()
 
   dym['atNums']   = [ cu.AtSym2AtNum(atominf[0]) for atominf in input['cell_struc_xyz_red'] ]
@@ -1120,8 +1117,8 @@ def generateInput(config, input, output):
 # First we parse cell_red_xyz to find the atom labels
 
 # Debug: FDV
-#  print 'random stuff'
-#  print input
+   print 'random stuff'
+   print input
 #  sys.exit()
         
         # Switch based on what output is required
@@ -1139,19 +1136,35 @@ def generateInput(config, input, output):
       writeList(nwchemFileList, pathbase + '.files')
       writeDict(optInput(input), pathbase + '.in')
       files.append(filebase + '.in')
-#     print pathbase + '.in'
+      print pathbase + '.in'
 
-# Structure optimization + dynamical matrix
+#  Dynamical matrix
    if set(output.keys()) == set(['dynmat']):
       filebase = '0.nwchem.opt'
       pathbase = os.path.join(dir, filebase)
       nwchemFileList = nwchemFiles(pathbase, pseudos)
       writeList(nwchemFileList, pathbase + '.files')
 # Debug
-#     print '\n optInput(input) \n'
-#     pp_debug.pprint(optInput(input))
+      print '\n optInput(input) \n'
+      pp_debug.pprint(optInput(input))
 #     sys.exit()
       writeDict(dynmatInput(input), pathbase + '.in')
+      files.append(filebase + '.in')
+# Debug
+#     print pathbase + '.in'
+#     sys.exit()
+
+# Structure optimization + dynamical matrix
+   if set(output.keys()) == set(['opt_dynmat']):
+      filebase = '0.nwchem.opt'
+      pathbase = os.path.join(dir, filebase)
+      nwchemFileList = nwchemFiles(pathbase, pseudos)
+      writeList(nwchemFileList, pathbase + '.files')
+# Debug
+      print '\n optInput(input) \n'
+      pp_debug.pprint(optInput(input))
+#     sys.exit()
+      writeDict(opt_dynmatInput(input), pathbase + '.in')
       files.append(filebase + '.in')
 # Debug
 #     print pathbase + '.in'
@@ -1174,7 +1187,7 @@ def generateInput(config, input, output):
       writeList(nwchemFileList, pathbase + '.files')
       writeDict(UInput(input), pathbase + '.in') 
       files.append(filebase + '.in')
-#     print pathbase + '.in'
+      print pathbase + '.in'
 
 # Electron-phonon calculation using ANADDB
    elif set(output.keys()).issubset(set(['pdos','a2f','a2','eint'])):
@@ -1215,7 +1228,7 @@ def generateInput(config, input, output):
       writeList(nwchemFileList, pathbase + '.files')
       writeDict(qmdInput(input), pathbase + '.in') 
       files.append(filebase + '.in')
-#     print pathbase + '.in'
+      print pathbase + '.in'
 	    
 # qmd with optimized geometry
    elif set(output.keys()) == set(['opt_qmd']):
@@ -1225,7 +1238,7 @@ def generateInput(config, input, output):
       writeList(nwchemFileList, pathbase + '.files')
       writeDict(qmdInput(input), pathbase + '.in') 
       files.append(filebase + '.in')
-#     print pathbase + '.in'
+      print pathbase + '.in'
 	    
 # x-ray spectrum(single shot)
    elif set(output.keys()) == set(['xas']):
@@ -1235,7 +1248,7 @@ def generateInput(config, input, output):
       writeList(nwchemFileList, pathbase + '.files')
       writeDict(xasInput(input), pathbase + '.in') 
       files.append(filebase + '.in')
-#     print pathbase + '.in'
+      print pathbase + '.in'
 	    
 # xas with optimized geometry
    elif set(output.keys()) == set(['opt_xas']):
@@ -1245,7 +1258,7 @@ def generateInput(config, input, output):
       writeList(nwchemFileList, pathbase + '.files')
       writeDict(xasInput(input), pathbase + '.in') 
       files.append(filebase + '.in')
-#     print pathbase + '.in'  
+      print pathbase + '.in'  
 
 # average x-ray spectrum
    elif set(output.keys()).issubset(set(['xas_avg','user_xasavg'])):
@@ -1283,6 +1296,12 @@ def translateOutput(config, input, output):
          output[target] = getacell(file)
          input['cell_struc_xyz_red'] = optqmdcell(file)
       elif target == 'dynmat':
+         file_out  = os.path.join(dir, '0.nwchem.opt.out')
+         file_hess = os.path.join(dir, '0.nwchem.opt.hess')
+# NOTE: This should probably be changed to output?
+#        input['cell_struc_xyz_red'] = optqmdcell(file_out)
+         output[target] = getdynmat(input,file_hess)
+      elif target == 'opt_dynmat':
          file_out  = os.path.join(dir, '0.nwchem.opt.out')
          file_hess = os.path.join(dir, '0.nwchem.opt.hess')
 # NOTE: This should probably be changed to output?

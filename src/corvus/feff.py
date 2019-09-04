@@ -1,7 +1,6 @@
 from structures import Handler, Exchange, Loop, Update
 import corvutils.pyparsing as pp
 import os, sys, subprocess, shutil
-import corvutils.corvus_misc_funcs as cu
 
 # Debug: FDV
 import pprint
@@ -18,7 +17,6 @@ for s in subs(['potlist','atomlist']):
     cost = 1
     implemented[key] = {'type':'Exchange','out':list(s),'req':input,
                         'desc':autodesc,'cost':cost}
-
 
 implemented['feffAtomicData'] = {'type':'Exchange','out':['feffAtomicData'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate atomic data using FEFF.'}
@@ -44,15 +42,18 @@ implemented['feffXANES'] = {'type':'Exchange','out':['feffXANES'],'cost':1,
 implemented['feffXES'] = {'type':'Exchange','out':['feffXES'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
 
+# Added by FDV
+# Trying to implement and EXAFS with optimized geometry and ab initio DW factors
+implemented['opt_dynmat_s2_exafs'] = {'type':'Exchange',
+   'out':['opt_dynmat_s2_exafs'], 'cost':3,
+   'req':['opt_dynmat','absorbing_atom'],
+   'desc':'Calculate EXAFS with optimized geometry and ab initio DW factors from a dynamical matrix using FEFF.'}
+
 
 
 class Feff(Handler):
     def __str__(self):
         return 'FEFF Handler'
-
-    @staticmethod
-    def Produces():
-      return implemented
 
     @staticmethod
     def canProduce(output):
@@ -123,12 +124,6 @@ class Feff(Handler):
     # or not. 
     @staticmethod
     def run(config, input, output):
-
-        import corvutils.corvus_misc_funcs as cu
-
-        if config['verbose'] > 0:
-          print 'Entering Handler {0}'.format(Feff.__name__)
-
         # set atoms and potentials
 
         # Set directory to feff executables.
@@ -161,9 +156,12 @@ class Feff(Handler):
                     # will more likely have only one executable.
                     # Run rdinp and atomic part of calculation
                     executables = ['rdinp','atomic','screen']
-# Modified by FDV:
                     for executable in executables:
-                        cu.subp(config,[feffdir+'/'+executable],dir,out,err)
+# Modified by FDV:
+# Adding the / to make the config more generic
+#                       p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
+                        p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
+                        p.wait()
 
                 # Translate files produced by executable and update output
                 # Normally this will look like the following example:
@@ -207,9 +205,12 @@ class Feff(Handler):
 
                     # Run rdinp and atomic part of calculation
                     executables = ['rdinp','pot']
-# Modified by FDV:
                     for executable in executables:
-                        cu.subp(config,[feffdir+'/'+executable],dir,out,err)
+# Modified by FDV:
+# Adding the / to make the config more generic
+#                       p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
+                        p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
+                        p.wait()
 
                 # Translate files produced by executable and update output
                 # Normally this will look like the following example:
@@ -252,9 +253,12 @@ class Feff(Handler):
 
                     # Run rdinp and atomic part of calculation
                     executables = ['rdinp','xsph']
-# Modified by FDV:
                     for executable in executables:
-                        cu.subp(config,[feffdir+'/'+executable],dir,out,err)
+# Modified by FDV:
+# Adding the / to make the config more generic
+#                       p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
+                        p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
+                        p.wait()
 
                 # Translate files produced by executable and update output
                 # Normally this will look like the following example:
@@ -299,9 +303,12 @@ class Feff(Handler):
 
                     # Run rdinp and atomic part of calculation
                     executables = ['rdinp','fms','mkgtr']
-# Modified by FDV:
                     for executable in executables:
-                        cu.subp(config,[feffdir+'/'+executable],dir,out,err)
+# Modified by FDV:
+# Adding the / to make the config more generic
+#                       p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
+                        p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
+                        p.wait()
 
                 # Translate files produced by executable and update output
                 # Normally this will look like the following example:
@@ -346,9 +353,12 @@ class Feff(Handler):
 
                     # Run rdinp and atomic part of calculation
                     executables = ['rdinp','path']
-# Modified by FDV:
                     for executable in executables:
-                        cu.subp(config,[feffdir+'/'+executable],dir,out,err)
+# Modified by FDV:
+# Adding the / to make the config more generic
+#                       p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
+                        p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
+                        p.wait()
 
                 # Translate files produced by executable and update output
                 # Normally this will look like the following example:
@@ -392,9 +402,12 @@ class Feff(Handler):
 
                     # Run rdinp and atomic part of calculation
                     executables = ['rdinp','genfmt']
-# Modified by FDV:
                     for executable in executables:
-                        cu.subp(config,[feffdir+'/'+executable],dir,out,err)
+# Modified by FDV:
+# Adding the / to make the config more generic
+#                       p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
+                        p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
+                        p.wait()
 
                 # Translate files produced by executable and update output
                 # Normally this will look like the following example:
@@ -418,9 +431,6 @@ class Feff(Handler):
                 # Set output and error files
                 with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
 
-# Debug FDV
-#                   print os.path.join(dir, 'corvus.FEFF.stdout')
-#                   print os.path.join(dir, 'corvus.FEFF.stderr')
                     # Set input file
                     inpf = os.path.join(dir, 'feff.inp')
 
@@ -442,9 +452,12 @@ class Feff(Handler):
 
                     # Run rdinp and atomic part of calculation
                     executables = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
-# Modified by FDV:
                     for executable in executables:
-                        cu.subp(config,[feffdir+'/'+executable],dir,out,err)
+# Modified by FDV:
+# Adding the / to make the config more generic
+#                       p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
+                        p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
+                        p.wait()
 
                 # Translate files produced by executable and update output
                 # Normally this will look like the following example:
@@ -454,17 +467,6 @@ class Feff(Handler):
 
                 # For this case, I am only passing the directory for now so
                 # that other executables in FEFF can use the atomic data.
-
-# FDV: Testing the generation of gnuplot scripts out of xmu.dat files
-                filename = os.path.join(dir, 'xmu.dat')
-# Debug: FDV
-#               pp_debug.pprint(input)
-#               print input['mkgnuplot'][0][0]
-                if input['mkgnuplot'][0][0]:
-                  Ctrl_Dat = { 'Plot_mu'  : [ [1,4], ["Energy (eV)", "Mu"] ],
-                               'Plot_mu0' : [ [1,5], ["Energy (eV)", "Mu0"] ],
-                               'Plot_chi' : [ [1,6], ["Energy (eV)", "Chi"] ] }
-                  cu.Make_Gnuplot(filename,Ctrl_Dat)
 
                 output[target] = dir
 
@@ -501,9 +503,12 @@ class Feff(Handler):
 
                     # Run rdinp and atomic part of calculation
                     executables = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
-# Modified by FDV:
                     for executable in executables:
-                        cu.subp(config,[feffdir+'/'+executable],dir,out,err)
+# Modified by FDV:
+# Adding the / to make the config more generic
+#                       p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
+                        p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
+                        p.wait()
 
                 # Translate files produced by executable and update output
                 # Normally this will look like the following example:
@@ -516,8 +521,69 @@ class Feff(Handler):
 
                 output[target] = dir
 
-        if config['verbose'] > 0:
-          print 'Done with Handler {0}'.format(Feff.__name__)
+# Added by FDV
+            elif (target == 'opt_dynmat_s2_exafs'):
+
+# Before we can call the rest of the input preparation, we need to get the
+# optmized structure and put it in the "cluster" input, so the stuff below
+# can work OK.
+                input['cluster'] = input['cell_struc_xyz_red']
+
+# First generate any data that is needed from input
+                input['feff.atoms']      = getFeffAtomsFromCluster(input)
+                input['feff.potentials'] = getFeffPotentialsFromCluster(input)
+
+# Set directory for this exchange
+                dir = config['xcDir']
+
+# Set output and error files
+                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+
+# Set input file
+                  inpf = os.path.join(dir, 'feff.inp')
+
+# For now, copy all files from previous feff directory to current xcDir
+# For now, we are going to run all modules for XANES.
+#                 previousDir = input['feffFMatrices']
+#                 src_files = os.listdir(previousDir)
+#                 for file_name in src_files:
+#                     full_file_name = os.path.join(previousDir, file_name)
+#                     if (os.path.isfile(full_file_name)):
+#                         shutil.copy(full_file_name, dir)
+
+# Write input file for FEFF.
+#                 writeXANESInput(input,inpf)
+                  writeEXAFSDMDWInput(input,inpf)
+
+# Before running, we need to write the dym file to be used in this run
+                  dymFilename = 'corvus.dym'
+                  from dmdw import writeDym
+                  writeDym(input['opt_dynmat'], os.path.join(dir, dymFilename))
+#                 sys.exit()
+
+# Loop over executable: This is specific to feff. Other codes
+# will more likely have only one executable. Here I am running 
+# rdinp again since writeSCFInput may have different cards than
+
+# Run rdinp and atomic part of calculation
+                  executables = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                  for executable in executables:
+# Modified by FDV:
+# Adding the / to make the config more generic
+#                     p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
+                      p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
+                      p.wait()
+
+# Translate files produced by executable and update output
+# Normally this will look like the following example:
+
+#               filename = os.path.join(dir, 'xmu.dat')
+#               output[target] = readColumns(filename, columns=[1,4])
+
+# For this case, I am only passing the directory for now so
+# that other executables in FEFF can use the atomic data.
+
+                output[target] = dir
 
     @staticmethod
     def cleanup(config):
@@ -649,6 +715,7 @@ for i in xrange(nElem):
     ptable[sym] = {'mass':mass, 'symbol':sym, 'number':num}
 
 def getFeffAtomsFromCluster(input):
+
     # Find absorbing atom.
     absorber = input['absorbing_atom'][0][0] - 1
     atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
@@ -1059,6 +1126,54 @@ def writeELNESinp(input, feffinp='feff.inp'):
         lines.append(atomstr.format(*atLine))
     lines.append('')
     lines.append('END')
+    # Print feff input file
+    writeList(lines, feffinp)
+
+# Added by FDV
+def writeEXAFSDMDWInput(input, feffinp='feff.inp'):
+
+    for key in ['feff.potentials', 'feff.atoms']:
+        assert key in input
+    lines = []
+    lines.append('* This feff9 input file was generated by corvus.')
+    lines.append('')
+
+    lines = lines + getInpLines(input,'feff.control', '1 1 1 1 1 1')
+    lines = lines + getInpLines(input,'feff.print', '0 0 0 0 0 0')
+    lines = lines + getInpLines(input,'feff.exchange', '0 0.0 0.0 0')
+    lines = lines + getInpLines(input,'feff.exafs', '18.0')
+    lines = lines + getInpLines(input,'feff.scf', '4.0 0')
+    lines = lines + getInpLines(input,'feff.rpath', '8.0')
+    lines = lines + getInpLines(input,'feff.nleg', '4')
+    lines = lines + getInpLines(input,'feff.edge', 'K')
+
+# Now we have to make the DEBYE input line depending on what input we have
+# for the DMDW approach.
+    dymFilename = 'corvus.dym'
+#   pp_debug.pprint(input)
+#   sys.exit()
+    Debye_Def  = str(input['nuctemp'][0][0]) + ' '
+    Debye_Def += str(input['debyetemp'][0][0]) + ' '
+    Debye_Def += '5 '
+    Debye_Def += dymFilename + ' '
+
+# To get the right number of Lanczos iterations we should check the number of
+# atoms in the DM, but will leave that for later.
+    Debye_Def += str(input['dmdw_nlanczos'][0][0]) + ' 0 1 '
+
+    print 'Debye_Def'
+    print Debye_Def
+#   sys.exit()
+    lines = lines + getInpLines(input,'feff.debye', Debye_Def)
+
+    # loop over feff keys in input and write them to lines
+    feffKeys = [key for key in input if key.startswith('feff.')]
+
+    for key in feffKeys:
+        lines = lines + getInpLines(input,key)
+
+    lines = lines + getInpLines(input,'feff.end')
+
     # Print feff input file
     writeList(lines, feffinp)
 

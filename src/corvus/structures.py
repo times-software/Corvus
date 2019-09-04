@@ -275,17 +275,11 @@ class Handler():
         pass
 
     @abstractmethod
-    def Produces():
-        # Return all the implemented properties for this handler
-        pass
-
-    @abstractmethod
     def canProduce(output):
         # Return True if Handler can calculate all output(s)
         # output could be single string or list of strings
         pass
 
-    @abstractmethod
     @abstractmethod
     def requiredInputFor(output):
         # Return list of tokens (strings)

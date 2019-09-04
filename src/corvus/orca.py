@@ -23,10 +23,6 @@ class Orca(Handler):
         return 'ORCA Handler'
 
     @staticmethod
-    def Produces():
-      return implemented
-
-    @staticmethod
     def canProduce(output):
         if isinstance(output, list) and output and isinstance(output[0], basestring):
             return strlistkey(output) in implemented
@@ -90,10 +86,6 @@ class Orca(Handler):
 
     @staticmethod
     def run(config, input, output):
-
-        if config['verbose'] > 0:
-          print 'Entering Handler {0}'.format(Orca.__name__)
-
         dir = config['xcDir']
         out = open(os.path.join(dir, 'corvus.ORCA.stdout'), 'w')
         err = open(os.path.join(dir, 'corvus.ORCA.stderr'), 'w')
@@ -124,10 +116,6 @@ class Orca(Handler):
             err.close()
 
         translateOutput(config, input, output) 
-
-        if config['verbose'] > 0:
-          print 'Done with Handler {0}'.format(Orca.__name__)
-
     @staticmethod
     def cleanup(config):
         pass

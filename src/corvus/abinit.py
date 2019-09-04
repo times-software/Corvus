@@ -36,10 +36,6 @@ class Abinit(Handler):
         return 'ABINIT Handler'
 
     @staticmethod
-    def Produces():
-      return implemented
-
-    @staticmethod
     def canProduce(output):
         if isinstance(output, list) and output and isinstance(output[0], basestring):
             return strlistkey(output) in implemented
@@ -110,9 +106,6 @@ class Abinit(Handler):
 #   def run(config, files):
     def run(config, input, output):
 
-        if config['verbose'] > 0:
-          print 'Entering Handler {0}'.format(Abinit.__name__)
-
 # Modified by FDV:
 # Bringing generateInput into run
         files = generateInput(config, input, output)
@@ -158,9 +151,6 @@ class Abinit(Handler):
 # Modified by FDV:
 # Bringing translateOutput into run
         translateOutput(config, input, output)
-
-        if config['verbose'] > 0:
-          print 'Done with Handler {0}'.format(Abinit.__name__)
     
     @staticmethod
     def cleanup(config):    

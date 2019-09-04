@@ -17,10 +17,6 @@ class FeffRixs(Handler):
         return 'FEFFRIXS Handler'
 
     @staticmethod
-    def Produces():
-      return implemented
-
-    @staticmethod
     def canProduce(output):
         if isinstance(output, list) and output and isinstance(output[0], basestring):
             return strlistkey(output) in implemented
@@ -88,9 +84,6 @@ class FeffRixs(Handler):
     @staticmethod
     def run(config, input, output):
         
-        if config['verbose'] > 0:
-          print 'Entering Handler {0}'.format(FeffRixs.__name__)
-
         # Set directory to feff executables.
         feffdir = config['feffrixs']
         
@@ -112,9 +105,6 @@ class FeffRixs(Handler):
                out.close()
                err.close()
                output[target] = dir
-
-        if config['verbose'] > 0:
-          print 'Done with Handler {0}'.format(FeffRixs.__name__)
 
     @staticmethod
     def cleanup(config):
