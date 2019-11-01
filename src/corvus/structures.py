@@ -293,7 +293,7 @@ class Handler():
         pass
 
     @abstractmethod
-    def sequenceFor(output):
+    def sequenceFor(output,inp=None):
         # Return list of Workflow sequence(s) to produce output
         # output could be single string or list of strings
         pass

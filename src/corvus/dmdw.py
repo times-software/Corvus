@@ -63,7 +63,7 @@ class Dmdw(Handler):
         return implemented[key]['cost']
 
     @staticmethod
-    def sequenceFor(output):
+    def sequenceFor(output,inp=None):
         if isinstance(output, list) and output and isinstance(output[0], basestring):
             key = strlistkey(output)
         elif isinstance(output, basestring):
@@ -95,7 +95,7 @@ class Dmdw(Handler):
         dir = config['xcDir']
         out = open(os.path.join(dir, 'corvus.DMDW.stdout'), 'w')
         err = open(os.path.join(dir, 'corvus.DMDW.stderr'), 'w')
-        p = subprocess.Popen([config['dmdw_standalone']], cwd=dir, stdout=out, stderr=err)
+        p = subprocess.Popen([config['dmdw']], cwd=dir, stdout=out, stderr=err)
         p.wait()
         out.close()
         err.close()

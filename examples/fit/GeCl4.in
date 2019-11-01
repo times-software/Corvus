@@ -1,0 +1,27 @@
+# CORVUS input
+
+target_list { fit }
+fit.target { feffXANES }
+fit.datafile { data.dat }
+fit.parameters {
+   broadening -0.07
+   expansion  0.979
+   delta_e0 4.85
+   bond 0.2
+}
+
+fit.bond{ 2 1 }
+usehandlers { Feff }
+
+feff.edge{ K }
+feff.scf{ 0.0 1 1 0.1 0 }
+
+absorbing_atom{ 2 }
+
+cluster {
+Cl 1.3100	1.3100	1.3100	
+Ge 0.0		0.0	0.0
+Cl 1.2100	-1.2100	-1.2100	
+Cl -1.4100	1.4100	-1.4100	
+Cl -1.1100	-1.1100	1.1100	
+}

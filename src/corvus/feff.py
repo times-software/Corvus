@@ -1,6 +1,7 @@
 from structures import Handler, Exchange, Loop, Update
 import corvutils.pyparsing as pp
-import os, sys, subprocess, shutil
+import os, sys, subprocess, shutil, resource
+import re
 
 # Debug: FDV
 import pprint
@@ -40,6 +41,9 @@ implemented['feffXANES'] = {'type':'Exchange','out':['feffXANES'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
 
 implemented['feffXES'] = {'type':'Exchange','out':['feffXES'],'cost':1,
+                        'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
+
+implemented['feffRIXS'] = {'type':'Exchange','out':['feffRIXS'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
 
 # Added by FDV
@@ -92,7 +96,7 @@ class Feff(Handler):
         return implemented[key]['cost']
 
     @staticmethod
-    def sequenceFor(output):
+    def sequenceFor(output,inp=None):
         if isinstance(output, list) and output and isinstance(output[0], basestring):
             key = strlistkey(output)
         elif isinstance(output, basestring):
@@ -124,6 +128,7 @@ class Feff(Handler):
     # or not. 
     @staticmethod
     def run(config, input, output):
+        import numpy as np
         # set atoms and potentials
 
         # Set directory to feff executables.
@@ -133,41 +138,44 @@ class Feff(Handler):
 # Debug: FDV
 #       sys.exit()
         
+        # Copy feff related input to feffinput here. Later we will be overriding some settings,
+        # so we want to keep the original input intact.
+        feffInput = {key:input[key] for key in input if key.startswith('feff.')}
+
+        # Generate any data that is needed from generic input and populate feffInput with
+        # global data (needed for all feff runs.)
+        atoms = getFeffAtomsFromCluster(input)
+        setInput(feffInput,'feff.atoms',atoms)
+        potentials = getFeffPotentialsFromCluster(input)
+        setInput(feffInput,'feff.potentials',potentials)
+        debyeOpts = getFeffDebyeOptions(input)
+        if 'spectral_broadening' in input:
+            exch=[[0, 0.0, input['spectral_broadening'][0][0], 0]]
+            setInput(feffInput,'feff.exchange',exch)
+            
+        if debyeOpts is not None:
+            setInput(feffInput,'feff.debye',debyeOpts)
+
+        # Set directory for this exchange
+        dir = config['xcDir']
+
+        # Set input file
+        inpf = os.path.join(dir, 'feff.inp')
         # Loop over targets in output. Not sure if there will ever be more than one output target here.
         for target in output:
             if (target == 'feffAtomicData'):
-                # First generate any data that is needed from input
-                input['feff.atoms']      = getFeffAtomsFromCluster(input)
-                input['feff.potentials'] = getFeffPotentialsFromCluster(input)
-               
-                # Set directory for this exchange
-                dir = config['xcDir']
-
                 # Set output and error files
                 with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
 
-                    # Set input file
-                    inpf = os.path.join(dir, 'feff.inp')
-                    
                     # Write input file for FEFF.
-                    writeAtomicInput(input,inpf)
+                    writeAtomicInput(feffInput,inpf)
 
                     # Loop over executable: This is specific to feff. Other codes
                     # will more likely have only one executable.
                     # Run rdinp and atomic part of calculation
                     executables = ['rdinp','atomic','screen']
                     for executable in executables:
-# Modified by FDV:
-# Adding the / to make the config more generic
-#                       p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
-                        p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
-                        p.wait()
-
-                # Translate files produced by executable and update output
-                # Normally this will look like the following example:
-                             
-                # filename = os.path.join(dir, 'xmu.dat')
-                # output[target] = readColumns(filename, columns=[1,4])
+                        runExecutable(feffdir,dir,executable,out,err)
 
                 # For this case, I am only passing the directory for now so
                 # that other executables in FEFF can use the atomic data.
@@ -175,146 +183,60 @@ class Feff(Handler):
                 output[target] = dir
 
             elif (target == 'feffSCFPotentials'):
-                # First generate any data that is needed from input
-                input['feff.atoms']      = getFeffAtomsFromCluster(input)
-                input['feff.potentials'] = getFeffPotentialsFromCluster(input)
-                
-                # Set directory for this exchange
-                dir = config['xcDir']
-
                 # Set output and error files
                 with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
 
-                    # Set input file
-                    inpf = os.path.join(dir, 'feff.inp')
-
-                    # For now, copy all files from previous feff directory to current xcDir
-                    previousDir = input['feffAtomicData']
-                    src_files = os.listdir(previousDir)
-                    for file_name in src_files:
-                        full_file_name = os.path.join(previousDir, file_name)
-                        if (os.path.isfile(full_file_name)):
-                            shutil.copy(full_file_name, dir)
-
                     # Write input file for FEFF.
-                    writeSCFInput(input,inpf)
+                    writeSCFInput(feffInput,inpf)
 
                     # Loop over executable: This is specific to feff. Other codes
                     # will more likely have only one executable. Here I am running 
                     # rdinp again since writeSCFInput may have different cards than
 
                     # Run rdinp and atomic part of calculation
-                    executables = ['rdinp','pot']
+                    executables = ['rdinp','atomic', 'pot', 'screen']
                     for executable in executables:
-# Modified by FDV:
-# Adding the / to make the config more generic
-#                       p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
-                        p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
-                        p.wait()
-
-                # Translate files produced by executable and update output
-                # Normally this will look like the following example:
-
-                # filename = os.path.join(dir, 'xmu.dat')
-                # output[target] = readColumns(filename, columns=[1,4])
+                        runExecutable(feffdir,dir,executable,out,err)
 
                 # For this case, I am only passing the directory for now so
                 # that other executables in FEFF can use the atomic data.
 
                 output[target] = dir
             elif (target == 'feffCrossSectionsAndPhases'):
-                # First generate any data that is needed from input
-                input['feff.atoms']      = getFeffAtomsFromCluster(input)
-                input['feff.potentials'] = getFeffPotentialsFromCluster(input)
-
-                # Set directory for this exchange
-                dir = config['xcDir']
-
                 # Set output and error files
                 with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
 
-                    # Set input file
-                    inpf = os.path.join(dir, 'feff.inp')
-
-                    # For now, copy all files from previous feff directory to current xcDir
-                    previousDir = input['feffSCFPotentials']
-                    src_files = os.listdir(previousDir)
-                    for file_name in src_files:
-                        full_file_name = os.path.join(previousDir, file_name)
-                        if (os.path.isfile(full_file_name)):
-                            shutil.copy(full_file_name, dir)
-
                     # Write input file for FEFF.
-                    writeCrossSectionsInput(input,inpf)
+                    writeCrossSectionsInput(feffInput,inpf)
 
                     # Loop over executable: This is specific to feff. Other codes
                     # will more likely have only one executable. Here I am running 
                     # rdinp again since writeSCFInput may have different cards than
 
                     # Run rdinp and atomic part of calculation
-                    executables = ['rdinp','xsph']
+                    executables = ['rdinp','atomic','screen', 'pot', 'xsph']
                     for executable in executables:
-# Modified by FDV:
-# Adding the / to make the config more generic
-#                       p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
-                        p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
-                        p.wait()
-
-                # Translate files produced by executable and update output
-                # Normally this will look like the following example:
-
-                # filename = os.path.join(dir, 'xmu.dat')
-                # output[target] = readColumns(filename, columns=[1,4])
-
-                # For this case, I am only passing the directory for now so
-                # that other executables in FEFF can use the atomic data.
+                        runExecutable(feffdir,dir,executable,out,err)
 
                 output[target] = dir
 
  
             elif (target == 'feffGreensFunction'):
-                # First generate any data that is needed from input
-                input['feff.atoms']      = getFeffAtomsFromCluster(input)
-                input['feff.potentials'] = getFeffPotentialsFromCluster(input)
-
-                # Set directory for this exchange
-                dir = config['xcDir']
 
                 # Set output and error files
                 with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
 
-                    # Set input file
-                    inpf = os.path.join(dir, 'feff.inp')
-
-                    # For now, copy all files from previous feff directory to current xcDir
-                    previousDir = input['feffCrossSectionsAndPhases']
-                    src_files = os.listdir(previousDir)
-                    for file_name in src_files:
-                        full_file_name = os.path.join(previousDir, file_name)
-                        if (os.path.isfile(full_file_name)):
-                            shutil.copy(full_file_name, dir)
 
                     # Write input file for FEFF.
-                    writeGreensFunctionInput(input,inpf)
+                    writeGreensFunctionInput(feffInput,inpf)
 
                     # Loop over executable: This is specific to feff. Other codes
                     # will more likely have only one executable. Here I am running 
                     # rdinp again since writeSCFInput may have different cards than
 
-                    # Run rdinp and atomic part of calculation
-                    executables = ['rdinp','fms','mkgtr']
+                    executables = ['rdinp','atomic','pot','screen','xsph','fms','mkgtr']
                     for executable in executables:
-# Modified by FDV:
-# Adding the / to make the config more generic
-#                       p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
-                        p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
-                        p.wait()
-
-                # Translate files produced by executable and update output
-                # Normally this will look like the following example:
-
-                # filename = os.path.join(dir, 'xmu.dat')
-                # output[target] = readColumns(filename, columns=[1,4])
+                        runExecutable(feffdir,dir,executable,out,err)
 
                 # For this case, I am only passing the directory for now so
                 # that other executables in FEFF can use the atomic data.
@@ -323,48 +245,19 @@ class Feff(Handler):
 
 
             elif (target == 'feffPaths'):
-                # First generate any data that is needed from input
-                input['feff.atoms']      = getFeffAtomsFromCluster(input)
-                input['feff.potentials'] = getFeffPotentialsFromCluster(input)
-
-                # Set directory for this exchange
-                dir = config['xcDir']
-
                 # Set output and error files
                 with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
 
-                    # Set input file
-                    inpf = os.path.join(dir, 'feff.inp')
-
-                    # For now, copy all files from previous feff directory to current xcDir
-                    previousDir = input['feffGreensFunction']
-                    src_files = os.listdir(previousDir)
-                    for file_name in src_files:
-                        full_file_name = os.path.join(previousDir, file_name)
-                        if (os.path.isfile(full_file_name)):
-                            shutil.copy(full_file_name, dir)
-
                     # Write input file for FEFF.
-                    writePathsInput(input,inpf)
+                    writePathsInput(feffInput,inpf)
 
                     # Loop over executable: This is specific to feff. Other codes
                     # will more likely have only one executable. Here I am running 
                     # rdinp again since writeSCFInput may have different cards than
 
-                    # Run rdinp and atomic part of calculation
-                    executables = ['rdinp','path']
+                    executables = ['rdinp','atomic','pot','screen','xsph','fms','mkgtr','path']
                     for executable in executables:
-# Modified by FDV:
-# Adding the / to make the config more generic
-#                       p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
-                        p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
-                        p.wait()
-
-                # Translate files produced by executable and update output
-                # Normally this will look like the following example:
-
-                # filename = os.path.join(dir, 'xmu.dat')
-                # output[target] = readColumns(filename, columns=[1,4])
+                        runExecutable(feffdir,dir,executable,out,err)
 
                 # For this case, I am only passing the directory for now so
                 # that other executables in FEFF can use the atomic data.
@@ -372,153 +265,248 @@ class Feff(Handler):
                 output[target] = dir
 
             elif (target == 'feffFMatrices'):
-                # First generate any data that is needed from input
-                input['feff.atoms']      = getFeffAtomsFromCluster(input)
-                input['feff.potentials'] = getFeffPotentialsFromCluster(input)
-
-                # Set directory for this exchange
-                dir = config['xcDir']
-
                 # Set output and error files
                 with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
 
-                    # Set input file
-                    inpf = os.path.join(dir, 'feff.inp')
-
-                    # For now, copy all files from previous feff directory to current xcDir
-                    previousDir = input['feffPaths']
-                    src_files = os.listdir(previousDir)
-                    for file_name in src_files:
-                        full_file_name = os.path.join(previousDir, file_name)
-                        if (os.path.isfile(full_file_name)):
-                            shutil.copy(full_file_name, dir)
-
                     # Write input file for FEFF.
-                    writeFMatricesInput(input,inpf)
+                    writeFMatricesInput(feffInput,inpf)
 
                     # Loop over executable: This is specific to feff. Other codes
                     # will more likely have only one executable. Here I am running 
                     # rdinp again since writeSCFInput may have different cards than
 
-                    # Run rdinp and atomic part of calculation
-                    executables = ['rdinp','genfmt']
+                    executables = ['rdinp','atomic','pot','screen','xsph','fms','mkgtr','path','genfmt']
                     for executable in executables:
-# Modified by FDV:
-# Adding the / to make the config more generic
-#                       p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
-                        p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
-                        p.wait()
-
-                # Translate files produced by executable and update output
-                # Normally this will look like the following example:
-
-                # filename = os.path.join(dir, 'xmu.dat')
-                # output[target] = readColumns(filename, columns=[1,4])
-
-                # For this case, I am only passing the directory for now so
-                # that other executables in FEFF can use the atomic data.
+                        runExecutable(feffdir,dir,executable,out,err)
 
                 output[target] = dir
 
             elif (target == 'feffXANES'):
-                # First generate any data that is needed from input
-                input['feff.atoms']      = getFeffAtomsFromCluster(input)
-                input['feff.potentials'] = getFeffPotentialsFromCluster(input)
-
-                # Set directory for this exchange
-                dir = config['xcDir']
-
                 # Set output and error files
                 with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
 
-                    # Set input file
-                    inpf = os.path.join(dir, 'feff.inp')
-
-                    # For now, copy all files from previous feff directory to current xcDir
-                    # For now, we are going to run all modules for XANES.
-                    #previousDir = input['feffFMatrices']
-                    #src_files = os.listdir(previousDir)
-                    #for file_name in src_files:
-                    #    full_file_name = os.path.join(previousDir, file_name)
-                    #    if (os.path.isfile(full_file_name)):
-                    #        shutil.copy(full_file_name, dir)
-
                     # Write input file for FEFF.
-                    writeXANESInput(input,inpf)
+                    writeXANESInput(feffInput,inpf)
 
                     # Loop over executable: This is specific to feff. Other codes
                     # will more likely have only one executable. Here I am running 
                     # rdinp again since writeSCFInput may have different cards than
 
-                    # Run rdinp and atomic part of calculation
                     executables = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                     for executable in executables:
-# Modified by FDV:
-# Adding the / to make the config more generic
-#                       p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
-                        p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
-                        p.wait()
+                        runExecutable(feffdir,dir,executable,out,err)
 
-                # Translate files produced by executable and update output
-                # Normally this will look like the following example:
-
-                # filename = os.path.join(dir, 'xmu.dat')
-                # output[target] = readColumns(filename, columns=[1,4])
-
-                # For this case, I am only passing the directory for now so
-                # that other executables in FEFF can use the atomic data.
-
-                output[target] = dir
+                outFile=os.path.join(dir,'xmu.dat')
+                output[target] = np.loadtxt(outFile,usecols = (0,3))
+                #print output[target]
 
 
             elif (target == 'feffXES'):
-                # First generate any data that is needed from input
-                input['feff.atoms']      = getFeffAtomsFromCluster(input)
-                input['feff.potentials'] = getFeffPotentialsFromCluster(input)
-
-                # Set directory for this exchange
-                dir = config['xcDir']
-
                 # Set output and error files
                 with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
 
-                    # Set input file
-                    inpf = os.path.join(dir, 'feff.inp')
-
-                    # For now, copy all files from previous feff directory to current xcDir
-                    # For now, we are going to run all modules for XANES.
-                    #previousDir = input['feffFMatrices']
-                    #src_files = os.listdir(previousDir)
-                    #for file_name in src_files:
-                    #    full_file_name = os.path.join(previousDir, file_name)
-                    #    if (os.path.isfile(full_file_name)):
-                    #        shutil.copy(full_file_name, dir)
-
                     # Write input file for FEFF.
-                    writeXESInput(input,inpf)
+                    writeXESInput(feffInput,inpf)
 
                     # Loop over executable: This is specific to feff. Other codes
-                    # will more likely have only one executable. Here I am running 
-                    # rdinp again since writeSCFInput may have different cards than
-
-                    # Run rdinp and atomic part of calculation
+                    # will more likely have only one executable. 
                     executables = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                     for executable in executables:
-# Modified by FDV:
-# Adding the / to make the config more generic
-#                       p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
-                        p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
-                        p.wait()
+                        runExecutable(feffdir,dir,executable,out,err)
 
-                # Translate files produced by executable and update output
-                # Normally this will look like the following example:
-
-                # filename = os.path.join(dir, 'xmu.dat')
-                # output[target] = readColumns(filename, columns=[1,4])
 
                 # For this case, I am only passing the directory for now so
                 # that other executables in FEFF can use the data.
 
+                output[target] = dir
+
+            elif (target == 'feffRIXS'):
+                # For RIXS, need to run multiple times as follows.
+                
+                # Core-Core RIXS
+                # 1. Run for the deep core-level.
+                # 2. Run for the shallow core-level.
+                # 3. Collect files.
+                # 4. Run rixs executable.
+                
+                # Core-valence RIXS
+                # 1. Run for the deep core-level.
+                # 2. Run for the valence level.
+                # 3. Run and XES calculation.
+                # 4. Run rixs executable.
+
+                # Set global settings for all runs.
+                setInput(feffInput,'feff.exchange',[[0, 0.0, -20.0, 0]])
+                setInput(feffInput,'feff.corehole',[['RPA']],Force=True) # maybe not this one. Need 'NONE' for valence
+
+                setInput(feffInput,'feff.edge',[['K','VAL']])
+                edges = feffInput['feff.edge'][0]
+
+                # Save original state of input
+                savedInput = dict(feffInput)
+
+                # Loop over edges and run XANES for each edge:
+                # Save deep edge
+                edge0 = edges[0]
+
+                nEdge=0
+                for edge in edges:
+                    nEdge = nEdge + 1
+
+                    # Make directory
+                    dirname = os.path.join(dir,edge)
+                    if not os.path.exists(dirname):
+                        os.mkdir(dirname)
+
+                    if edge.upper() != "VAL":
+
+                        # Delete XES input key
+                        if 'feff.xes' in feffInput:
+                            del feffInput['feff.xes']
+                            
+                        # Set edge.
+                        setInput(feffInput,'feff.edge',[[edge]],Force=True)
+
+                        # Set icore to other edge
+                        setInput(feffInput,'feff.icore',[[getICore(edge0)]],Force=True)
+
+                        # Set corehole RPA
+                        setInput(feffInput,'feff.corehole',[['RPA']],Force=True)
+
+                        # Set default energy grid
+                        setInput(feffInput,'feff.egrid',[['e_grid', -10, 10, 0.05],['k_grid', 'last', 4, 0.025]])
+                        
+                        # Set RLPRINT
+                        setInput(feffInput,'feff.rlprint',[[True]],Force=True)
+
+                        feffinp = os.path.join(dirname, 'feff.inp')
+                        # Write XANES input for this run
+                        writeXANESInput(feffInput,feffinp)
+
+                    else: # This is a valence calculation. Calculate NOHOLE and XES
+                        # XANES calculation
+                        # Find out if we are using a valence hole for valence calculation.
+                        # Set edge.
+                        setInput(feffInput,'feff.edge',[[edge0]],Force=True)
+                        if len(edges) == nEdge+1:
+                            # Set corehole RPA
+                            setInput(feffInput,'feff.corehole',[['RPA']],Force=True)
+
+                            # We want to use this core-state as the core hole in place of the valence
+                            # Set screen parameters                            
+                            setInput(feffInput,'feff.screen',[['icore', getICore(edges[nEdge])]],Force=True)
+                        else:
+                            # Set corehole NONE
+                            setInput(feffInput,'feff.corehole',[['NONE']],Force=True)
+                            # Write wscrn.dat to VAL directory
+                            wscrnFileW = os.path.join(dirname,'wscrn.dat')
+                            writeList(wscrnLines,wscrnFileW)
+                            
+                        # Set icore to deep edge
+                        setInput(feffInput,'feff.icore',[[getICore(edge0)]],Force=True)
+
+                        # Set default energy grid
+                        setInput(feffInput,'feff.egrid',[['e_grid', -10, 10, 0.05],['k_grid', 'last', 4, 0.025]])
+                        
+                        # Set RLPRINT
+                        setInput(feffInput,'feff.rlprint',[[True]],Force=True)
+
+                        #
+                        # Run XES for the deep level
+                        # Save XANES card, but delete from input
+                        xanesInput = {}
+                        if 'feff.xanes' in feffInput:
+                            setInput(xanesInput, 'feff.xanes', feffInput['feff.xanes'])
+                            del feffInput['feff.xanes']
+                        
+                        # Set XES options
+                        # Set default energy grid
+                        del feffInput['feff.egrid']
+                        setInput(feffInput,'feff.egrid',[['e_grid', -40, 10, 0.1]])
+                        setInput(feffInput,'feff.xes', [[-20, 10, 0.1]])
+                        xesdir = os.path.join(dir,'XES')
+                        if not os.path.exists(xesdir):
+                            os.mkdir(xesdir)
+
+                        feffinp = os.path.join(xesdir,'feff.inp')
+                        # Write XES input.
+                        writeXESInput(feffInput,feffinp)
+
+                        # Run executables to get XES
+                        # Set output and error files
+                        with open(os.path.join(xesdir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(xesdir, 'corvus.FEFF.stderr'), 'w') as err:
+                            executables = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                            for executable in executables:                        
+                                runExecutable(feffdir,xesdir,executable,out,err)
+
+                        # Make xes.dat from xmu.dat
+                        xmuFile = open(os.path.join(xesdir,'xmu.dat'))
+                        xesFile = os.path.join(dir,'xes.dat')
+                        xesLines=[]
+                        for line in xmuFile:
+                            if line.lstrip()[0] != '#':
+                                fields=line.split()
+                                xesLines = xesLines + [str(xmu - float(fields[1])) + '   ' + fields[3]]
+                            elif 'Mu' in line:
+                                fields = line.strip().split()
+                                xmu = float(fields[2][3:len(fields[2])-3])
+
+                        # Write lines in reverse order so that column 1 is sorted correctly.
+                        writeList(xesLines[::-1],xesFile)
+                        
+                        # Now make input file for XANES calculation.
+                        if 'feff.xanes' in xanesInput:
+                            feffInput['feff.xanes'] = xanesInput['feff.xanes']
+                            
+                        del feffInput['feff.xes']
+                        feffinp = os.path.join(dirname, 'feff.inp')
+                        # Write XANES input for this run
+                        writeXANESInput(feffInput,feffinp)
+
+                    
+                        
+                    # Run XANES for this edge
+                    # Set output and error files
+                    with open(os.path.join(dirname, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dirname, 'corvus.FEFF.stderr'), 'w') as err:
+                        executables = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                        for executable in executables:                        
+                            runExecutable(feffdir,dirname,executable,out,err)
+
+
+                    # Now copy files from this edge to main directory
+                    shutil.copyfile(os.path.join(dirname,'wscrn.dat'), os.path.join(dir,'wscrn_' + str(nEdge) + '.dat'))
+                    shutil.copyfile(os.path.join(dirname,'phase.bin'), os.path.join(dir,'phase_' + str(nEdge) + '.bin'))
+                    shutil.copyfile(os.path.join(dirname,'gg.bin'), os.path.join(dir,'gg_' + str(nEdge) + '.bin'))
+                    shutil.copyfile(os.path.join(dirname,'xsect.dat'), os.path.join(dir,'xsect_' + str(nEdge) + '.dat'))
+                    shutil.copyfile(os.path.join(dirname,'xmu.dat'), os.path.join(dir,'xmu_' + str(nEdge) + '.dat'))
+                    shutil.copyfile(os.path.join(dirname,'rl.dat'), os.path.join(dir,'rl_' + str(nEdge) + '.dat'))
+                    shutil.copyfile(os.path.join(dirname,'.dimensions.dat'), os.path.join(dir,'.dimensions.dat'))
+                    # If this is the first edge, get the screened potential.
+                    if nEdge == 1:
+                        wscrnLines = []
+                        with open(os.path.join(dirname,'wscrn.dat'),'r') as wscrnFileR:
+                            for wscrnLine in wscrnFileR.readlines():
+                                if wscrnLine.lstrip()[0] == '#':
+                                    wscrnLines = wscrnLines + [wscrnLine.strip()]
+                                else:
+                                    wscrnFields = wscrnLine.strip().split()
+                                    wscrnLines = wscrnLines + [wscrnFields[0] + ' 0.0  0.0']
+                                
+                                
+                # Finally, run rixs executable
+                feffInput = savedInput
+                setInput(feffInput,'feff.rixs', [[0.1, 0.1]])
+                
+                feffinp = os.path.join(dir, 'feff.inp')
+                # Write XANES input for this run
+                writeXANESInput(feffInput,feffinp)
+
+                # Set output and error files                
+                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                    executables = ['rdinp','atomic','rixs']
+                    for executable in executables:                        
+                        runExecutable(feffdir,dir,executable,out,err)
+                        
                 output[target] = dir
 
 # Added by FDV
@@ -527,33 +515,21 @@ class Feff(Handler):
 # Before we can call the rest of the input preparation, we need to get the
 # optmized structure and put it in the "cluster" input, so the stuff below
 # can work OK.
+# JK - in future, would like to replace this with a "helper" handler that translates
+# between generic properties. Thus cluster would be produced by the "helper" handler 
+# from cell_struc_xyz_red. 
                 input['cluster'] = input['cell_struc_xyz_red']
 
 # First generate any data that is needed from input
-                input['feff.atoms']      = getFeffAtomsFromCluster(input)
-                input['feff.potentials'] = getFeffPotentialsFromCluster(input)
+                feffInput['feff.atoms']      = getFeffAtomsFromCluster(input)
+                feffInput['feff.potentials'] = getFeffPotentialsFromCluster(input)
 
-# Set directory for this exchange
-                dir = config['xcDir']
 
 # Set output and error files
                 with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
 
-# Set input file
-                  inpf = os.path.join(dir, 'feff.inp')
-
-# For now, copy all files from previous feff directory to current xcDir
-# For now, we are going to run all modules for XANES.
-#                 previousDir = input['feffFMatrices']
-#                 src_files = os.listdir(previousDir)
-#                 for file_name in src_files:
-#                     full_file_name = os.path.join(previousDir, file_name)
-#                     if (os.path.isfile(full_file_name)):
-#                         shutil.copy(full_file_name, dir)
-
 # Write input file for FEFF.
-#                 writeXANESInput(input,inpf)
-                  writeEXAFSDMDWInput(input,inpf)
+                  writeEXAFSDMDWInput(feffInput,inpf)
 
 # Before running, we need to write the dym file to be used in this run
                   dymFilename = 'corvus.dym'
@@ -568,20 +544,7 @@ class Feff(Handler):
 # Run rdinp and atomic part of calculation
                   executables = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                   for executable in executables:
-# Modified by FDV:
-# Adding the / to make the config more generic
-#                     p = subprocess.Popen([feffdir+executable], cwd=dir)#, stdout=out, stderr=err)
-                      p = subprocess.Popen([feffdir+'/'+executable], cwd=dir)#, stdout=out, stderr=err)
-                      p.wait()
-
-# Translate files produced by executable and update output
-# Normally this will look like the following example:
-
-#               filename = os.path.join(dir, 'xmu.dat')
-#               output[target] = readColumns(filename, columns=[1,4])
-
-# For this case, I am only passing the directory for now so
-# that other executables in FEFF can use the atomic data.
+                        runExecutable(feffdir,dir,executable,out,err)
 
                 output[target] = dir
 
@@ -599,40 +562,51 @@ def check(input, token, default=None):
     else:
         return default
 
-def getInpLines(input,token,default=None):
+def setInput(input, token, default, Force=False):
+    # If token is already defined, leave it unless force, otherwise define with default.
+    if token not in input or Force:
+        input[token] = default
+
+def writeInput(input,inpfile):
+    lines=[]
+    for key in input:
+        if key != 'feff.end':
+            lines = lines + getInpLines(input,key) 
+        
+    lines = lines + ['END']
+    
+    # Print feff input file
+    writeList(lines, inpfile)
+    
+def getInpLines(input,token):
     lines=[]
     key = token[len('feff.'):]
 
+    if key == 'end':
+        return lines  # Don't use this to write END card, since that might be
+                      # written before end of input file.
+    
     if token in input:
         # If the first element is not a boolean, this contains values
         # to be stored after keyword.
-        if not isinstance(input[token][0][0],bool):
-            if token in input:
-                for element in input[token]:
+        if not isinstance(input[token][0][0],bool): # Keywords that have no arguments are written if bool is true
+            if token in input: # Use pre-defined values
+                for element in input[token]: # Takes care of single and multi-line input.
                     lines.append(' '.join([str(value) for value in element])) 
-            else:
+            else: # Use default
                 lines.append(' '.join(default))
           	
-            if key in ['atoms','potentials','egrid']:
-                lines.insert(0,key.upper())
-            else:
+            if key in ['atoms','potentials','egrid']: # Some keywords only have arguments starting on the 
+                lines.insert(0,key.upper())           # next line.
+                
+            else:                                     # Most have arguments on the same line as keyword.
                 lines[0] = key.upper() + ' ' + lines[0]
-        elif input[token][0][0]:
+                
+        elif input[token][0][0]: 
             lines.append(key.upper())
-
-    elif default:
-        # Put default into input dictionary
-   
-        if key in ['egrid']:
-           # for multi line input (fill with different targets later.
-           lines = [x for x in default]
-           lines.insert(0,key.upper())
-
-        else:
-           lines.append(key.upper() + ' ' + default)
-
     else:
-        lines.append(key.upper())
+        if input[token][0][0]:
+            lines.append(key.upper()) # Keywords with no arguments.
 
     # Add a blank line after each line
     lines.append('')
@@ -643,6 +617,56 @@ def writeList(lines, filename):
     with open(filename, 'w') as f:
         f.write('\n'.join(lines))
 
+def getICore(edge):
+    iCore = {'K':1, 'L1':2, 'L2':3, 'L3':4, 'M1':5, 'M2':6, 'M3':7, 'M4':8, 'M5':9}
+    if edge in iCore:
+        return iCore[edge]
+    else:
+        print "###########################################"
+        print "###########################################"
+        print "Error: Unknown edge name."
+        print "###########################################"
+        print "###########################################"
+        exit()
+
+        
+def runExecutable(execDir,workDir,executable,out,err):
+    # Runs executable located in execDir from working directory workDir.
+    # Tees stdout to file out in real-time, and stderr to file err.
+    print 'Running exectuable: ' + executable
+    # Modified by FDV:
+    # Adding the / to make the config more generic
+    # Modified by JJK to use os.path.join (even safer than above).
+
+    p = subprocess.Popen([os.path.join(execDir,executable)], bufsize=0, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    while True:
+        pout = p.stdout.readline()
+        if pout == '' and p.poll() is not None:
+            break
+        if pout:
+            print pout.strip()
+            out.write(pout)
+
+    while True:
+        perr = p.stderr.readline()
+        if perr == '' and p.poll() is not None:
+            break
+        if perr:
+            print '###################################################'
+            print '###################################################'
+            print 'Error in executable: ' + executable
+            print perr.strip()
+            print '###################################################'
+            print '###################################################'
+            err.write(perr)
+
+            
+    p.wait()
+    
+    
+
+
+    
 def readColumns(filename, columns=[1,2]):
     # Read file and clear out comments
     with open(filename, 'r') as file:
@@ -715,7 +739,6 @@ for i in xrange(nElem):
     ptable[sym] = {'mass':mass, 'symbol':sym, 'number':num}
 
 def getFeffAtomsFromCluster(input):
-
     # Find absorbing atom.
     absorber = input['absorbing_atom'][0][0] - 1
     atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
@@ -748,6 +771,45 @@ def getFeffPotentialsFromCluster(input):
        feffPots.append([i+1, int(ptable[atm]['number']), atm, -1, -1, xnat ])
 
     return feffPots
+
+def getFeffDebyeOptions(input):
+# Now we have to make the DEBYE input line depending on what input we have
+# for the DMDW approach.
+# JK - For now options for debye are all defined as just a single string.
+#      Maybe split these up in future, since some are optional.
+#   pp_debug.pprint(input)
+#   sys.exit()
+    Debye_Def = None
+    # JK - have to have nuctemp in input to run debye waller factors.
+    if 'nuctemp' in input:
+        Debye_Def  = str(input['nuctemp'][0][0]) + ' '
+       
+    # If a dynamical matrix is present, can use a made up debye temp if
+    # not debyetemp is not present.
+    if 'opt_dynmat' in input:
+        if 'debyetemp' in input:
+            Debye_Def += str(input['debyetemp'][0][0]) + ' '
+        else:
+            Debye_Def += '300 '
+
+        dymFilename = 'corvus.dym'
+        Debye_Def += '5 '
+        Debye_Def += dymFilename + ' '
+        # To get the right number of Lanczos iterations we should check the number of
+        # atoms in the DM, but will leave that for later.
+        Debye_Def += str(input['dmdw_nlanczos'][0][0]) + ' 0 1 '
+
+    elif 'debyetemp' in input:
+        Debye_Def += str(input['debyetemp'][0][0]) + ' '
+        Debye_Def += '0 '
+        Debye_Def = [[Debye_Def]]
+    else:
+        Debye_Def = None
+    
+#    print 'Debye_Def'
+#    print Debye_Def
+#   sys.exit()
+    return Debye_Def
 
 def cell2atoms(cellatoms, acell, rprim=None, angdeg=None, cutoff=None, nmax=1000):
     # cellatom = dict with 'coord', 'symbol'
@@ -885,200 +947,103 @@ def writeAtomicInput(input, feffinp='feff.inp'):
     # Header lines
     lines.append('* This feff9 input file was generated by corvus.')
     
-    # Set feff.KEY using getInpLine, which will use the
-    # previously defined value if available.
-    lines = lines + getInpLines(input,'feff.control', '1 0 0 0 0 0')
-    lines = lines + getInpLines(input,'feff.print', '5 0 0 0 0 0')
-    
-    # loop over feff keys in input and write them to lines
-    feffKeys = [key for key in input if key.startswith('feff.')]
+    # Set feff.KEY using setInput, which will use the
+    # previously defined value if available, unless Force=True.
+    setInput(input,'feff.control',[[1,0,0,0,0,0]],Force=True)
+    setInput(input,'feff.print',[[5,0,0,0,0,0]],Force=True)
 
-    for key in feffKeys:
-        lines = lines + getInpLines(input,key)
-
-    lines = lines + getInpLines(input,'feff.end')
-    
-    # Print feff input file
-    writeList(lines, feffinp)
+    writeInput(input,feffinp)
 
 
 def writeSCFInput(input, feffinp='feff.inp'):
-    for key in ['feff.potentials', 'feff.atoms']:
-        assert key in input
+
     lines = []
     lines.append('* This feff9 input file was generated by corvus.')
     lines.append('')
 
-    lines = lines + getInpLines(input,'feff.control', '1 0 0 0 0 0')
-    lines = lines + getInpLines(input,'feff.print', '5 0 0 0 0 0')
-
-    # Header part of feff.inp
-    #headerLines(input, lines)
-
-    lines = lines + getInpLines(input,'feff.scf','5.0 0 100 0.1 0')
-    lines = lines + getInpLines(input,'feff.edge','K')
+    setInput(input,'feff.control', [[1, 0, 0, 0, 0, 0]])
+    setInput(input,'feff.print', [[5, 0, 0, 0, 0, 0]])
+    setInput(input,'feff.scf',[[5.0, 0, 100, 0.1, 0]])
+    setInput(input,'feff.edge',[['K']])
     
-    # loop over feff keys in input and write them to lines
-    feffKeys = [key for key in input if key.startswith('feff.')]
-
-    for key in feffKeys:
-        lines = lines + getInpLines(input,key)
-
-    lines = lines + getInpLines(input,'feff.end')
-
-    # Print feff input file
-    writeList(lines, feffinp)
-    #print input
+    writeInput(input,feffinp)
 
 def writeCrossSectionsInput(input, feffinp='feff.inp'):
-    for key in ['feff.potentials', 'feff.atoms']:
-        assert key in input
     lines = []
     lines.append('* This feff9 input file was generated by corvus.')
     lines.append('')
 
-    lines = lines + getInpLines(input,'feff.control', '0 1 0 0 0 0')
-    lines = lines + getInpLines(input,'feff.print', '5 2 0 0 0 0')
-    lines = lines + getInpLines(input,'feff.exchange', '0 0.0 0.0 0')
+    setInput(input,'feff.control', [[1, 1, 0, 0, 0, 0]])
+    setInput(input,'feff.print', [[5, 2, 0, 0, 0, 0]])
+    setInput(input,'feff.exchange', [[0, 0.0, 0.0, 0]])
+    setInput(input,'feff.edge',[['K']])
 
-    # Header part of feff.inp
-    #headerLines(input, lines)
-
-    lines = lines + getInpLines(input,'feff.edge','K')
-
-    # loop over feff keys in input and write them to lines
-    feffKeys = [key for key in input if key.startswith('feff.')]
-
-    for key in feffKeys:
-        lines = lines + getInpLines(input,key)
-
-    lines = lines + getInpLines(input,'feff.end')
-
-    # Print feff input file
-    writeList(lines, feffinp)
+    writeInput(input,feffinp)
 
 
 def writeGreensFunctionInput(input, feffinp='feff.inp'):
-    for key in ['feff.potentials', 'feff.atoms']:
-        assert key in input
     lines = []
     lines.append('* This feff9 input file was generated by corvus.')
     lines.append('')
 
-    lines = lines + getInpLines(input,'feff.control', '0 0 1 0 0 0')
+    setInput(input,'feff.control', [[1, 1, 1, 0, 0, 0]])
     
-    # loop over feff keys in input and write them to lines
-    feffKeys = [key for key in input if key.startswith('feff.')]
-
-    for key in feffKeys:
-        lines = lines + getInpLines(input,key)
-
-    lines = lines + getInpLines(input,'feff.end')
-
-    # Print feff input file
-    writeList(lines, feffinp)
+    writeInput(input,feffinp)
 
 
 def writePathsInput(input, feffinp='feff.inp'):
-    for key in ['feff.potentials', 'feff.atoms']:
-        assert key in input
     lines = [] 
     lines.append('* This feff9 input file was generated by corvus.')
     lines.append('')
 
-    lines = lines + getInpLines(input,'feff.control', '0 0 0 1 0 0')
+    setInput(input,'feff.control', [[1, 1, 1, 1, 0, 0]])
 
-
-    # loop over feff keys in input and write them to lines
-    feffKeys = [key for key in input if key.startswith('feff.')]
-
-    for key in feffKeys:
-        lines = lines + getInpLines(input,key)
-
-    lines = lines + getInpLines(input,'feff.end')
-
-    # Print feff input file
-    writeList(lines, feffinp)
+    writInput(input,feffinp)
 
 
 def writeFMatricesInput(input, feffinp='feff.inp'):
-    for key in ['feff.potentials', 'feff.atoms']:
-        assert key in input
     lines = []
     lines.append('* This feff9 input file was generated by corvus.')
     lines.append('')
 
-    lines = lines + getInpLines(input,'feff.control', '0 0 0 0 1 0')
+    setInput(input,'feff.control', [[1, 1, 1, 1, 1, 0]])
 
 
-    # loop over feff keys in input and write them to lines
-    feffKeys = [key for key in input if key.startswith('feff.')]
-
-    for key in feffKeys:
-        lines = lines + getInpLines(input,key)
-
-    lines = lines + getInpLines(input,'feff.end')
-
-    # Print feff input file
-    writeList(lines, feffinp)
+    writeInput(input, feffinp)
 
 
 def writeXANESInput(input, feffinp='feff.inp'):
-    for key in ['feff.potentials', 'feff.atoms']:
-        assert key in input
     lines = []
     lines.append('* This feff9 input file was generated by corvus.')
     lines.append('')
 
-    lines = lines + getInpLines(input,'feff.control', '1 1 1 1 1 1')
-    lines = lines + getInpLines(input,'feff.print', '0 0 0 0 0 0')
-    lines = lines + getInpLines(input,'feff.exchange', '0 0.0 0.0 0')
-    lines = lines + getInpLines(input,'feff.xanes', '10')
-    lines = lines + getInpLines(input,'feff.fms', '6.0 0')
-    lines = lines + getInpLines(input,'feff.scf', '5.0 0')
-    lines = lines + getInpLines(input,'feff.rpath', '0.1')
-    lines = lines + getInpLines(input,'feff.edge', 'K')
+    setInput(input,'feff.control', [[1, 1, 1, 1, 1, 1]])
+    setInput(input,'feff.print', [[0, 0, 0, 0, 0, 0]])
+    setInput(input,'feff.exchange', [[0, 0.0, 0.0, 0]])
+    setInput(input,'feff.xanes', [[10]])
+    setInput(input,'feff.fms', [[6.0, 0]])
+    setInput(input,'feff.scf', [[5.0, 0]])
+    setInput(input,'feff.rpath', [[0.1]])
+    setInput(input,'feff.edge', [['K']])
 
-
-    # loop over feff keys in input and write them to lines
-    feffKeys = [key for key in input if key.startswith('feff.')]
-
-    for key in feffKeys:
-        lines = lines + getInpLines(input,key)
-
-    lines = lines + getInpLines(input,'feff.end')
-
-    # Print feff input file
-    writeList(lines, feffinp)
+    writeInput(input,feffinp)
 
 
 def writeXESInput(input, feffinp='feff.inp'):
-    for key in ['feff.potentials', 'feff.atoms']:
-        assert key in input
     lines = []
     lines.append('* This feff9 input file was generated by corvus.')
     lines.append('')
 
-    lines = lines + getInpLines(input,'feff.control', '1 1 1 1 1 1')
-    lines = lines + getInpLines(input,'feff.print', '0 0 0 0 0 0')
-    lines = lines + getInpLines(input,'feff.exchange', '0 0.0 0.0 0')
-    lines = lines + getInpLines(input,'feff.xes', '-30 0')
-    lines = lines + getInpLines(input,'feff.fms', '6.0 0')
-    lines = lines + getInpLines(input,'feff.scf', '5.0 0')
-    lines = lines + getInpLines(input,'feff.rpath', '0.1')
-    lines = lines + getInpLines(input,'feff.edge', 'K')
+    setInput(input,'feff.control', [[1, 1, 1, 1, 1, 1]])
+    setInput(input,'feff.print', [[0, 0, 0, 0, 0, 0]])
+    setInput(input,'feff.exchange', [[0, 0.0, 0.0, 0]])
+    setInput(input,'feff.xes', [[-30, 0]])
+    setInput(input,'feff.fms', [[6.0, 0]])
+    setInput(input,'feff.scf', [[5.0, 0]])
+    setInput(input,'feff.rpath', [[0.1]])
+    setInput(input,'feff.edge', [['K']])
 
-
-    # loop over feff keys in input and write them to lines
-    feffKeys = [key for key in input if key.startswith('feff.')]
-
-    for key in feffKeys:
-        lines = lines + getInpLines(input,key)
-
-    lines = lines + getInpLines(input,'feff.end')
-
-    # Print feff input file
-    writeList(lines, feffinp)
+    writeInput(input,feffinp)
 
 
 def writeELNESinp(input, feffinp='feff.inp'):
@@ -1132,50 +1097,42 @@ def writeELNESinp(input, feffinp='feff.inp'):
 # Added by FDV
 def writeEXAFSDMDWInput(input, feffinp='feff.inp'):
 
-    for key in ['feff.potentials', 'feff.atoms']:
-        assert key in input
     lines = []
     lines.append('* This feff9 input file was generated by corvus.')
     lines.append('')
 
-    lines = lines + getInpLines(input,'feff.control', '1 1 1 1 1 1')
-    lines = lines + getInpLines(input,'feff.print', '0 0 0 0 0 0')
-    lines = lines + getInpLines(input,'feff.exchange', '0 0.0 0.0 0')
-    lines = lines + getInpLines(input,'feff.exafs', '18.0')
-    lines = lines + getInpLines(input,'feff.scf', '4.0 0')
-    lines = lines + getInpLines(input,'feff.rpath', '8.0')
-    lines = lines + getInpLines(input,'feff.nleg', '4')
-    lines = lines + getInpLines(input,'feff.edge', 'K')
 
+    setInput(input,'feff.control', [[1, 1, 1, 1, 1, 1]])
+    setInput(input,'feff.print', [[0, 0, 0, 0, 0, 0]])
+    setInput(input,'feff.exchange', [[0, 0.0, 0.0, 0]])
+    setInput(input,'feff.exafs', [[18]])
+    setInput(input,'feff.scf', [[4.0, 0]])
+    setInput(input,'feff.rpath', [[8.0]])
+    setInput(input,'feff.nleg', [[4]])
+    setInput(input,'feff.edge', [['K']])
+
+# JK -  Commented below: I'm making this a function getFeffDebyeInput that translates generic 
+# input to feff input, which will be performed at the begining of the run 
+# function.
 # Now we have to make the DEBYE input line depending on what input we have
 # for the DMDW approach.
-    dymFilename = 'corvus.dym'
+#    dymFilename = 'corvus.dym'
 #   pp_debug.pprint(input)
 #   sys.exit()
-    Debye_Def  = str(input['nuctemp'][0][0]) + ' '
-    Debye_Def += str(input['debyetemp'][0][0]) + ' '
-    Debye_Def += '5 '
-    Debye_Def += dymFilename + ' '
+#    Debye_Def  = str(input['nuctemp'][0][0]) + ' '
+#    Debye_Def += str(input['debyetemp'][0][0]) + ' '
+#    Debye_Def += '5 '
+#    Debye_Def += dymFilename + ' '
 
 # To get the right number of Lanczos iterations we should check the number of
 # atoms in the DM, but will leave that for later.
-    Debye_Def += str(input['dmdw_nlanczos'][0][0]) + ' 0 1 '
+#    Debye_Def += str(input['dmdw_nlanczos'][0][0]) + ' 0 1 '
 
-    print 'Debye_Def'
-    print Debye_Def
+#    print 'Debye_Def'
+#    print Debye_Def
 #   sys.exit()
-    lines = lines + getInpLines(input,'feff.debye', Debye_Def)
 
-    # loop over feff keys in input and write them to lines
-    feffKeys = [key for key in input if key.startswith('feff.')]
-
-    for key in feffKeys:
-        lines = lines + getInpLines(input,key)
-
-    lines = lines + getInpLines(input,'feff.end')
-
-    # Print feff input file
-    writeList(lines, feffinp)
+    writeInput(input,feffinp)
 
 def legacy_dym2feffinp(dym, center=1, feffinp='feff.inp', feffdym='feff.dym', spectrum='EXAFS', header=True, input={}):
     from operator import itemgetter

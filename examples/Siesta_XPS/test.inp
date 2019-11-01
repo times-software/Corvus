@@ -1,0 +1,18 @@
+# CORVUS input
+
+target_list {
+siestaXPS
+}
+
+usehandlers { Siesta }
+orca.expert{
+SHIT
+FUCK
+}
+orca.scf.convergencestrategy
+{
+NormalConv 
+} 
+orca.output.pdbfile{ True }
+
+siesta.TD.NumberOfTimeSteps{ 100 }

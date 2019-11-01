@@ -11,15 +11,17 @@ def availableHandlers():
     from abinit import Abinit
     from dmdw import Dmdw
     from feff import Feff
-    from feffrixs import FeffRixs
+    #from feffrixs import FeffRixs
     from vasp import Vasp
     from nwchem import Nwchem
     from orca import Orca
+    from siesta import Siesta
+    from fit import fit
 
 # Commenting out Vasp for now since we have no content in the manual for it for
 # now. I will readd once I include Scott's Handler.
 #   return [Feff, FeffRixs, Dmdw, Abinit, Vasp, Nwchem, Orca]
-    return [Feff, FeffRixs, Dmdw, Abinit, Nwchem, Orca]
+    return [Feff, Dmdw, Abinit, Nwchem, Orca,Siesta, fit]
 
 def configure(config):
     from ConfigParser import RawConfigParser
@@ -55,11 +57,12 @@ def configure(config):
                              'ff2x','fms','fullspectrum','genfmt','ldos',
                              'mkgtr','opconsat','path','pot','rdinp','rhorrp',
                              'rixs','screen','sfconv','xsph'],
-                   'dmdw'  :['dmdw_standalone'],
+                   'dmdw'  :['dmdw'],
                    'orca'  :['orca'],
                    'abinit':['abinit','anaddb','mrgddb','mrggkk'],
                    'vasp'  :['vasp_gam','vasp_std'],
-                   'nwchem':['nwchem'] }
+                   'nwchem':['nwchem'], 
+                   'siesta':['siesta']}
 
 
     exe_ext = ''
@@ -76,6 +79,8 @@ def configure(config):
     path2feff = rcp.get('Executables', 'feff')
     config['feff'] = path2feff
 
+    path2siesta = rcp.get('Executables', 'siesta') 
+    config['siesta'] = path2siesta
 # Initialize system with user input
 def initializeSystem(config, system):
     from corvutils import parsnip
@@ -95,7 +100,9 @@ def initializeSystem(config, system):
 #   sys.exit()
 
 # Basic Workflow Generator
-def generateWorkflow(target, handlers, desc=''):
+# JK - added system as input to generateWorkflow to accomodate handlers that call other 
+# handlers or workflows such as "fit" or "average".
+def generateWorkflow(target, handlers, system, desc=''):
     from structures import Workflow
 
 # Note FDV: Moving to top so this is available throughout
@@ -107,19 +114,18 @@ def generateWorkflow(target, handlers, desc=''):
 # handlers requested by the user
     availableHandlers_map = { h.__name__:h for h in availableHandlers() }
 # Debug: FDV
-    pp_debug.pprint(availableHandlers_map)
+    #pp_debug.pprint(availableHandlers_map)
 #   sys.exit()
 
 # Now we create the useHandlers list from the input and the available ones
     useHandlers = []
 # Debug: FDV
-    print handlers
-    print availableHandlers_map.keys()
-#   sys.exit()
+    #print handlers
+    #print availableHandlers_map.keys()
     for handler_name in handlers:
       if handler_name in availableHandlers_map.keys():
         useHandlers.append(availableHandlers_map[handler_name])
-        print useHandlers
+        #print useHandlers
       else:
         print("Handler %s not in list of available handlers:" % (handler_name))
         for s in availableHandlers_map.keys():
@@ -131,28 +137,27 @@ def generateWorkflow(target, handlers, desc=''):
 #   pp_debug.pprint(useHandlers)
 #   sys.exit()
     workflow = Workflow(target, desc=desc)
-#   print workflow
-#   sys.exit()
+    # subs creates a list of all possible subsets of the set of targets.
     subs = lambda L:[{L[j] for j in range(len(L)) if 1<<j&k} for k in range(1,1<<len(L))]
 # Modified by FDV:
 # Commenting original code and substituting with JJKs code, to see if it works
 #-----------------------------------------------------------------------------
-    targets = set(workflow.getRequiredInput())
-    while len(targets) > 0:
-        noMatch = True
-        for h in useHandlers:
-            htargets = [t for t in targets if h.canProduce(t)]
-            if htargets:
-                noMatch = False
-                for subset in reversed(sorted(subs(htargets), key=len)):
-                    l = list(subset)
-                    if h.canProduce(l):
-                        workflow.addExchangeAt(0, h.sequenceFor(l))
-                        targets.difference_update(subset)
-                        targets.update(set(workflow.getRequiredInput()))
-                        break
-        if noMatch:
-            break
+#    targets = set(workflow.getRequiredInput())
+#    while len(targets) > 0:
+#        noMatch = True
+#        for h in useHandlers:
+#            htargets = [t for t in targets if h.canProduce(t)]
+#            if htargets:
+#                noMatch = False
+#                for subset in reversed(sorted(subs(htargets), key=len)):
+#                    l = list(subset)
+#                    if h.canProduce(l):
+#                        workflow.addExchangeAt(0, h.sequenceFor(l))
+#                        targets.difference_update(subset)
+#                        targets.update(set(workflow.getRequiredInput()))
+#                        break
+#        if noMatch:
+#            break
 # Debug: FDV
 #   berp = {}
 #workflow print statements uncommented, Krsna
@@ -161,35 +166,42 @@ def generateWorkflow(target, handlers, desc=''):
 #   workflow.sequence[0]({1:'a'},{1:'a'},berp)
 #   sys.exit()
 #-----------------------------------------------------------------------------
-#    maintargets = workflow.getRequiredInput()
-#    #print "Done printing ri" # Debug JJK
-#    for t in maintargets:
-#       targets = set([t])
-#       while len(targets) > 0:
-#           noMatch = True
-#           for h in availableHandlers():
-#               #print "Checking Handler: " # Debug JJK
-#               #print h # Debug JJK
-#              htargets = [t for t in targets if h.canProduce(t)]
-#               #print htargets # Debug JJK
-#               #print "Done checking handler." # Debug JJK
-#               if htargets:
-#                   noMatch = False
-#                   for subset in reversed(sorted(subs(htargets), key=len)):
-#                       l = list(subset)
-#                       if h.canProduce(l):
-#                           workflow.addExchangeAt(0, h.sequenceFor(l))
-#                           # h.setDefaults(input,h)
-#                           targets.difference_update(subset)
-#                           targets.update(set(workflow.getRequiredInput()))
-#                           break
-#
-#           if noMatch:
-#               break
+    mainTargets = workflow.getRequiredInput()
+    #print mainTargets
+    #print "Done printing ri" # Debug JJK
+    for t in reversed(mainTargets):
+       targets = set([t])
+       while len(targets) > 0:
+           noMatch = True
+           for h in availableHandlers():
+               #print "Checking Handler: " # Debug JJK
+               #print h # Debug JJK
+               htargets = [t for t in targets if h.canProduce(t)]
+               #print htargets # Debug JJK
+               #print "Done checking handler." # Debug JJK
+               if htargets:
+                   noMatch = False
+                   for subset in reversed(sorted(subs(htargets), key=len)):
+                       l = list(subset)
+                       if h.canProduce(l):
+                           workflow.addExchangeAt(0, h.sequenceFor(l,system))
+                           # h.setDefaults(input,h)
+                           targets.difference_update(subset)
+                           targets.update(set(workflow.getRequiredInput()))
+                           break
+
+           if noMatch:
+               break
 #-----------------------------------------------------------------------------
 
 # Debug: FDV
-    print workflow
+#    print '#########################'
+#    print '    WORKFLOW'
+#    print '#########################'
+#    print workflow
+#    print '#########################'
+#    print '  END WORKFLOW'
+#    print '#########################'
 #   sys.exit()
 
     return workflow
@@ -264,6 +276,48 @@ def printAndExit(msg):
     sys.stderr.write(msg + '\n')
     sys.stderr.flush()
     sys.exit()
+
+def generateAndRunWorkflow(config, system, targetList):
+    import copy
+    #if 'target_list' in system.keys():
+    #  targetList = system['target_list']
+    #else:
+    #  print 'Provide target properties or Workflow'
+    #  sys.exit()
+
+    if 'usehandlers' in system.keys():
+      handlerList = system['usehandlers'][0]
+    else:
+      print 'Provide the handler list to be used in this calculation'
+      sys.exit()
+
+    autodesc = 'Calculate ' + ', '.join(targetList[0])
+    workflow = generateWorkflow(targetList, handlerList, system, desc=autodesc)
+
+    # Check for any missing user input
+    required = set(workflow.getRequiredInput())
+    missing = list(required.difference(set(system.keys())))
+    
+    #config2=copy.deepcopy(config)
+    # Create a copy of config
+    if len(missing) > 0:
+        printAndExit('Error: missing user input for ' + str(missing))
+
+    i = 0
+    while i < len(workflow.sequence):
+        #if config['checkpoints']:
+        #    saveState['system'] = system
+        #    saveState['index'] = i
+        #    with open(config['saveFile'], 'w') as saveFile:
+        #        pickle.dump(saveState, saveFile, pickle.HIGHEST_PROTOCOL)
+        #print 'Workflow index'
+        #print config['xcIndex']
+        #print config['xcIndexStart']
+        config['xcIndex'] = i + config['xcIndexStart']
+        #print config['xcIndex']
+        
+        workflow.sequence[i].go(config, system)
+        i += 1
 
 # Handles command line arguments and runs through workflow
 def oneshot(argv):
@@ -362,7 +416,7 @@ def oneshot(argv):
     # Update System with any user input
     initializeSystem(config, system)
 #DASb
-    print 'system = ', system
+    #print 'system = ', system
 #DASe
 # Debug: FDV
 #   print(system['target_list'])
@@ -391,8 +445,8 @@ def oneshot(argv):
 
 # Debug: FDV
 #print check targetList usehandlers by Krsna
-    print targetList
-    print handlerList
+    #print targetList
+    #print handlerList
 #   sys.exit()
 
     # Set up Workflow or read from file
@@ -402,7 +456,18 @@ def oneshot(argv):
     elif not resume:
         # Create Workflow
         autodesc = 'Calculate ' + ', '.join(targetList[0])
-        workflow = generateWorkflow(targetList, handlerList, desc=autodesc)
+        workflow = generateWorkflow(targetList, handlerList, system, desc=autodesc)
+        print ''
+        print ''
+        print '#########################'
+        print '    WORKFLOW'
+        print '#########################'
+        print workflow
+        print '#########################'
+        print '  END WORKFLOW'
+        print '#########################'
+        print ''
+        print ''
 
 # Debug: FDV
 #Krsna uncommented line below
@@ -428,7 +493,7 @@ def oneshot(argv):
     saveState = {'system':system,'workflow':workflow}
     # Run Workflow
     i = max(0, workflowStart)
-    print workflow.sequence
+    #print workflow.sequence
     while i < len(workflow.sequence):
         if config['checkpoints']:
             saveState['system'] = system

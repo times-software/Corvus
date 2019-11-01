@@ -59,7 +59,7 @@ class Orca(Handler):
         return implemented[key]['cost']
 
     @staticmethod
-    def sequenceFor(output):
+    def sequenceFor(output,inp=None):
         if isinstance(output, list) and output and isinstance(output[0], basestring):
             key = strlistkey(output)
         elif isinstance(output, basestring):

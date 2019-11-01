@@ -1,20 +1,23 @@
 from structures import Handler, Exchange, Loop, Update
 import corvutils.pyparsing as pp
-import os, sys, subprocess
+import os, sys, subprocess, shutil, resource
+import re
+# Debug: FDV
+import pprint
+pp_debug = pprint.PrettyPrinter(indent=4)
 
 # Define dictionary of implemented calculations
 implemented = {}
 strlistkey = lambda L:','.join(sorted(L))
-implemented['feffRIXS'] = {'type':'Exchange','out':['feffRIXS'],'cost':2,
-                        'req':['cluster','absorbing_atom'],'desc':'Calculate RIXS using FEFF.'}
-#implemented['feff.atoms'] = {'type':'Exchange','out':['feff.atoms'],'cost':1,
-#                        'req':['cluster','absorbing_atom'],'desc':'Make feff ATOMS input from cluster.'}
-#implemented['feff.potentials'] = {'type':'Exchange','out':['feff.potentials'],'cost':1,
-#                        'req':['cluster','absorbing_atom'],'desc':'Make feff POTENTIALS input from cluster.'}
 
-class FeffRixs(Handler):
+implemented['siestaCoreResponse'] = {'type':'Exchange','out':['siestaCoreResponse'],'cost':3,
+                        'req':['siesta.TD.NumberOfTimeSteps'],'desc':'Calculate XPS using siesta.'}
+
+
+
+class Siesta(Handler):
     def __str__(self):
-        return 'FEFFRIXS Handler'
+        return 'SIESTA Handler'
 
     @staticmethod
     def canProduce(output):
@@ -28,8 +31,8 @@ class FeffRixs(Handler):
     @staticmethod
     def requiredInputFor(output):
         if isinstance(output, list) and output and isinstance(output[0], basestring):
-            unresolved = {o for o in output if not FeffRixs.canProduce(o)}
-            canProduce = (o for o in output if FeffRixs.canProduce(o))
+            unresolved = {o for o in output if not Siesta.canProduce(o)}
+            canProduce = (o for o in output if Siesta.canProduce(o))
             additionalInput = (set(implemented[o]['req']) for o in canProduce)
             return list(set.union(unresolved,*additionalInput))
         elif isinstance(output, basestring):
@@ -64,11 +67,11 @@ class FeffRixs(Handler):
             raise LookupError('Corvus cannot currently produce ' + key + ' using FEFF')
         f = lambda subkey : implemented[key][subkey]
         if f('type') is 'Exchange':
-            return Exchange(FeffRixs, f('req'), f('out'), cost=f('cost'), desc=f('desc'))
+            return Exchange(Siesta, f('req'), f('out'), cost=f('cost'), desc=f('desc'))
 
     @staticmethod
     def prep(config):
-        subdir = config['pathprefix'] + str(config['xcIndex']) + '_FEFF'
+        subdir = config['pathprefix'] + str(config['xcIndex']) + '_SIESTA'
         xcDir = os.path.join(config['cwd'], subdir)
         # Make new output directory if if doesn't exist
         if not os.path.exists(xcDir):
@@ -77,124 +80,171 @@ class FeffRixs(Handler):
         config['xcDir'] = xcDir
 
     #@staticmethod
-    #def generateInput(config, input, output):
-        dir = config['xcDir']
-        #print output # Debug JJK
+    #def setDefaults(input,target):
 
+    # JJ Kas - run now performs all 3 methods, i.e., generateInput, run, translateOutput
+    # Maybe we should also include prep here. Is there a reason that we want to limit the directory names
+    # to automated Corvus_FEFFNN? Also if we have prep included here, we can decide on making a new directory
+    # or not. 
     @staticmethod
     def run(config, input, output):
+        print "JOSH"
         
-        # Set directory to feff executables.
-        feffdir = config['feffrixs']
-        
+        # set atoms and potentials
+
+        # Set directory to siesta executables.
+        # Debug: FDV
+        #       pp_debug.pprint(config)
+        siestadir = config['siesta']
+        # Debug: FDV
+        #       sys.exit()
+
+        # Copy siesta related input to siestaInput here. Later we will be overriding some settings,
+        # so we want to keep the original input intact.
+        siestaInput = {key:input[key] for key in input if key.startswith('siesta.')}
+
+        # Generate any data that is needed from generic input and populate siestaInput with
+        # global data (needed for all feff runs.)
+
+        # Set directory for this exchange
+        dir = config['xcDir']
+
+        # Set input file
+        inpf = os.path.join(dir, 'input.fdf')
+
         # Loop over targets in output. Not sure if there will ever be more than one output target here.
         for target in output:
-            if (target == 'feffRIXS'):
-               # First generate any data that is needed from input
-               input['feff.atoms']      = getFeffAtomsFromCluster(input)
-               input['feff.potentials'] = getFeffPotentialsFromCluster(input)
-               print 'Producing feffRIXS using FEFF.' # Debug JJK
-               dir = config['xcDir']
-               inpf = os.path.join(dir, 'feffrixs.inp')
-               writeRIXSinp(input, feffinp=inpf)
+            if (target == 'siestaCoreResponse'):               
+                # Set output and error files
+                with open(os.path.join(dir, 'corvus.SIESTA.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.SIESTA.stderr'), 'w') as err:
 
-               out = open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w')
-               err = open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w')
-               p = subprocess.Popen([feffdir + 'rixs.rb'], cwd=dir)
-               p.wait()
-               out.close()
-               err.close()
-               output[target] = dir
+                    # Write input file for FEFF.
+                    writeXPSInput(siestaInput,inpf)
+
+
+                    # Loop over executables: This is specific to feff. Other codes
+                    # will more likely have only one executable.
+                    executables = ['siesta']
+                    for executable in executables:
+                        print siestadir
+                        runExecutable(siestadir,dir,executable,out,err)
+
+                # For now, I am only passing the directory.
+                print 'Setting output'
+                output[target] = dir
+
+
 
     @staticmethod
     def cleanup(config):
         pass
 
+
+
 ##### Generic Helper Methods ##########
-def getFeffAtomsFromCluster(input):
-    # Find absorbing atom.
-    absorber = input['absorbing_atom'][0][0] - 1
-    atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
-    uniqueAtoms = list(set([ x[0] for x in atoms]))
-    #print absorber
-    #print input['absorbing_atom']
-    #print uniqueAtoms
-    #print ''.join(''.join([str(e),' ']) for e in input['cluster'][absorber][1:]) + ' 0'
-    #print input
-    feffAtoms = []
-    feffAtoms.append([0.0, 0.0, 0.0, 0])
-    for line in atoms:
-        feffAtom = [ e - input['cluster'][absorber][i+1] for i,e in enumerate(line[1:4]) ]
-        feffAtom.append(uniqueAtoms.index(line[0])+1)
-        #print feffAtom
-        #print ''.join(''.join([str(e),' ']) for e in line[1:]) + str(uniqueAtoms.index(line[0])+1)
-        #print ptable[x[0]]['number']
-        feffAtoms.append(feffAtom)
-
-    return feffAtoms
-
-def getFeffPotentialsFromCluster(input):
-    absorber = input['absorbing_atom'][0][0] - 1
-    atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
-    uniqueAtoms = list(set([ x[0] for x in atoms]))
-    feffPots = [[]]
-    feffPots[0] = [0, ptable[input['cluster'][absorber][0]]['number'], input['cluster'][absorber][0], -1, -1, 1.0 ]
-    for i,atm in enumerate(uniqueAtoms):
-       xnat = [ x[0] for x in input['cluster'] ].count(atm)
-       feffPots.append([i+1, int(ptable[atm]['number']), atm, -1, -1, xnat ])
-
-    return feffPots
-
-def getInpLines(input,token,default=None):
-    lines=[]
-    key = token[len('feff.'):]
-
-    if token in input:
-        # If the first element is not a boolean, this contains values
-        # to be stored after keyword.
-        if not isinstance(input[token][0][0],bool):
-            if token in input:
-                for element in input[token]:
-                    lines.append(' '.join([str(value) for value in element]))
-            else:
-                lines.append(' '.join(default))
-
-            if key in ['atoms','potentials','egrid']:
-                lines.insert(0,key.upper())
-            else:
-                lines[0] = key.upper() + ' ' + lines[0]
-        elif input[token][0][0]:
-            lines.append(key.upper())
-
-    elif default:
-        # Put default into input dictionary
-
-        if key in ['egrid']:
-           # for multi line input (fill with different targets later.
-           lines = [x for x in default]
-           lines.insert(0,key.upper())
-
-        else:
-           lines.append(key.upper() + ' ' + default)
-
-    else:
-        lines.append(key.upper())
-
-    # Add a blank line after each line
-    lines.append('')
-
-    return lines
 
 def check(input, token, default=None):
     if token in input:
         return input[token]
     else:
         return default
+    
+def setInput(input, token, default, Force=False):
+    # If token is already defined, leave it unless force, otherwise define with default.
+    if token not in input or Force:
+        input[token] = default
+
+def writeInput(input,inpfile):
+    lines=[]
+    for key in input:
+        lines = lines + getInpLines(input,key) 
+        
+    
+    # Print siesta input file
+    writeList(lines, inpfile)
+    
+def getInpLines(input,token):
+    lines=[]
+    block=False
+    endblock=' '
+    key = token[len('siesta.'):]
+    if key.startswith('Block.'):
+	block=True
+	key = key[len('Block.'):]
+
+    if token in input:
+        # If the first element is not a boolean, this contains values
+        # to be stored after keyword.
+        for element in input[token]: # Takes care of single and multi-line input.
+            lines.append(' '.join([str(value) for value in element])) 
+          	
+        if block:
+            lines.insert(0,'%block ' + key.upper())           # next line.
+            endblock = '%endblock ' + key.upper()
+        else:                                     # Most have arguments on the same line as keyword.
+            lines[0] = key.upper() + ' ' + lines[0]
+ 
+
+    # Add a blank line after each line
+    lines.append(endblock)
+    lines.append('')
+
+    return lines
 
 def writeList(lines, filename):
     with open(filename, 'w') as f:
         f.write('\n'.join(lines))
 
+def getICore(edge):
+    iCore = {'K':1, 'L1':2, 'L2':3, 'L3':4, 'M1':5, 'M2':6, 'M3':7, 'M4':8, 'M5':9}
+    if edge in iCore:
+        return iCore[edge]
+    else:
+        print "###########################################"
+        print "###########################################"
+        print "Error: Unknown edge name."
+        print "###########################################"
+        print "###########################################"
+        exit()
+
+        
+def runExecutable(execDir,workDir,executable,out,err):
+    # Runs executable located in execDir from working directory workDir.
+    # Tees stdout to file out in real-time, and stderr to file err.
+    print 'Running exectuable: ' + executable
+    # Modified by FDV:
+    # Adding the / to make the config more generic
+    # Modified by JJK to use os.path.join (even safer than above).
+    print execDir
+    p = subprocess.Popen([os.path.join(execDir,executable)], bufsize=0, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    while True:
+        pout = p.stdout.readline()
+        if pout == '' and p.poll() is not None:
+            break
+        if pout:
+            print pout.strip()
+            out.write(pout)
+
+    while True:
+        perr = p.stderr.readline()
+        if perr == '' and p.poll() is not None:
+            break
+        if perr:
+            print '###################################################'
+            print '###################################################'
+            print 'Error in executable: ' + executable
+            print perr.strip()
+            print '###################################################'
+            print '###################################################'
+            err.write(perr)
+
+            
+    p.wait()
+    
+    
+
+
+    
 def readColumns(filename, columns=[1,2]):
     # Read file and clear out comments
     with open(filename, 'r') as file:
@@ -238,7 +288,7 @@ atomicMasses = [
     92.90638,  95.93,     98.0,     101.07,    102.9055,  106.42,  107.8681,  112.412,
    114.82,    118.71,    121.76,    127.6,     126.90447, 131.29,  132.90544, 137.327,
    138.9054,  140.115,   140.90765, 144.24,    145.0,     150.36,  151.965,   157.25,    
-   158.92534, 162.5,     164.93032, 167.26,    168.93421, 173.04,  174.967,   178.49,
+   158.92534, 1612.5,     164.93032, 167.26,    168.93421, 173.04,  174.967,   178.49,
    180.9479,  183.85,    186.207,   190.2,     192.22,    195.08,  196.96654, 200.6, 
    204.3833,  207.2,     208.98037, 209.0,     210.0,     222.0,   223.0,     226.0,
    227.0,     232.0381,  231.04,    238.0289,  237.0,     244.0,   243.0,     247.0,
@@ -275,7 +325,9 @@ def getFeffAtomsFromCluster(input):
     #print input['absorbing_atom']
     #print uniqueAtoms
     #print ''.join(''.join([str(e),' ']) for e in input['cluster'][absorber][1:]) + ' 0'
-    feffAtoms = [[0.0, 0.0, 0.0, 0]]
+    #print input
+    feffAtoms = []
+    feffAtoms.append([0.0, 0.0, 0.0, 0])
     for line in atoms: 
         feffAtom = [ e - input['cluster'][absorber][i+1] for i,e in enumerate(line[1:4]) ]
         feffAtom.append(uniqueAtoms.index(line[0])+1)
@@ -428,29 +480,11 @@ def headerLines(input, lines):
                 lines.append('TITLE ' + t)
         lines.append('')
 
-def writeRIXSinp(input, feffinp='feffrixs.inp'):
-    for key in ['feff.potentials', 'feff.atoms']:
-        assert key in input
-    lines = []
-    lines.append(' * This feff9 input file was generated by corvus.feff.writeRIXSinp')
-    lines = lines + getInpLines(input,'feff.edge', 'K VAL')
-    lines = lines + getInpLines(input,'feff.rixs', '-1.d10')
-    lines = lines + getInpLines(input,'feff.xes', '-45 10 0.1')
-    lines = lines + getInpLines(input,'feff.xanes', '10')
-    lines = lines + getInpLines(input,'feff.corehole', 'RPA')
-    lines = lines + getInpLines(input,'feff.egrid', ['e_grid -10.0 10.0 0.05','k_grid last 5.0 0.025'])
-    lines = lines + getInpLines(input,'feff.exchange', '-2 0.0 -20.0 2')
-    lines = lines + getInpLines(input,'feff.scf', '5.0')
-    lines = lines + getInpLines(input,'feff.fms', '6.0')
+def writeXPSInput(input, siestainp='input.fdf'):
     
-    # loop over feff keys in input and write them to lines
-    feffKeys = [key for key in input if key.startswith('feff.')]
+    lines = []
+    #setInput(input,'feff.print',[[5,0,0,0,0,0]],Force=True)
 
-    for key in feffKeys:
-        lines = lines + getInpLines(input,key)
+    writeInput(input,siestainp)
 
-    lines = lines + getInpLines(input,'feff.end')
-    print lines
-    # Print feff input file
-    writeList(lines, feffinp)
 
