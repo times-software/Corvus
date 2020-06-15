@@ -4,6 +4,8 @@ target_list { feffXES }
 usehandlers { Feff }
 
 absorbing_atom{ 2 }
+feff.MPI.CMD{ mpirun }
+feff.MPI.ARGS{ -n 6 }
 
 cluster {
 Cl 1.3100	1.3100	1.3100	

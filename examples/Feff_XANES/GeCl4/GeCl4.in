@@ -1,7 +1,10 @@
 # CORVUS input
 
+
 target_list { feffXANES }
 usehandlers { Feff }
+feff.MPI.CMD { mpirun }
+feff.MPI.ARGS { -n 6 }
 
 feff.jumprm{ F }
 feff.title{Written by JJK}

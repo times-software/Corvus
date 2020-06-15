@@ -1,27 +1,39 @@
-# CORVUS input
+# CORVUS input for GeCl4
 
+# Set target property for fitting.
 target_list { fit }
+
+# Define what property we want to fit (XANES with FEFF).
 fit.target { feffXANES }
-fit.datafile { data.dat }
+
+# Let lmfit know where the experimental data is.
+fit.datafile { exp.nor.shift2 }
+
+# Define fit parameters.
 fit.parameters {
-   broadening -0.07
-   expansion  0.979
-   delta_e0 4.85
-   bond 0.2
+   broadening    0.0 
+   delta_e0      1.0
+   delta_efermi  0.0 
+   amplitude     1.0
+   expansion 1.0
 }
 
-fit.bond{ 2 1 }
 usehandlers { Feff }
-
+feff.egrid{
+e_grid -40 -10 0.5
+e_grid -10 10 0.1
+k_grid last 6 0.05
+} 
 feff.edge{ K }
 feff.scf{ 0.0 1 1 0.1 0 }
 
 absorbing_atom{ 2 }
 
+
 cluster {
-Cl 1.3100	1.3100	1.3100	
+Cl 1.2100	1.2100	1.2100	
 Ge 0.0		0.0	0.0
 Cl 1.2100	-1.2100	-1.2100	
-Cl -1.4100	1.4100	-1.4100	
-Cl -1.1100	-1.1100	1.1100	
+Cl -1.2100	1.2100	-1.2100	
+Cl -1.2100	-1.2100	1.2100	
 }

@@ -4,9 +4,13 @@ target_list {
 feffRIXS
 }
 
-usehandlers { FeffRixs }
+usehandlers { Feff }
+feff.MPI.CMD { mpirun }
+feff.MPI.ARGS { -n 6 }
 
-feff.edge{ K }
+feff.edge{ K VAL }
+feff.fms{ 3.0 0 }
+feff.scf{ 3.0 0 }
 spectral_broadening{ 0.7 }
 charge{ 1 }
 absorbing_atom{ 1 }

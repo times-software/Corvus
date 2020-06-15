@@ -11,6 +11,8 @@ pp_debug = pprint.PrettyPrinter(indent=4)
 
 # Define dictionary of implemented calculations
 implemented = {}
+fitconvfile=None
+firstcall=True
 strlistkey = lambda L:','.join(sorted(L))
 implemented['fit'] = {'type':'Exchange','out':['fit'],'cost':1,
                             'req':['fit.target','fit.datafile','fit.parameters'],'desc':'Calculate a property using fit handler.'}
@@ -116,6 +118,7 @@ class fit(Handler):
         for param in input['fit.parameters']:
             params.add(param[0],value=param[1])
 
+        #open('fitconvergence.dat', 'ab')
         # do fit, here with the default leastsq algorithm
         minner = Minimizer(Xanes2Min, params, fcn_args=(x, data, input, config, output))
         result = minner.minimize(epsfcn=0.0001)
@@ -124,13 +127,13 @@ class fit(Handler):
         report_fit(result)
 
         # try to plot results
-        try:
-            import matplotlib.pyplot as plt
-            plt.plot(x, data, 'k+')
-            plt.plot(x, final, 'r')
-            plt.show()
-        except ImportError:
-            pass
+        #try:
+        #    import matplotlib.pyplot as plt
+        #    plt.plot(x, data, 'k+')
+        #    plt.plot(x, final, 'r')
+        #    plt.show()
+        #except ImportError:
+        #    pass
 
     @staticmethod
     def cleanup(config):
@@ -143,8 +146,11 @@ def Xanes2Min(params, x, data, input, config, output):
     import copy
     Xanes2Min.count += 1
     input2 = copy.deepcopy(input)
+
     #print params.valuesdict()
     energy_shift = 0.0
+    atoms = input['cluster']
+    amp = 1.0
     for param in params.values():
         
         # Use case insensitive equal.
@@ -152,8 +158,7 @@ def Xanes2Min(params, x, data, input, config, output):
             # Uniform expansion of coordinates in cluster.
             expansion = param.value
         
-            atoms = [[f[0],expansion*f[1],expansion*f[2],expansion*f[3]] for f in input['cluster']]
-            input2['cluster'] = atoms
+            atoms = [[f[0],expansion*f[1],expansion*f[2],expansion*f[3]] for f in atoms]
 
         elif param.name.lower() == 'broadening':
             # Lorentzian broadening applied to spectrum.
@@ -168,24 +173,25 @@ def Xanes2Min(params, x, data, input, config, output):
             # Find vector to move along (r_2 - r_1)/r12
             # Get the two atoms defining the bond vector.
             bond = param.value
-            atoms = [item-1 for sublist in input2['fit.bond'] for item in sublist]
-            vec = [ input2['cluster'][atoms[1]][i] - input2['cluster'][atoms[0]][i] for i in [1,2,3]]
+            bond_atoms = [item-1 for sublist in input2['fit.bond'] for item in sublist]
+            vec = [ input2['cluster'][bond_atoms[1]][i] - input2['cluster'][bond_atoms[0]][i] for i in [1,2,3]]
             vecSquared = [ vec[i]**2 for i in [0,1,2] ] 
             norm = math.sqrt(sum(vecSquared))
             vec = [ vec[i]/norm*bond for i in [0,1,2] ]
-            for atom in atoms[1:]:
+            for atom in bond_atoms[1:]:
                 for i in [1,2,3]:
-                    input2['cluster'][atom][i] += vec[i-1]
+                    atoms[atom][i] += vec[i-1]
 
         elif param.name.lower() == 'delta_efermi':
-            delta_ef = param.value
-            input2['feff.exchange'][1] = delta_ef
-            
+            input2['fermi_shift'] = [[param.value]]
+        elif param.name.lower() == 'amplitude':
+            amp = param.value
         else:
             print 'WARNING: UNKOWN PARAMETER ' + param.name + '!'
             print 'STOPPING NOW!!!'
             exit()
         
+    input2['cluster'] = atoms
     # Need a copy of config to start wf over
     config2 = copy.deepcopy(config)
     
@@ -211,12 +217,38 @@ def Xanes2Min(params, x, data, input, config, output):
             generateAndRunWorkflow(config2, input2,targetList)
     
             x0=input2[input['fit.target'][0][0]][:,0]
-            y=input2[input['fit.target'][0][0]][:,1]
+            y=input2[input['fit.target'][0][0]][:,1]*amp
 
             # If there is an energy shift, shift the x-axis before
             # interpolating onto data grid
             x0 = x0 + energy_shift
-            yterp = np.interp(x, x0, y)
+            # On first call, check if experimental data is outside calculated
+            # data, and redefine experimental data within range.
+            global firstcall
+            global fitconvfile
+            if firstcall:
+               print 'Opening convergence file'
+               os.remove('fitconvergence.dat')
+               fitconvfile=open('fitconvergence.dat', 'a')
+               np.savetxt(fitconvfile,np.array([x,data]).transpose())
+               fitconvfile.write('\n')   
+               firstcall = False
+
+            yterp = np.interp(x, x0, y, left = 0.0, right = 0.0)
+             
+            np.savetxt(fitconvfile,np.array([x,yterp]).transpose())
+            fitconvfile.write('\n')
+
+            i = 0
+            residual = np.zeros(yterp.size)
+            for yi in yterp:
+               if (x[i] >= x0[0]) and (x[i] <= x0[-1]):
+                 residual[i] = yi - data[i] 
+               else:
+                 residual[i] = 0.0
+               i = i + 1
+
+            #exit()
             # JK - Debug
             #print "Model"
             #print y
@@ -224,6 +256,6 @@ def Xanes2Min(params, x, data, input, config, output):
             #print data
 
             #exit()
-            return yterp - data
+            return residual
 
 Xanes2Min.count=0

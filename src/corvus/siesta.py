@@ -88,7 +88,6 @@ class Siesta(Handler):
     # or not. 
     @staticmethod
     def run(config, input, output):
-        print "JOSH"
         
         # set atoms and potentials
 
@@ -109,6 +108,7 @@ class Siesta(Handler):
         # Set directory for this exchange
         dir = config['xcDir']
 
+        
         # Set input file
         inpf = os.path.join(dir, 'input.fdf')
 
@@ -117,18 +117,25 @@ class Siesta(Handler):
             if (target == 'siestaCoreResponse'):               
                 # Set output and error files
                 with open(os.path.join(dir, 'corvus.SIESTA.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.SIESTA.stderr'), 'w') as err:
-
+                    # Get pseudopotentials
+                     
                     # Write input file for FEFF.
                     writeXPSInput(siestaInput,inpf)
-
+                    
+                    # Copy pseudos to dir
+                    for file in os.listdir("."):
+                        if file.endswith(".psf"):
+                           shutil.copy(file,dir)
 
                     # Loop over executables: This is specific to feff. Other codes
                     # will more likely have only one executable.
-                    executables = ['siesta']
+                    executables = siestaInput.get('siesta.MPI.CMD',[['siesta']])[0][0]
+                    args = siestaInput.get('siesta.MPI.ARGS')[0] + [os.path.join(siestadir,'siesta')]
+                    iExec = 0
                     for executable in executables:
-                        print siestadir
-                        runExecutable(siestadir,dir,executable,out,err)
+                        runExecutable('',dir,executable,args,out,err)
 
+                
                 # For now, I am only passing the directory.
                 print 'Setting output'
                 output[target] = dir
@@ -208,15 +215,17 @@ def getICore(edge):
         exit()
 
         
-def runExecutable(execDir,workDir,executable,out,err):
+def runExecutable(execDir,workDir,executable, args,out,err):
     # Runs executable located in execDir from working directory workDir.
     # Tees stdout to file out in real-time, and stderr to file err.
     print 'Running exectuable: ' + executable
     # Modified by FDV:
     # Adding the / to make the config more generic
     # Modified by JJK to use os.path.join (even safer than above).
-    print execDir
-    p = subprocess.Popen([os.path.join(execDir,executable)], bufsize=0, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    execList = [os.path.join(execDir,executable)] + args
+    inFile = open(os.path.join(workDir,'input.fdf'))
+    print execList
+    p = subprocess.Popen(execList, bufsize=0, cwd=workDir, stdin=inFile, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     while True:
         pout = p.stdout.readline()
         if pout == '' and p.poll() is not None:
