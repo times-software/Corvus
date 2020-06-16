@@ -216,9 +216,9 @@ def Xanes2Min(params, x, data, input, config, output):
             # generate and run the workflow for target.
             generateAndRunWorkflow(config2, input2,targetList)
     
-            x0=input2[input['fit.target'][0][0]][:,0]
-            y=input2[input['fit.target'][0][0]][:,1]*amp
-
+            print targetList[0][0]
+            x0,y=np.array(input2[input['fit.target'][0][0]])
+            y = y*amp
             # If there is an energy shift, shift the x-axis before
             # interpolating onto data grid
             x0 = x0 + energy_shift
