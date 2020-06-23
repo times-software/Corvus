@@ -1,5 +1,5 @@
 import sys, os
-
+import imp
 # Debug: FDV
 import pprint
 pp_debug = pprint.PrettyPrinter(indent=4)
@@ -7,21 +7,52 @@ pp_debug = pprint.PrettyPrinter(indent=4)
 # Define the available handlers by hand here
 # Note FDV: There should be a way to do this automatically, but can't think of
 # one right now
-def availableHandlers():
-    from abinit import Abinit
-    from dmdw import Dmdw
-    from feff import Feff
-    #from feffrixs import FeffRixs
-    from vasp import Vasp
-    from nwchem import Nwchem
-    from orca import Orca
-    from siesta import Siesta
-    from fit import fit
+def availableHandlers(config):
+    # Need to check which of these is defined in config file befor importing
+    # and adding to list of available handlers. 
+    handlers = []
+    if config['abinit'] and config['anaddb'] and config['mrgddb'] and config['mrggkk']:
+        from abinit import Abinit
+        handlers = handlers + [Abinit]
+    if config['dmdw']:
+        from dmdw import Dmdw
+        handlers = handlers + [Dmdw]
+    if config['feff']:
+        from feff import Feff
+        handlers = handlers + [Feff]
+    if config['vasp_gam'] and config['vasp_std']:
+        from vasp import Vasp
+        handlers = handlers + [Vasp]
+    if config['nwchem']:
+        from nwchem import Nwchem
+        handlers = handlers + [Nwchem]
+    if config['orca']: 
+        # JK - Note that there is another command named orca on many linux systems.
+        # Need to figure out how to check that this is indeed orca electronic structure code.
+        from orca import Orca
+        handlers = handlers + [Orca]
+    if config['siesta']:
+        from siesta import Siesta
+        handlers = handlers + [Siesta]
+    # import only if module lmfit exists (fit dependency). Should probably
+    # do this with numpy and scipy as well. 
+    try:
+        imp.find_module('lmfit')
+        lmfitInstalled = True
+    except ImportError:
+        print("Warning: lmfit not found. fit handler will be disabled.")
+        lmfitInstalled = False
+        pass
+
+    if lmfitInstalled:
+        from fit import fit
+        handlers = handlers + [fit]
+
+    return handlers
 
 # Commenting out Vasp for now since we have no content in the manual for it for
 # now. I will readd once I include Scott's Handler.
 #   return [Feff, FeffRixs, Dmdw, Abinit, Vasp, Nwchem, Orca]
-    return [Feff, Dmdw, Abinit, Nwchem, Orca,Siesta, fit]
 
 def configure(config):
     from ConfigParser import RawConfigParser
@@ -102,7 +133,9 @@ def initializeSystem(config, system):
 # Basic Workflow Generator
 # JK - added system as input to generateWorkflow to accomodate handlers that call other 
 # handlers or workflows such as "fit" or "average".
-def generateWorkflow(target, handlers, system, desc=''):
+# JK - added config as input to allow use of paths to check for necessary executables
+# before adding handlers to available handler list.
+def generateWorkflow(target, handlers, system, config, desc=''):
     from structures import Workflow
 
 # Note FDV: Moving to top so this is available throughout
@@ -112,7 +145,8 @@ def generateWorkflow(target, handlers, system, desc=''):
     #availableHandlers = [Abinit, Dmdw]
 # From the handlers list we generate a mapping dictionary to identify the 
 # handlers requested by the user
-    availableHandlers_map = { h.__name__:h for h in availableHandlers() }
+    availHandlers = availableHandlers(config)
+    availableHandlers_map = { h.__name__:h for h in availHandlers }
 # Debug: FDV
     #pp_debug.pprint(availableHandlers_map)
 #   sys.exit()
@@ -173,25 +207,42 @@ def generateWorkflow(target, handlers, system, desc=''):
        targets = set([t])
        while len(targets) > 0:
            noMatch = True
-           for h in availableHandlers():
-               #print "Checking Handler: " # Debug JJK
+           # JK - Make sure there is some handler that can produce each target.
+           #for target in targets:
+           #    handler_not_found = True
+           #    for h in availHandlers:
+           #        if h.canProduce(target):
+           #            handler_not_found = False
+           #    if handler_not_found:
+           #        print("No handler to produce target:", target)
+           #        print("Install the correct software if it exists.")
+           #        sys.exit()
+
+
+
+           for h in availHandlers:
+               #print "Checking Handler: ", h # Debug JJK
                #print h # Debug JJK
-               htargets = [t for t in targets if h.canProduce(t)]
+               htargets = [target for target in targets if h.canProduce(target)]
                #print htargets # Debug JJK
                #print "Done checking handler." # Debug JJK
                if htargets:
                    noMatch = False
                    for subset in reversed(sorted(subs(htargets), key=len)):
                        l = list(subset)
+                       print l, h
                        if h.canProduce(l):
                            workflow.addExchangeAt(0, h.sequenceFor(l,system))
                            # h.setDefaults(input,h)
                            targets.difference_update(subset)
                            targets.update(set(workflow.getRequiredInput()))
+                           print(targets)
                            break
 
            if noMatch:
                break
+
+       print("243")
 #-----------------------------------------------------------------------------
 
 # Debug: FDV
@@ -292,16 +343,16 @@ def generateAndRunWorkflow(config, system, targetList):
       sys.exit()
 
     autodesc = 'Calculate ' + ', '.join(targetList[0])
-    workflow = generateWorkflow(targetList, handlerList, system, desc=autodesc)
+    workflow = generateWorkflow(targetList, handlerList, system, config, desc=autodesc)
 
-    # Check for any missing user input
+    # Check for any missing user input or handlers.
     required = set(workflow.getRequiredInput())
     missing = list(required.difference(set(system.keys())))
     
     #config2=copy.deepcopy(config)
     # Create a copy of config
     if len(missing) > 0:
-        printAndExit('Error: missing user input for ' + str(missing))
+        printAndExit('Error: missing user input or handler for ' + str(missing))
 
     i = 0
     while i < len(workflow.sequence):
@@ -415,6 +466,7 @@ def oneshot(argv):
 
     # Update System with any user input
     initializeSystem(config, system)
+    #print(system)
 #DASb
     #print 'system = ', system
 #DASe
@@ -456,7 +508,7 @@ def oneshot(argv):
     elif not resume:
         # Create Workflow
         autodesc = 'Calculate ' + ', '.join(targetList[0])
-        workflow = generateWorkflow(targetList, handlerList, system, desc=autodesc)
+        workflow = generateWorkflow(targetList, handlerList, system, config, desc=autodesc)
         print ''
         print ''
         print '#########################'
