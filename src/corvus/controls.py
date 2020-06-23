@@ -230,7 +230,7 @@ def generateWorkflow(target, handlers, system, config, desc=''):
                    noMatch = False
                    for subset in reversed(sorted(subs(htargets), key=len)):
                        l = list(subset)
-                       print l, h
+                       print(l, h)
                        if h.canProduce(l):
                            workflow.addExchangeAt(0, h.sequenceFor(l,system))
                            # h.setDefaults(input,h)
@@ -304,17 +304,17 @@ def which(program, search=None):
     return None
 
 def usage():
-    print "Usage: corvus.py [options]"
-    print "       Possible options:"
-#uncommented print line below, Krsna
-    print "         -t, --target      [comma-separated list]"
-    print "         -w, --workflow    [filename]"
-    print "         -i, --input       [filename]"  
-    print "         -c, --checkpoints"  
-    print "         -r, --resume"  
-    print "         -s, --save        [filename]"  
-    print "             --prefix      [alphanumeric string (-_. okay)]"
-    print "             --parallelrun [command string]"
+    print("Usage: corvus.py [options]")
+    print("       Possible options:")
+#uncommented print(line below, Krsna)
+    print("         -t, --target      [comma-separated list]")
+    print("         -w, --workflow    [filename]")
+    print("         -i, --input       [filename]"  )
+    print("         -c, --checkpoints"  )
+    print("         -r, --resume"  )
+    print("         -s, --save        [filename]"  )
+    print("             --prefix      [alphanumeric string (-_. okay)]")
+    print("             --parallelrun [command string]")
 
 def checkFile(filename):
     if not os.path.exists(filename):
@@ -338,7 +338,7 @@ def generateAndRunWorkflow(config, system, targetList):
     if 'usehandlers' in system.keys():
       handlerList = system['usehandlers'][0]
     else:
-      print 'Provide the handler list to be used in this calculation'
+      print('Provide the handler list to be used in this calculation')
       sys.exit()
 
     autodesc = 'Calculate ' + ', '.join(targetList[0])
@@ -393,7 +393,7 @@ def oneshot(argv):
     try:
         opts, args = getopt.getopt(argv[1:], shortopts, longopts)
     except getopt.GetoptError as err:
-        print str(err)
+        print(str(err))
         usage()
         sys.exit(2)
 
@@ -479,7 +479,7 @@ def oneshot(argv):
     if 'target_list' in system.keys():
       targetList = system['target_list']
     else:
-      print 'Provide target properties or Workflow'
+      print('Provide target properties or Workflow')
       sys.exit()
 
 # Added by FDV
@@ -488,7 +488,7 @@ def oneshot(argv):
     if 'usehandlers' in system.keys():
       handlerList = system['usehandlers'][0]
     else:
-      print 'Provide the handler list to be used in this calculation'
+      print('Provide the handler list to be used in this calculation')
       sys.exit()
 
 # Here we should probably add a check to see if the target list if empty, but
@@ -508,17 +508,17 @@ def oneshot(argv):
         # Create Workflow
         autodesc = 'Calculate ' + ', '.join(targetList[0])
         workflow = generateWorkflow(targetList, handlerList, system, config, desc=autodesc)
-        print ''
-        print ''
-        print '#########################'
-        print '    WORKFLOW'
-        print '#########################'
-        print workflow
-        print '#########################'
-        print '  END WORKFLOW'
-        print '#########################'
-        print ''
-        print ''
+        print('')
+        print('')
+        print('#########################')
+        print('    WORKFLOW')
+        print('#########################')
+        print(workflow)
+        print('#########################')
+        print('  END WORKFLOW')
+        print('#########################')
+        print('')
+        print('')
 
 # Debug: FDV
 #Krsna uncommented line below

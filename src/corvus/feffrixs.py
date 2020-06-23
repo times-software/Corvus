@@ -93,7 +93,7 @@ class FeffRixs(Handler):
                # First generate any data that is needed from input
                input['feff.atoms']      = getFeffAtomsFromCluster(input)
                input['feff.potentials'] = getFeffPotentialsFromCluster(input)
-               print 'Producing feffRIXS using FEFF.' # Debug JJK
+               print('Producing feffRIXS using FEFF.') # Debug JJK)
                dir = config['xcDir']
                inpf = os.path.join(dir, 'feffrixs.inp')
                writeRIXSinp(input, feffinp=inpf)
@@ -203,7 +203,7 @@ def readColumns(filename, columns=[1,2]):
     try:
         cleanStr = comments.transformString(cleanStr)
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     # Define grammar for ncols of data based on number of entries in first row
     floating = pp.Word(pp.nums + ".+-E").setParseAction(lambda t: float(t[0]))
@@ -220,7 +220,7 @@ def readColumns(filename, columns=[1,2]):
     try:
         data = text.parseString(cleanStr).asList()
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     cols = map(list, zip(*data))
     return [cols[i-1] for i in columns]
@@ -344,7 +344,7 @@ def abcell2atoms(input):
         rprim = listVectors.parseString(rprim).asList()[0]
         rprim = [map(float, v) for v in rprim]
     except pp.ParseException as pe:
-        print "Parsing Error using pyparsing: invalid input:", pe
+        print("Parsing Error using pyparsing: invalid input:", pe)
     # Specify a single lmax for each atomic species
     if 'lmax' in input:
         lmax = map(int, expandedList(input['lmax'], length=input['natom']))
@@ -450,7 +450,7 @@ def writeRIXSinp(input, feffinp='feffrixs.inp'):
         lines = lines + getInpLines(input,key)
 
     lines = lines + getInpLines(input,'feff.end')
-    print lines
+    print(lines)
     # Print feff input file
     writeList(lines, feffinp)
 

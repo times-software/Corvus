@@ -197,7 +197,7 @@ def readDym(dymFilename):
         try:
             data = text.parseString(f.read()).asList()
         except pp.ParseException as pe:
-            print 'Parsing Error using pyparsing: invalid input:', pe
+            print('Parsing Error using pyparsing: invalid input:', pe)
             sys.exit()
 
     # Construct dym object
@@ -224,7 +224,7 @@ def readDym(dymFilename):
     try:
         data = typeSpecific.parseString(data[6]).asList()
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     
     # Store type-specific information
@@ -252,7 +252,7 @@ def readSpecFn(filename):
     try:
         data = text.parseString(f.read()).asList()
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     f.close()
     cols = map(list, zip(*data))
@@ -269,7 +269,7 @@ def combineReImSE(reFilename, imFilename):
         rePts = text.parseString(reFile.read()).asList()
         imPts = text.parseString(imFile.read()).asList()
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     reFile.close()
     imFile.close()
@@ -311,7 +311,7 @@ def read_s2(filename, tempgrid):
             cleanStr = grammar.transformString(cleanStr)
         ppresults = data.parseString(cleanStr).asList()
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     # Format Results
     results = {}
@@ -360,7 +360,7 @@ def read_u2(filename, tempgrid):
             cleanStr = grammar.transformString(cleanStr)
         ppresults = data.parseString(cleanStr).asList()
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     # Format Results
     results = {}
@@ -392,7 +392,7 @@ def readVFE(filename):
             cleanStr = grammar.transformString(cleanStr)
         ppresults = data.parseString(cleanStr).asList()
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     # Format Results
     results = {}
@@ -490,8 +490,8 @@ def generateInput(config, input, output):
     else:
         return "DMDW Input Error: unrecognized property flag: " + propflag
 
-    print 'lines'
-    print lines
+    print('lines')
+    print(lines)
     writeList(lines, os.path.join(dir, dmdwInputFile))
     return [dmdwInputFile]
 

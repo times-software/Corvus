@@ -268,7 +268,7 @@ def baseInput(input):
 # Create a list of unique atom type labels
     Labels = [ Line[0] for Line in input['pspfiles'] ]
     if len(Labels) - len(list(set(Labels))) != 0:
-        print 'Abinit Handler Error: Repeated labels in pspfiles', Labels
+        print('Abinit Handler Error: Repeated labels in pspfiles', Labels)
         sys.exit()
 
 # Create a dictionary to relate atom labels to atom type indices
@@ -439,7 +439,7 @@ def getacell(file):
     try:
         a = acell.parseString(f.read()).asList()[0]
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     f.close()
     return '  '.join(a)
@@ -465,7 +465,7 @@ def getU(file, addDS=''):
     try:
         u = etotal.parseString(f.read()).asList()[0]
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     f.close()
     return float(u)
@@ -478,7 +478,7 @@ def kgrid2qgrid(file):
     try:
         pts = kpt.parseString(f.read()).asList()
     except pp.ParseException as pe:
-        print "Parsing Error using pyparsing: invalid input:", pe
+        print("Parsing Error using pyparsing: invalid input:", pe)
         sys.exit()
     f.close()
     qpts = []
@@ -494,7 +494,7 @@ def anaddb2cols(file):
     try:
         data = text.parseString(f.read()).asList()
     except pp.ParseException as pe:
-        print "Parsing Error using pyparsing: invalid input:", pe
+        print("Parsing Error using pyparsing: invalid input:", pe)
         sys.exit()
     f.close() 
     return map(list, zip(*data))
@@ -509,7 +509,7 @@ def eli2couplings(filePrefix):
         pdsRow = text.parseString(pdsFile.read()).asList()
         a2fRow = text.parseString(a2fFile.read()).asList()
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     pdsFile.close()
     a2fFile.close()
@@ -536,7 +536,7 @@ def ifc2dym(file, input):
     try:
         data = text.parseString(f.read()).asList()
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     f.close()
     natom = int(data[-1][0])

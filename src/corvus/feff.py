@@ -715,19 +715,19 @@ def getICore(edge):
     if edge in iCore:
         return iCore[edge]
     else:
-        print "###########################################"
-        print "###########################################"
-        print "Error: Unknown edge name."
-        print "###########################################"
-        print "###########################################"
-        exit()
+        print("###########################################")
+        print("###########################################")
+        print("Error: Unknown edge name.")
+        print("###########################################")
+        print("###########################################")
+        sys.exit()
 
 
 
 def runExecutable(execDir,workDir,executable, args,out,err):
     # Runs executable located in execDir from working directory workDir.
     # Tees stdout to file out in real-time, and stderr to file err.
-    print 'Running exectuable: ' + executable[0] + ' ' + ' '.join(args)
+    print('Running exectuable: ' + executable[0] + ' ' + ' '.join(args))
     # Modified by FDV:
     # Adding the / to make the config more generic
     # Modified by JJK to use os.path.join (even safer than above).
@@ -738,7 +738,7 @@ def runExecutable(execDir,workDir,executable, args,out,err):
         if pout == '' and p.poll() is not None:
             break
         if pout:
-            print pout.strip()
+            print(pout.strip())
             out.write(pout)
 
     while True:
@@ -746,12 +746,12 @@ def runExecutable(execDir,workDir,executable, args,out,err):
         if perr == '' and p.poll() is not None:
             break
         if perr:
-            print '###################################################'
-            print '###################################################'
-            print 'Error in executable: ' + executable[0]
-            print perr.strip()
-            print '###################################################'
-            print '###################################################'
+            print('###################################################')
+            print('###################################################')
+            print('Error in executable: ' + executable[0])
+            print(perr.strip())
+            print('###################################################')
+            print('###################################################')
             err.write(perr)
 
 
@@ -766,7 +766,7 @@ def readColumns(filename, columns=[1,2]):
     try:
         cleanStr = comments.transformString(cleanStr)
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     # Define grammar for ncols of data based on number of entries in first row
     floating = pp.Word(pp.nums + ".+-E").setParseAction(lambda t: float(t[0]))
@@ -783,7 +783,7 @@ def readColumns(filename, columns=[1,2]):
     try:
         data = text.parseString(cleanStr).asList()
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     cols = map(list, zip(*data))
     return [cols[i-1] for i in columns]
@@ -948,7 +948,7 @@ def abcell2atoms(input):
         rprim = listVectors.parseString(rprim).asList()[0]
         rprim = [map(float, v) for v in rprim]
     except pp.ParseException as pe:
-        print "Parsing Error using pyparsing: invalid input:", pe
+        print("Parsing Error using pyparsing: invalid input:", pe)
     # Specify a single lmax for each atomic species
     if 'lmax' in input:
         lmax = map(int, expandedList(input['lmax'], length=input['natom']))

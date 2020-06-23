@@ -91,7 +91,7 @@ class Orca(Handler):
         err = open(os.path.join(dir, 'corvus.ORCA.stderr'), 'w')
 
         if set(output) >= {'OptimizedStructure'}:
-            print 'Optimizing strucure using ORCA.' # Debug JJK
+            print('Optimizing strucure using ORCA.') # Debug JJK
             inpf = os.path.join(dir, Orca_In_File_Name)
             writeOptimizeStructureInp(input, orcainp=inpf)
             files = inpf
@@ -161,7 +161,7 @@ def readColumns(filename, columns=[1,2]):
     try:
         cleanStr = comments.transformString(cleanStr)
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     # Define grammar for ncols of data based on number of entries in first row
     floating = pp.Word(pp.nums + ".+-E").setParseAction(lambda t: float(t[0]))
@@ -178,7 +178,7 @@ def readColumns(filename, columns=[1,2]):
     try:
         data = text.parseString(cleanStr).asList()
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     cols = map(list, zip(*data))
     return [cols[i-1] for i in columns]

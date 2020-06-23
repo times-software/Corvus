@@ -218,7 +218,7 @@ def parse(configFile, inputFile, mode=defaultMode):
     extra = list(set(inputDict.keys()) - set(configDict.keys()))
     if extra: 
 #       print 'Parsnip Warning: unsupported option(s):', extra
-        print 'Parsnip Error: unsupported option(s):', extra
+        print('Parsnip Error: unsupported option(s):', extra)
         sys.exit()
 
 # NOTE FDV: Here we make a change and only initialize with the default if
@@ -310,14 +310,14 @@ def formatInputs(parsedInputs,formatsDict):
 
 # Make sure that the first format indicator is not 'repeat data'
     if format.split()[0] == RepData_Indicat:
-      print 'Parsnip Error: First format indicator in ' + \
-        key + ' can not be \'' + RepData_Indicat + '\''
+      print('Parsnip Error: First format indicator in ' + \
+        key + ' can not be \'' + RepData_Indicat + '\'')
       sys.exit() 
 
 # Make sure that the format is allowed
     if not set(format.split()).issubset(Allowed_Formats):
-      print 'Parsnip Error: Unrecognized format type ' + \
-         ' for token ' + key
+      print('Parsnip Error: Unrecognized format type ' + \
+         ' for token ' + key)
       sys.exit() 
 
 # Loop over the parsedInputs dictionary to process each key:value pair
@@ -330,7 +330,7 @@ def formatInputs(parsedInputs,formatsDict):
 # Before we do anything, make sure this key is present in the formats. If it
 # is not, then we print a warning and just keep the original format.
     if key not in formatsDict.keys():
-      print 'Parsnip Warning: no format found for ' + key + ', keeping as is.'
+      print('Parsnip Warning: no format found for ' + key + ', keeping as is.')
       continue
 
 # We also check to see if the format associated with this key is 'P', or pass.
@@ -354,8 +354,8 @@ def formatInputs(parsedInputs,formatsDict):
 
 # Check if any lines in in the format are empty, just in case
     if not all(format_list):
-      print 'Parsnip Error: Missing format type' + \
-         ' for token ' + key
+      print('Parsnip Error: Missing format type' + \
+         ' for token ' + key)
       sys.exit() 
 
 # Check if we have RepData in the last line.
@@ -365,7 +365,7 @@ def formatInputs(parsedInputs,formatsDict):
 
 # Check we have the minimum number of values to put into the listed formats
       if len(value_list) < len(format_list)-1:
-        print 'Parsnip Error: Not enough values for format of token ' + key
+        print('Parsnip Error: Not enough values for format of token ' + key)
         sys.exit() 
       
 # Get the number of times we have to repeat the last format line
@@ -381,7 +381,7 @@ def formatInputs(parsedInputs,formatsDict):
 # This is obvious for the ones we created for a repeated format, but might not
 # be the case for defined length formats
     if ( len(format_list) != len(value_list) ):
-      print 'Parsnip Error: Value for ' + key + ' has wrong format.'
+      print('Parsnip Error: Value for ' + key + ' has wrong format.')
       sys.exit()
 
 # After this we are ready to process the values line by line
@@ -410,7 +410,7 @@ def formatLine(key,value_line,format_list):
 
 # Check we have the minimum number of values to put into the listed formats
     if len(value_list) < len(format_list)-1:
-      print 'Parsnip Error: Not enough values for format of token ' + key
+      print('Parsnip Error: Not enough values for format of token ' + key)
       sys.exit() 
       
 # Get the number of times we have to repeat the last format
@@ -424,7 +424,7 @@ def formatLine(key,value_line,format_list):
 
 # Check if the current value and format lists have the same number of elements
   if len(value_list) != len(format_list):
-    print 'Parsnip Error: Value for ' + key + ' has wrong format.'
+    print('Parsnip Error: Value for ' + key + ' has wrong format.')
     sys.exit()
 
 # After this we are ready to process the values element by element
@@ -433,7 +433,7 @@ def formatLine(key,value_line,format_list):
       new_value = Typ_Conv_Funcs[format](value)
       conv_line.append(new_value)
     except ValueError:
-      print 'Parsnip Error: Value ' + value + ' for ' + key + ' has wrong format.'
+      print('Parsnip Error: Value ' + value + ' for ' + key + ' has wrong format.')
       sys.exit()
 
   return conv_line
@@ -447,7 +447,7 @@ def readConfig(file):
         cleanConfig = commentGrammar.transformString(file.read())
         return configFile.parseString(cleanConfig)
     except ParseException as pe:
-        print "Parsnip Error: invalid input:", pe
+        print("Parsnip Error: invalid input:", pe)
 
 def readConfig_for_Doc(file):
 
@@ -475,7 +475,7 @@ def readConfig_for_Doc(file):
         cleanConfig = commentGrammar.transformString(file.read())
         return configFile.parseString(cleanConfig)
     except ParseException as pe:
-        print "Parsnip Error: invalid input:", pe
+        print("Parsnip Error: invalid input:", pe)
 
 def parseMetaData(String):
 
@@ -506,7 +506,7 @@ Platform: UNKNOWN
     try:
         return metadataGrammar.parseString(String).asDict()
     except ParseException as pe:
-        print "Parsnip Error: invalid input in parseMetaData:\n", pe
+        print("Parsnip Error: invalid input in parseMetaData:\n", pe)
 
 def readInput(file):
     # Here we do some preprocessing of the input file
@@ -534,10 +534,10 @@ def readInput(file):
         # Return parsed dictionary            
         return inputFile.parseString(cleanInput)
     except ParseException as pe:
-        print "Parsnip Error: invalid input:", pe 
+        print("Parsnip Error: invalid input:", pe )
 
 def usage():
-    print "Usage: python parsnip.py -c <configfile> -i <inputfile>"
+    print("Usage: python parsnip.py -c <configfile> -i <inputfile>")
 
 def main(argv):
     # Parse command line arguments
@@ -546,7 +546,7 @@ def main(argv):
         longopts = ['config=', 'input=', 'mode=']
         opts, args = getopt.getopt(argv[1:], shortopts, longopts)
     except getopt.GetoptError as err:
-        print str(err)
+        print(str(err))
         usage()
         sys.exit(2)
     if not opts:

@@ -84,8 +84,8 @@ class fit(Handler):
                    #exit()
                    break
         else:
-            print "Missing user input: fit.target is required to run a fit."
-            exit()
+            print("Missing user input: fit.target is required to run a fit.")
+            sys.exit()
         
         if f('type') is 'Exchange':
             return Exchange(fit, required, f('out'), cost=f('cost'), desc=f('desc'))
@@ -187,8 +187,8 @@ def Xanes2Min(params, x, data, input, config, output):
         elif param.name.lower() == 'amplitude':
             amp = param.value
         else:
-            print 'WARNING: UNKOWN PARAMETER ' + param.name + '!'
-            print 'STOPPING NOW!!!'
+            print('WARNING: UNKOWN PARAMETER ' + param.name + '!')
+            print('STOPPING NOW!!!')
             exit()
         
     input2['cluster'] = atoms
@@ -216,7 +216,7 @@ def Xanes2Min(params, x, data, input, config, output):
             # generate and run the workflow for target.
             generateAndRunWorkflow(config2, input2,targetList)
     
-            print targetList[0][0]
+            print(targetList[0][0])
             x0,y=np.array(input2[input['fit.target'][0][0]])
             y = y*amp
             # If there is an energy shift, shift the x-axis before
@@ -227,7 +227,7 @@ def Xanes2Min(params, x, data, input, config, output):
             global firstcall
             global fitconvfile
             if firstcall:
-               print 'Opening convergence file'
+               print('Opening convergence file')
                os.remove('fitconvergence.dat')
                fitconvfile=open('fitconvergence.dat', 'a')
                np.savetxt(fitconvfile,np.array([x,data]).transpose())

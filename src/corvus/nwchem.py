@@ -120,13 +120,13 @@ class Nwchem(Handler):
 # Modified by FDV:
 # Bringing generateInput into run
         files = generateInput(config, input, output)
-#       print files
+#       print(files)
 #       sys.exit()
         # Run by looping through input files
         dir = config['xcDir']
         for f in files:
-	    print f
-	    print 'hellofile'
+	    print(f)
+	    print('hellofile')
             (num, tool, desc, suffix) = filesGrammar.parseString(f)
             if config['parallelRun']:
                 if tool == 'nwchem':
@@ -139,10 +139,10 @@ class Nwchem(Handler):
                 
             inp = open(os.path.join(dir, f), 'r')
             log = open(os.path.join(dir, '.'.join([num,tool,desc,'out'])), 'w')
-	    print executable,dir,log
+	    print(executable,dir,log)
             p = subprocess.Popen(executable, cwd=dir, stdin=None, stdout=log, stderr=log)
-	    print 'hello2'
-	    print files
+	    print('hello2')
+	    print(files)
             p.wait()
             inp.close()
             log.close()
@@ -316,7 +316,7 @@ def baseInput(input):
 	    basisset = basisH + '\n' + basiselse + '\n' + basisX
 	elif X is None:
 	    basisset = basisH + '\n' + basiselse
-	    print 'Must specify target element, if no energy window, for x-ray spectroscopy'
+	    print('Must specify target element, if no energy window, for x-ray spectroscopy')
     elif target == 'xas_avg':
         basisH = 'H library "def2-svp"'
 	basiselse = '* library "def2-svpd"'
@@ -327,7 +327,7 @@ def baseInput(input):
 	    basisset = basisH + '\n' + basiselse + '\n' + basisX
 	elif X is None:
 	    basisset = basisH + '\n' + basiselse
-	    print 'Must specify target element, if no energy window, for x-ray spectroscopy'
+	    print('Must specify target element, if no energy window, for x-ray spectroscopy')
     elif target == 'opt_xas':
         basisH = 'H library "def2-svp"'
 	basiselse = '* library "def2-svpd"'
@@ -338,7 +338,7 @@ def baseInput(input):
 	    basisset = basisH + '\n' + basiselse + '\n' + basisX
 	elif X is None:
 	    basisset = basisH + '\n' + basiselse
-	    print 'Must specify target element, if no energy window, for x-ray spectroscopy'
+	    print('Must specify target element, if no energy window, for x-ray spectroscopy')
     elif target == 'opt_xasavg':
         basisH = 'H library "def2-svp"'
 	basiselse = '* library "def2-svpd"'
@@ -349,7 +349,7 @@ def baseInput(input):
 	    basisset = basisH + '\n' + basiselse + '\n' + basisX
 	elif X is None:
 	    basisset = basisH + '\n' + basiselse
-	    print 'Must specify target element, if no energy window, for x-ray spectroscopy'
+	    print('Must specify target element, if no energy window, for x-ray spectroscopy')
     elif target == 'user_xasavg':
         basisH = 'H library "def2-svp"'
 	basiselse = '* library "def2-svpd"'
@@ -360,7 +360,7 @@ def baseInput(input):
 	    basisset = basisH + '\n' + basiselse + '\n' + basisX
 	elif X is None:
 	    basisset = basisH + '\n' + basiselse
-	    print 'Must specify target element, if no energy window, for x-ray spectroscopy'    
+	    print('Must specify target element, if no energy window, for x-ray spectroscopy') 
 
 # NOTE FDV: Here we have a small problem now, because the format of the data
 # that is in the input (system dict) is different than the one the default
@@ -377,7 +377,7 @@ def baseInput(input):
       basis = basisset
 
 # Debug: FDV
-#   print basis
+#   print(basis)
 #   sys.exit()
     basisstr = ''.join(str(r) for v in basis for r in v)
 #   basisstr = ' '.join(str(r) for v in basis for r in v)
@@ -396,7 +396,7 @@ def baseInput(input):
 # Hack to get better DMs
     dict['addendum'] = 'scf'+'\n'+'thresh 1e-10'+'\n'+'end'+'\n'+'driver'+'\n'+'tight'+'\n'+'maxiter 80'+'\n'+'end'
 
-    print dict
+    print(dict)
     return dict
 
 def optInput(input):
@@ -494,7 +494,7 @@ def xasInput(input):
         alphaflag = ''
 #	seq_beta = ('beta', '1 1')
 #        beta = str(b.join(seq_beta))
-	print 'Need either alpha flag, energy window, or spectroscopy element for x-ray spectroscopy'
+	print('Need either alpha flag, energy window, or spectroscopy element for x-ray spectroscopy')
     if ewin is not None:
         ewinstr = '  '.join(str(r) for v in ewin for r in v)
 	seq_ewin = ('ewin', ewinstr)
@@ -506,7 +506,7 @@ def xasInput(input):
         ewinflag = ''
 #	seq_beta = ('beta', '1 1')
 #        beta = str(b.join(seq_beta))
-	print 'Need either alpha flag, energy window, or spectroscopy element for x-ray spectroscopy'
+	print('Need either alpha flag, energy window, or spectroscopy element for x-ray spectroscopy')
     xas['cis'] = 'cis'
     nroots = check(input, 'nwchem.xas.nroots', default = '10')
     nrootsstr = ''.join(str(r) for v in nroots for r in v)
@@ -529,7 +529,7 @@ def xasInput(input):
     dict['method2'] = xas['method1'] + xas['cis'] + '\n' + seq_nrootsj + '\n' + xas['trip'] + '\n' + maxvecs + '\n' + xas['end'] + '\n'
     seqtask = ('task', 'tddft')
     dict['task'] = str(b.join(seqtask))
-    print dict
+    print(dict)
     return dict
 
 def elphonInput(input):
@@ -616,7 +616,7 @@ def getacell(file):
     try:
         a = bcell.parseString(f.read()).asList()[0]
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     f.close()
     #return ''.join(a)
@@ -697,7 +697,7 @@ def optqmdcell(file):
     try:
         a = bcell.parseString(f.read()).asList()[0]
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     f.close()
     #return ''.join(a)
@@ -737,7 +737,7 @@ def getU(file, addDS=''):
     try:
         u = etotal.parseString(f.read()).asList()[0]
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     f.close()
     return float(u)
@@ -797,7 +797,7 @@ def kgrid2qgrid(file):
     try:
         pts = kpt.parseString(f.read()).asList()
     except pp.ParseException as pe:
-        print "Parsing Error using pyparsing: invalid input:", pe
+        print("Parsing Error using pyparsing: invalid input:", pe)
         sys.exit()
     f.close()
     qpts = []
@@ -813,7 +813,7 @@ def anaddb2cols(file):
     try:
         data = text.parseString(f.read()).asList()
     except pp.ParseException as pe:
-        print "Parsing Error using pyparsing: invalid input:", pe
+        print("Parsing Error using pyparsing: invalid input:", pe)
         sys.exit()
     f.close() 
     return map(list, zip(*data))
@@ -828,7 +828,7 @@ def eli2couplings(filePrefix):
         pdsRow = text.parseString(pdsFile.read()).asList()
         a2fRow = text.parseString(a2fFile.read()).asList()
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     pdsFile.close()
     a2fFile.close()
@@ -855,7 +855,7 @@ def ifc2dym(file, input):
     try:
         data = text.parseString(f.read()).asList()
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     f.close()
     natom = int(data[-1][0])
@@ -877,7 +877,7 @@ def ifc2dym(file, input):
         parsedMatrix = matrix.parseString(input['rprim']).asList()[0]
         rprim = [map(float, row) for row in parsedMatrix]
     except pp.ParseException as pe:
-        print 'Parsing Error using pyparsing: invalid input:', pe
+        print('Parsing Error using pyparsing: invalid input:', pe)
         sys.exit()
     znucl = map(int, expandedList(input['znucl'], length=natom))
         
@@ -1117,8 +1117,8 @@ def generateInput(config, input, output):
 # First we parse cell_red_xyz to find the atom labels
 
 # Debug: FDV
-   print 'random stuff'
-   print input
+   print('random stuff')
+   print(input)
 #  sys.exit()
         
         # Switch based on what output is required
@@ -1136,7 +1136,7 @@ def generateInput(config, input, output):
       writeList(nwchemFileList, pathbase + '.files')
       writeDict(optInput(input), pathbase + '.in')
       files.append(filebase + '.in')
-      print pathbase + '.in'
+      print(pathbase + '.in')
 
 #  Dynamical matrix
    if set(output.keys()) == set(['dynmat']):
@@ -1145,7 +1145,7 @@ def generateInput(config, input, output):
       nwchemFileList = nwchemFiles(pathbase, pseudos)
       writeList(nwchemFileList, pathbase + '.files')
 # Debug
-      print '\n optInput(input) \n'
+      print('\n optInput(input) \n')
       pp_debug.pprint(optInput(input))
 #     sys.exit()
       writeDict(dynmatInput(input), pathbase + '.in')
@@ -1161,7 +1161,7 @@ def generateInput(config, input, output):
       nwchemFileList = nwchemFiles(pathbase, pseudos)
       writeList(nwchemFileList, pathbase + '.files')
 # Debug
-      print '\n optInput(input) \n'
+      print('\n optInput(input) \n')
       pp_debug.pprint(optInput(input))
 #     sys.exit()
       writeDict(opt_dynmatInput(input), pathbase + '.in')
@@ -1187,7 +1187,7 @@ def generateInput(config, input, output):
       writeList(nwchemFileList, pathbase + '.files')
       writeDict(UInput(input), pathbase + '.in') 
       files.append(filebase + '.in')
-      print pathbase + '.in'
+      print(pathbase + '.in')
 
 # Electron-phonon calculation using ANADDB
    elif set(output.keys()).issubset(set(['pdos','a2f','a2','eint'])):
@@ -1228,7 +1228,7 @@ def generateInput(config, input, output):
       writeList(nwchemFileList, pathbase + '.files')
       writeDict(qmdInput(input), pathbase + '.in') 
       files.append(filebase + '.in')
-      print pathbase + '.in'
+      print(pathbase + '.in')
 	    
 # qmd with optimized geometry
    elif set(output.keys()) == set(['opt_qmd']):
@@ -1238,7 +1238,7 @@ def generateInput(config, input, output):
       writeList(nwchemFileList, pathbase + '.files')
       writeDict(qmdInput(input), pathbase + '.in') 
       files.append(filebase + '.in')
-      print pathbase + '.in'
+      print(pathbase + '.in')
 	    
 # x-ray spectrum(single shot)
    elif set(output.keys()) == set(['xas']):
@@ -1248,7 +1248,7 @@ def generateInput(config, input, output):
       writeList(nwchemFileList, pathbase + '.files')
       writeDict(xasInput(input), pathbase + '.in') 
       files.append(filebase + '.in')
-      print pathbase + '.in'
+      print(pathbase + '.in')
 	    
 # xas with optimized geometry
    elif set(output.keys()) == set(['opt_xas']):
@@ -1258,7 +1258,7 @@ def generateInput(config, input, output):
       writeList(nwchemFileList, pathbase + '.files')
       writeDict(xasInput(input), pathbase + '.in') 
       files.append(filebase + '.in')
-      print pathbase + '.in'  
+      print(pathbase + '.in'  )
 
 # average x-ray spectrum
    elif set(output.keys()).issubset(set(['xas_avg','user_xasavg'])):
