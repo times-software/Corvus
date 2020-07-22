@@ -1,0 +1,20 @@
+# CORVUS input
+target_list { feffXANES }
+usehandlers { Feff }
+feff.MPI.CMD { mpirun }
+feff.MPI.ARGS { -n 6 }
+
+feff.reciprocal{ T }
+feff.edge{ K }
+
+absorbing_atom{ 1 }
+feff.target{ 1 }
+feff.cif{/home/jjkas/Programs/Corvus/examples/KSpace/Graphite.cif}
+feff.kmesh{ 1000 0}
+cluster {
+Cl 1.3100	1.3100	1.3100	
+Ge 0.0		0.0	0.0
+Cl 1.2100	-1.2100	-1.2100	
+Cl -1.4100	1.4100	-1.4100	
+Cl -1.1100	-1.1100	1.1100	
+}
