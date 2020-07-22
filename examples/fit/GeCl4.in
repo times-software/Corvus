@@ -28,7 +28,6 @@ e_grid -10 10 0.1
 k_grid last 6 0.05
 } 
 feff.edge{ K }
-feff.scf{ 0.0 1 1 0.1 0 }
 
 absorbing_atom{ 2 }
 
