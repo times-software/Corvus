@@ -2,7 +2,7 @@ from structures import Handler, Exchange, Loop, Update
 import numpy as np
 import corvutils.pyparsing as pp
 import os, sys, subprocess, shutil, resource
-from lmfit import Minimizer, Parameters, report_fit 
+from lmfit import Minimizer, Parameters, report_fit, fit_report 
 import re
 import math
 # Debug: FDV
@@ -78,10 +78,6 @@ class fit(Handler):
             for h in availableHandlers():
                 if h.canProduce(target):
                    required.extend(h.requiredInputFor(target))
-                   # JK debug
-                   #print f('req')
-                   #print required
-                   #exit()
                    break
         else:
             print("Missing user input: fit.target is required to run a fit.")
@@ -110,7 +106,6 @@ class fit(Handler):
     @staticmethod
     def run(config, input, output):
         dataFile = os.path.join(config['cwd'], input['fit.datafile'][0][0])
-        #print dataFile
         x,data = np.loadtxt(dataFile,usecols=(0,1),unpack=True) 
         params = Parameters()
         # Loop over parameters defined in input. Later, we might loop over
@@ -125,15 +120,10 @@ class fit(Handler):
         final  = data + result.residual
 
         report_fit(result)
+        with open('fit_result.txt', 'w') as fh:
+            fh.write(fit_report(result))
 
-        # try to plot results
-        #try:
-        #    import matplotlib.pyplot as plt
-        #    plt.plot(x, data, 'k+')
-        #    plt.plot(x, final, 'r')
-        #    plt.show()
-        #except ImportError:
-        #    pass
+        output['fit'] = [x.tolist(),final.tolist(), data.tolist()] # For now set this as fit. Later we may want to make a statement about what is implemented and what is not for fit. 
 
     @staticmethod
     def cleanup(config):
@@ -144,26 +134,46 @@ class fit(Handler):
 def Xanes2Min(params, x, data, input, config, output):
     from controls import generateAndRunWorkflow
     import copy
+    Xanes2Min.count
+    #lastParams
     Xanes2Min.count += 1
     input2 = copy.deepcopy(input)
 
-    #print params.valuesdict()
     energy_shift = 0.0
     atoms = input['cluster']
     amp = 1.0
+    input2['feff.corrections'] = [[0.0,0.0]]
+    # Set controls based on what has changed since last call
+    # to function.
+    if Xanes2Min.count == 1:
+        control = [1,1,1,1,1,1]
+    else:
+        control = [0, 0, 0, 0, 0, 0]
+    ipar = 0
     for param in params.values():
-        
+        if Xanes2Min.lastParams is not None:            
+            diff = param != Xanes2Min.lastParams.values()[ipar] 
+        else: 
+            diff = True 
+
         # Use case insensitive equal.
         if param.name.lower() == 'expansion':
             # Uniform expansion of coordinates in cluster.
+            if diff:
+                control = [1, 1, 1, 1, 1, 1] 
+
             expansion = param.value
         
             atoms = [[f[0],expansion*f[1],expansion*f[2],expansion*f[3]] for f in atoms]
 
         elif param.name.lower() == 'broadening':
             # Lorentzian broadening applied to spectrum.
+            if diff:
+                control[5] = 1
+
             broadening = param.value
-            input2['spectral_broadening'] = [[broadening]]
+            #input2['spectral_broadening'] = [[broadening]]
+            input2['feff.corrections'][0][1] = broadening
 
         elif param.name.lower() == 'delta_e0':
             # Shift in absolute edge energy (shift of energy grid of spectrum).
@@ -172,6 +182,9 @@ def Xanes2Min(params, x, data, input, config, output):
             # Move a set of atoms away from absorber along a bond.
             # Find vector to move along (r_2 - r_1)/r12
             # Get the two atoms defining the bond vector.
+            if diff:
+                control = [1, 1, 1, 1, 1, 1] 
+
             bond = param.value
             bond_atoms = [item-1 for sublist in input2['fit.bond'] for item in sublist]
             vec = [ input2['cluster'][bond_atoms[1]][i] - input2['cluster'][bond_atoms[0]][i] for i in [1,2,3]]
@@ -183,7 +196,10 @@ def Xanes2Min(params, x, data, input, config, output):
                     atoms[atom][i] += vec[i-1]
 
         elif param.name.lower() == 'delta_efermi':
-            input2['fermi_shift'] = [[param.value]]
+            #input2['fermi_shift'] = [[param.value]]
+            input2['feff.corrections'][0][0] = param.value
+            if diff:
+                control[5] = 1
         elif param.name.lower() == 'amplitude':
             amp = param.value
         else:
@@ -191,7 +207,10 @@ def Xanes2Min(params, x, data, input, config, output):
             print('STOPPING NOW!!!')
             exit()
         
+        ipar += 1
+
     input2['cluster'] = atoms
+    input2['feff.control'] = [control]
     # Need a copy of config to start wf over
     config2 = copy.deepcopy(config)
     
@@ -199,9 +218,10 @@ def Xanes2Min(params, x, data, input, config, output):
     # will run inside of outer wf directory.
     config2['cwd'] = config['xcDir']
 
-    if True: # Save all runs of underlying handler in separate directories.
+    if False: # Save all runs of underlying handler in separate directories.
         config2['xcIndexStart'] = Xanes2Min.count
-        #print config2['xcIndexStart']
+    else:
+        config2['xcIndexStart'] = 1
 
     dir = config['xcDir']
     # Loop over targets in output. Not sure if there will ever be more than one output target here.
@@ -213,10 +233,9 @@ def Xanes2Min(params, x, data, input, config, output):
             #xanes2MinIterator += 1
             targetList = input['fit.target']
 
-            # generate and run the workflow for target.
+            # generate and run the workflow for target, unless no run is necessary.
             generateAndRunWorkflow(config2, input2,targetList)
     
-            print(targetList[0][0])
             x0,y=np.array(input2[input['fit.target'][0][0]])
             y = y*amp
             # If there is an energy shift, shift the x-axis before
@@ -228,7 +247,10 @@ def Xanes2Min(params, x, data, input, config, output):
             global fitconvfile
             if firstcall:
                print('Opening convergence file')
-               os.remove('fitconvergence.dat')
+               try:
+                   os.remove('fitconvergence.dat')
+               except OSError:
+                   pass
                fitconvfile=open('fitconvergence.dat', 'a')
                np.savetxt(fitconvfile,np.array([x,data]).transpose())
                fitconvfile.write('\n')   
@@ -248,14 +270,9 @@ def Xanes2Min(params, x, data, input, config, output):
                  residual[i] = 0.0
                i = i + 1
 
-            #exit()
-            # JK - Debug
-            #print "Model"
-            #print y
-            #print "Data"
-            #print data
+            Xanes2Min.lastParams = copy.copy(params)
 
-            #exit()
             return residual
 
 Xanes2Min.count=0
+Xanes2Min.lastParams=None
