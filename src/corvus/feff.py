@@ -424,7 +424,7 @@ class Feff(Handler):
                         os.mkdir(dirname)
 
                     if edge.upper() != "VAL":
-
+                        outFileName='rixsET.dat'
                         # Delete XES input key
                         if 'feff.xes' in feffInput:
                             del feffInput['feff.xes']
@@ -450,6 +450,7 @@ class Feff(Handler):
 
                     else: # This is a valence calculation. Calculate NOHOLE and XES
                         # XANES calculation
+                        outFileName='rixsET-sat.dat'
                         # Find out if we are using a valence hole for valence calculation.
                         # Set edge.
                         setInput(feffInput,'feff.edge',[[edge0]],Force=True)
@@ -592,8 +593,8 @@ class Feff(Handler):
                             args = ['']
 
                         runExecutable('',dir,executable,args,out,err)
-                        
-                outFile=os.path.join(dir,'rixsET.dat')
+
+                outFile=os.path.join(dir,outFileName)
                 output[target] = np.loadtxt(outFile).T.tolist()
 
 # Added by FDV
@@ -663,7 +664,7 @@ def setInput(input, token, default, Force=False):
 def writeInput(input,inpfile):
     lines=[]
     for key in input:
-        if key != 'feff.end' and not key.startswith('feff.MPI'):
+        if key != 'feff.end' and not key.startswith('feff.MPI') and not key.startswith('feff.lfms'):
             lines = lines + getInpLines(input,key) 
         
     lines = lines + ['END']
@@ -855,11 +856,13 @@ def getFeffPotentialsFromCluster(input):
     absorber = input['absorbing_atom'][0][0] - 1
     atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
     uniqueAtoms = list(set([ x[0] for x in atoms]))
+    lfms1 = input.get('feff.lfms1')[0][0]
+    lfms2 = input.get('feff.lfms2')[0][0]
     feffPots = [[]]
-    feffPots[0] = [0, ptable[input['cluster'][absorber][0]]['number'], input['cluster'][absorber][0], -1, -1, 1.0 ]
+    feffPots[0] = [0, ptable[input['cluster'][absorber][0]]['number'], input['cluster'][absorber][0], lfms1, lfms2, 1.0 ]
     for i,atm in enumerate(uniqueAtoms):
        xnat = [ x[0] for x in input['cluster'] ].count(atm)
-       feffPots.append([i+1, int(ptable[atm]['number']), atm, -1, -1, xnat ])
+       feffPots.append([i+1, int(ptable[atm]['number']), atm, lfms1, lfms2, xnat ])
 
     return feffPots
 
