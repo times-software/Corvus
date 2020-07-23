@@ -1,17 +1,20 @@
-# CORVUS input
-
-
+# Set target to feffXANES (we will later change this to XANES.
 target_list { feffXANES }
-usehandlers { Feff }
-feff.MPI.CMD { mpirun }
-feff.MPI.ARGS { -n 6 }
 
-feff.jumprm{ F }
-feff.title{Written by JJK}
+# Make Corvus use FEFF for XANES.
+usehandlers { Feff }
+
+# Set the mpi command and flags for feff.
+feff.MPI.CMD { mpirun }
+feff.MPI.ARGS { -n 1 }
+
+# Set absorption edge.
 feff.edge{ K }
 
+# Set absorbing atom
 absorbing_atom{ 2 }
 
+# Define cluster (xyz format in angstrom)
 cluster {
 Cl 1.3100	1.3100	1.3100	
 Ge 0.0		0.0	0.0
