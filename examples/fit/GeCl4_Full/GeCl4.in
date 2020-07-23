@@ -1,0 +1,43 @@
+# CORVUS input for GeCl4
+
+# Set target property for fitting.
+target_list { fit }
+
+# Define what property we want to fit (XANES with FEFF).
+fit.target { feffXANES }
+
+# Let lmfit know where the experimental data is.
+fit.datafile { exp.dat }
+
+feff.MPI.CMD{mpirun}
+feff.MPI.ARGS{-n 1}
+feff.lfms1{ 2 }
+feff.lfms2{ 3 }
+
+# Define fit parameters.
+fit.parameters {
+   broadening    0.0 
+   delta_e0      1.0
+   delta_efermi  0.0 
+   amplitude     1.0
+   expansion 1.0
+}
+
+usehandlers { Feff }
+feff.egrid{
+e_grid -40 -10 0.5
+e_grid -10 10 0.1
+k_grid last 6 0.05
+} 
+feff.edge{ K }
+feff.exchange{ 3 0.0 0.0 2 }
+absorbing_atom{ 2 }
+
+
+cluster {
+Cl 1.300	1.300	1.300	
+Ge 0.0		0.0	0.0
+Cl 1.300	-1.300	-1.300	
+Cl -1.300	1.300	-1.300	
+Cl -1.300	-1.300	1.300	
+}

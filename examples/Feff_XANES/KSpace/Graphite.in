@@ -6,11 +6,13 @@ feff.MPI.ARGS { -n 6 }
 
 feff.reciprocal{ T }
 feff.edge{ K }
-
+feff.xanes{ 4.0 }
+spectral_broadening{ 0.1 }
 absorbing_atom{ 1 }
 feff.target{ 1 }
-feff.cif{/home/jjkas/Programs/Corvus/examples/KSpace/Graphite.cif}
-feff.kmesh{ 1000 0}
+feff.cif{/home/jjkas/Programs/Corvus/examples/Feff_XANES/KSpace/Graphite.cif}
+feff.kmesh{1000}
+feff.corehole{ rpa }
 cluster {
 Cl 1.3100	1.3100	1.3100	
 Ge 0.0		0.0	0.0

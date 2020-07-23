@@ -10,15 +10,17 @@ fit.target { feffXANES }
 fit.datafile { exp.dat }
 
 feff.MPI.CMD{mpirun}
-feff.MPI.ARGS{-n 6}
+feff.MPI.ARGS{-n 1}
 
 # Define fit parameters.
+# Fit only an scaling factor (amplitude), 
+# fermi-level shift, broadening, and overall 
+# energy shift.
 fit.parameters {
-   broadening    0.0 
-   delta_e0      1.0
-   delta_efermi  0.0 
    amplitude     1.0
-   expansion 1.0
+   delta_efermi  0.0
+   broadening    0.0
+   delta_e0      0.0
 }
 
 usehandlers { Feff }
@@ -28,7 +30,7 @@ e_grid -10 10 0.1
 k_grid last 6 0.05
 } 
 feff.edge{ K }
-
+feff.exchange{ 3 0.0 0.0 2 }
 absorbing_atom{ 2 }
 
 

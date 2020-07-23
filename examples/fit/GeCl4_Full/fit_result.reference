@@ -1,0 +1,25 @@
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 51
+    # data points      = 247
+    # variables        = 5
+    chi-square         = 0.53026060
+    reduced chi-square = 0.00219116
+    Akaike info crit   = -1507.51243
+    Bayesian info crit = -1489.96549
+[[Variables]]
+    broadening:    0.50591372 +/- 0.04446749 (8.79%) (init = 0)
+    delta_e0:     -3.48645762 +/- 0.07762949 (2.23%) (init = 1)
+    delta_efermi: -4.51541358 +/- 0.07785192 (1.72%) (init = 0)
+    amplitude:     0.96512264 +/- 0.00402304 (0.42%) (init = 1)
+    expansion:     0.92482754 +/- 0.00346806 (0.37%) (init = 1)
+[[Correlations]] (unreported correlations are < 0.100)
+    C(delta_e0, delta_efermi)   =  0.774
+    C(delta_efermi, amplitude)  = -0.568
+    C(broadening, delta_e0)     =  0.537
+    C(broadening, delta_efermi) =  0.482
+    C(amplitude, expansion)     =  0.338
+    C(delta_e0, amplitude)      = -0.329
+    C(delta_efermi, expansion)  = -0.281
+    C(delta_e0, expansion)      =  0.233
+    C(broadening, expansion)    =  0.198
