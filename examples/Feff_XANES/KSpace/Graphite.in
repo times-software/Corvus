@@ -1,18 +1,47 @@
-# CORVUS input
+# Set tartget for corvus
 target_list { feffXANES }
+
+# Make corvus use feff for calculation
 usehandlers { Feff }
+
+# Set mpi command and flags.
 feff.MPI.CMD { mpirun }
 feff.MPI.ARGS { -n 6 }
 
+# Make feff run in reciprocal space like KKR.
 feff.reciprocal{ T }
+
+# Set absorption edge.
 feff.edge{ K }
+
+# Set kmax for XANES calculation. 
+# (KSPACE calculations are unstable at high energy, so keep it on the lower side)
 feff.xanes{ 4.0 }
+
+# Set extra spectral broadening beyond core-hole lifetime broadening.
 spectral_broadening{ 0.1 }
-absorbing_atom{ 1 }
+
+# Set target atom (absorbing atom) within the cif file.
 feff.target{ 1 }
+
+# Set cif file to use for this calculation.
 feff.cif{/home/jjkas/Programs/Corvus/examples/Feff_XANES/KSpace/Graphite.cif}
+
+# Set kmesh - This puts ~1000 kpoints in the IBZ. You could also specify
+# points in each direction, i.e., 10 10 5 for example.
 feff.kmesh{1000}
+
+# Use the rpa core-hole - This is not essential. If you leave it out
+# feff will use the FSR core-hole, although I don't know exactly which way
+# it is calculated when using the k-space formalism.
 feff.corehole{ rpa }
+
+# Note that below this, FEFF doesn't really need these, but Corvus/feff handler
+# requires them. Both cif and cluster will be written to feff input file, and
+# feff will ignore the cluster.
+#
+# Set absorbing atom
+absorbing_atom{ 1 }
 cluster {
 Cl 1.3100	1.3100	1.3100	
 Ge 0.0		0.0	0.0
