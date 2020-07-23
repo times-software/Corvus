@@ -7,9 +7,11 @@ pp_debug = pprint.PrettyPrinter(indent=4)
 # Define the available handlers by hand here
 # Note FDV: There should be a way to do this automatically, but can't think of
 # one right now
-def availableHandlers(config):
+def availableHandlers():
     # Need to check which of these is defined in config file befor importing
     # and adding to list of available handlers. 
+    config = {}
+    configure(config)
     handlers = []
     if config['abinit'] and config['anaddb'] and config['mrgddb'] and config['mrggkk']:
         from abinit import Abinit
@@ -37,7 +39,7 @@ def availableHandlers(config):
     # import only if module lmfit exists (fit dependency). Should probably
     # do this with numpy and scipy as well. 
     try:
-        imp.find_module('lmfit')
+        from fit import fit
         lmfitInstalled = True
     except ImportError:
         print("Warning: lmfit not found. fit handler will be disabled.")
@@ -45,7 +47,6 @@ def availableHandlers(config):
         pass
 
     if lmfitInstalled:
-        from fit import fit
         handlers = handlers + [fit]
 
     return handlers
@@ -145,7 +146,7 @@ def generateWorkflow(target, handlers, system, config, desc=''):
     #availableHandlers = [Abinit, Dmdw]
 # From the handlers list we generate a mapping dictionary to identify the 
 # handlers requested by the user
-    availHandlers = availableHandlers(config)
+    availHandlers = availableHandlers()
     availableHandlers_map = { h.__name__:h for h in availHandlers }
 # Debug: FDV
     #pp_debug.pprint(availableHandlers_map)
@@ -221,22 +222,25 @@ def generateWorkflow(target, handlers, system, config, desc=''):
 
 
            for h in availHandlers:
-               #print "Checking Handler: ", h # Debug JJK
-               #print h # Debug JJK
+               # In the below line we will want to check if target is a list, and if so, check
+               # if h can produce any elements of target. Optionally, we can check 
                htargets = [target for target in targets if h.canProduce(target)]
-               #print htargets # Debug JJK
-               #print "Done checking handler." # Debug JJK
                if htargets:
                    noMatch = False
                    for subset in reversed(sorted(subs(htargets), key=len)):
                        l = list(subset)
-                       print(l, h)
                        if h.canProduce(l):
                            workflow.addExchangeAt(0, h.sequenceFor(l,system))
                            # h.setDefaults(input,h)
-                           targets.difference_update(subset)
+                           # JK - We need to replace the following line with code that
+                           # checks a list of lists rather than a list. If any requirement in an
+                           # inner list is found, the entire inner list can be removed.
+                           # For each target,
+                           #for target in targets:
+                           #    if isinstance(target,list):
+
+                           targets.difference_update(subset)  
                            targets.update(set(workflow.getRequiredInput()))
-                           print(targets)
                            break
 
            if noMatch:
@@ -259,6 +263,8 @@ def generateWorkflow(target, handlers, system, config, desc=''):
 # Formats output strings
 def prettyprint(token, config, system):
     import pprint
+    # JK - Going to leave this for now, but output should probably
+    # depend on the target. 
     f = open(config['pathprefix'] + '.' + token + '.out', 'w')
     data = system[token]
 
