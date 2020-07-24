@@ -1,16 +1,21 @@
-# CORVUS input
-
+# Set target property to feffXES
 target_list { feffXES }
+
+# Use feff to calculate 
 usehandlers { Feff }
 
+# Set absorbing atom to Ge
 absorbing_atom{ 2 }
-feff.MPI.CMD{ mpirun }
-feff.MPI.ARGS{ -n 6 }
 
+# Set mpi command and flags
+feff.MPI.CMD{ mpirun }
+feff.MPI.ARGS{ -n 1 }
+
+# Specify cluster of atoms (xyz type format in Angstroms)
 cluster {
-Cl 1.3100	1.3100	1.3100	
+Cl 1.2100	1.2100	1.2100	
 Ge 0.0		0.0	0.0
 Cl 1.2100	-1.2100	-1.2100	
-Cl -1.4100	1.4100	-1.4100	
-Cl -1.1100	-1.1100	1.1100	
+Cl -1.2100	1.2100	-1.2100	
+Cl -1.2100	-1.2100	1.2100	
 }
