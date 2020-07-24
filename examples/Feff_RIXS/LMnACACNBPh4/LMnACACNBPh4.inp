@@ -1,17 +1,23 @@
-# CORVUS input
+# Set target property to feffRIXS
+target_list{ feffRIXS }
 
-target_list {
-feffRIXS
-}
-
+# Use feff to calculate
 usehandlers { Feff }
+
+# Set mpi command and flags
 feff.MPI.CMD { mpirun }
 feff.MPI.ARGS { -n 6 }
 
+# Set excitation edge and de-excitation edge
 feff.edge{ K VAL }
+
+# Set extra spectral broadening
 spectral_broadening{ 0.7 }
-charge{ 1 }
+
+# Set absorbing atom
 absorbing_atom{ 1 }
+
+# Set cluster in xyz format (angstroms).
 cluster {
 Mn 0.000000 0.000000 0.000000
 O 0.199422 0.594958 1.791970
