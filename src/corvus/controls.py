@@ -39,7 +39,7 @@ def availableHandlers():
     # import only if module lmfit exists (fit dependency). Should probably
     # do this with numpy and scipy as well. 
     try:
-        from fit import fit
+        import lmfit
         lmfitInstalled = True
     except ImportError:
         print("Warning: lmfit not found. fit handler will be disabled.")
@@ -47,6 +47,7 @@ def availableHandlers():
         pass
 
     if lmfitInstalled:
+        from fit import fit
         handlers = handlers + [fit]
 
     return handlers
