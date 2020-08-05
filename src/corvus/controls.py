@@ -40,15 +40,12 @@ def availableHandlers():
     # do this with numpy and scipy as well. 
     try:
         import lmfit
-        lmfitInstalled = True
-    except ImportError:
-        print("Warning: lmfit not found. fit handler will be disabled.")
-        lmfitInstalled = False
-        pass
-
-    if lmfitInstalled:
         from fit import fit
         handlers = handlers + [fit]
+    except ImportError:
+        print("Warning: lmfit not found. fit handler will be disabled.")
+        pass
+
 
     return handlers
 
