@@ -1,0 +1,68 @@
+# Set this for your own computer/cluster
+target_list{ OceanXANES }
+usehandlers { Ocean }
+ocean.para_prefix{ mpirun -n 6 }
+
+ocean.photon.operator{ 'quad' }
+ocean.photon.polarization{ 0.0 0.0 1.0 }
+ocean.photon.qhat{ 0.0 1.0 0.0 }
+ocean.photon.energy{ 550.0 }
+ocean.dft{ qe }
+ocean.opf.program{ hamann }
+
+##############################
+# Convergence Params
+# Number of bands to use (includes valence right now, so we will have 20 unoccupied)
+ocean.nbands{ 25 }
+# k-point sampling, if not here will use defaults (could be higher)
+ocean.nkpt { 10 10 10 }
+# k-point sampling for calculating W (\chi)
+# Because we are interested in a limited region of real-space
+#  2x2x2 is good enough almost always
+ocean.screen.nkpt{ 2 2 2 }
+# Number of bands to use for the screening calculation (could be higher)
+ocean.screen.nbands{ 100 }
+# Real-space sampling for calcualting the action of W on a wave function
+ocean.cnbse.xmesh{ 8 8 8 }
+
+
+##############################
+# ABINIT style crystallographic info
+# 4.0279 angstroms
+ocean.acell { 7.596698474 7.596698474 7.596698474 }
+
+ocean.rprim {
+ 0.0 0.5 0.5
+ 0.5 0.0 0.5
+ 0.5 0.5 0.0
+}
+
+ocean.pp_list{
+Li-s-high.oncvpsp
+F.oncvpsp
+}
+
+ocean.znucl { 3 9 }
+
+ocean.ntypat{ 2 }
+ocean.typat { 1 2 }
+
+ocean.natom{ 2 }
+ocean.xred {
+0.5 0.5 0.5
+0  0   0
+}
+
+ocean.ecut{ 100 }
+
+ocean.diemac{ 1.92 }
+
+#edge information (run the F 1s )
+ocean.edges{ -9 1 0 }
+
+# radius for shell of charge in screening
+ocean.screen.shells{ 4.0 }
+ocean.cnbse.rad{ 4.0 }
+
+# spectral broadening in eV
+ocean.cnbse.broaden{ 0.5 }
