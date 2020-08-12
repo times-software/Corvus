@@ -1,0 +1,92 @@
+target_list{ OceanXANES }
+usehandlers { Ocean }
+ocean.dft{ qe }
+
+#assumes you want to try and run abinit on 1 core
+ocean.para_prefix{ mpirun -n 6 }
+
+# Input for photon file
+ocean.photon.operator{ quad }
+ocean.photon.polarization{ 0.0 0.0 1.0 }
+ocean.photon.qhat{ 0.0 1.0 0.0 }
+ocean.photon.energy{ 550.0 }
+  
+# Kpt mesh for final states
+ocean.nkpt { 4 4 2 }
+
+# Kpt mesh for screening
+ocean.screen.nkpt{ 2 2 2 }
+
+# Total bands for final states
+ocean.nbands{ 50 }
+
+# Total bands for screening
+ocean.screen.nbands{ 100 }
+
+# Mag. of latt. vec.
+ocean.acell { 8.68 8.68 5.6 }
+
+# Cart comps. of latt. vecs.
+ocean.rprim {
+ 1 0 0
+ 0 1 0
+ 0 0 1 }
+
+# Ntypes of atoms
+ocean.ntypat{ 2 }
+
+# Z num for types
+ocean.znucl { 22 8 }
+
+# psp info
+ocean.pp_list{ ti.fhi 
+08-o.lda.fhi }
+# N atoms in unit cell
+ocean.natom{ 6 }
+
+# Type of each atom
+ocean.typat { 1 1 2 2 2 2 }
+
+# Positions of atoms
+ocean.xred {
+ 0      0      0
+ .5     .5     .5
+ .3053  .3053  0
+-.3053 -.3053  0
+ .8053  .1947  .5
+ .1947  .8053  .5 } 
+
+# Kinetic Enery cutoff
+ocean.ecut{ 140 }
+
+# Energy tol
+ocean.toldfe{ 1.1e-6 }
+
+# wftol
+ocean.tolwfr{ 1.1e-16 }
+
+# iterations
+ocean.nstep{ 50 }
+
+# Static dielectric const
+ocean.diemac{ 6 }
+
+# xmesh
+ocean.cnbse.xmesh { 4 4 4 }
+
+# opf control files
+ocean.opf.fill{ 22 ti.fill }
+ocean.opf.opts{ 22 ti.opts }
+
+#edge information
+# By setting the first number to a negative
+#  we select ALL of the Ti (Z=22) atoms
+ocean.edges{ -22 2 1 }
+
+# radius for shell for screening
+ocean.screen.shells{ 3.5 4.0 }
+ocean.cnbse.rad{ 4.0 }
+
+#Scaling Factor
+ocean.scfac{ 0.80 }
+ocean.cnbse.broaden{ 0.19 }

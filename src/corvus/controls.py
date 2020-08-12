@@ -28,6 +28,9 @@ def availableHandlers():
     if config['nwchem']:
         from nwchem import Nwchem
         handlers = handlers + [Nwchem]
+    if config['ocean']:
+        from ocean import Ocean
+        handlers = handlers + [Ocean]
     if config['orca']: 
         # JK - Note that there is another command named orca on many linux systems.
         # Need to figure out how to check that this is indeed orca electronic structure code.
@@ -92,7 +95,8 @@ def configure(config):
                    'abinit':['abinit','anaddb','mrgddb','mrggkk'],
                    'vasp'  :['vasp_gam','vasp_std'],
                    'nwchem':['nwchem'], 
-                   'siesta':['siesta']}
+                   'siesta':['siesta'],
+                   'ocean' :['ocean.pl']}
 
 
     exe_ext = ''
@@ -110,7 +114,9 @@ def configure(config):
     config['feff'] = path2feff
 
     path2siesta = rcp.get('Executables', 'siesta') 
+    path2ocean = rcp.get('Executables', 'ocean') 
     config['siesta'] = path2siesta
+    config['ocean'] = path2ocean
 # Initialize system with user input
 def initializeSystem(config, system):
     from corvutils import parsnip
