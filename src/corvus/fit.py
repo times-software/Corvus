@@ -14,7 +14,7 @@ implemented = {}
 fitconvfile=None
 firstcall=True
 strlistkey = lambda L:','.join(sorted(L))
-implemented['fit'] = {'type':'Exchange','out':['fit'],'cost':1,
+implemented['fit'] = {'type':'Exchange','out':['fit'],'cost':3,
                             'req':['fit.target','fit.datafile','fit.parameters'],'desc':'Calculate a property using fit handler.'}
 
 

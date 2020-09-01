@@ -4,23 +4,39 @@ import os, sys, subprocess, shutil, resource
 import re
 # Debug: FDV
 import pprint
+# The below is from the pycifrw package. It comes with 
+# cif2cell, so it should work if cif2cell is installed.
+from CifFile import ReadCif
+# This one is from the cif2cell package. It allows calculations of 
+# cell properties from cif input.
+from uctools import *
+
 pp_debug = pprint.PrettyPrinter(indent=4)
+
 
 # Define dictionary of implemented calculations
 implemented = {}
 strlistkey = lambda L:','.join(sorted(L))
+subs = lambda L:[{L[j] for j in range(len(L)) if 1<<j&k} for k in range(1,1<<len(L))]
+for s in subs(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc']):
+    key = strlistkey(s)
+    autodesc = 'Get ' + ', '.join(s) + ' using cif2cell'
+    cost = 10
+    implemented[key] = {'type':'Exchange','out':list(s),'req':['cif_input'],
+                        'desc':autodesc,'cost':cost}
 
-implemented['OceanXANES'] = {'type':'Exchange','out':['OceanXANES'],'cost':3,
-                        'req':['ocean.edges', 'ocean.ecut', 
-                            'ocean.pp_list', 'ocean.diemac', 'ocean.xred', 'ocean.typat', 'ocean.natom', 
-                            'ocean.znucl', 'ocean.ntypat', 'ocean.rprim', 'ocean.acell', 'ocean.photon.operator',
-                            'ocean.photon.polarization'],'desc':'Calculate XANES using ocean.'}
+implemented['cell_structure'] = {'type':'Exchange','out':['cell_structure'],'cost':0,
+                        'req':['cell_vectors','cell_struct_xyz_red','cell_scaling_iso','cell_scaling_abc'],'desc':'Calculate cell structure from cif file using cif2cell.'}
+#implemented['cell_structure'] = {'type':'Exchange','out':['cell_structure','cell_struc_xyz','cell_scaling_abc','cell_scaling_iso'],'cost':0,
+#                        'req':['cif_input'],'desc':'Calculate cell structure from cif file using cif2cell.'}
 
 
+#implemented['cluster'] = 
 
-class Ocean(Handler):
+
+class cif2cell(Handler):
     def __str__(self):
-        return 'Ocean Handler'
+        return 'cif2cell Handler'
 
     @staticmethod
     def canProduce(output):
@@ -34,8 +50,8 @@ class Ocean(Handler):
     @staticmethod
     def requiredInputFor(output):
         if isinstance(output, list) and output and isinstance(output[0], basestring):
-            unresolved = {o for o in output if not Ocean.canProduce(o)}
-            canProduce = (o for o in output if Ocean.canProduce(o))
+            unresolved = {o for o in output if not cif2cell.canProduce(o)}
+            canProduce = (o for o in output if cif2cell.canProduce(o))
             additionalInput = (set(implemented[o]['req']) for o in canProduce)
             return list(set.union(unresolved,*additionalInput))
         elif isinstance(output, basestring):
@@ -70,11 +86,11 @@ class Ocean(Handler):
             raise LookupError('Corvus cannot currently produce ' + key + ' using FEFF')
         f = lambda subkey : implemented[key][subkey]
         if f('type') is 'Exchange':
-            return Exchange(Ocean, f('req'), f('out'), cost=f('cost'), desc=f('desc'))
+            return Exchange(cif2cell, f('req'), f('out'), cost=f('cost'), desc=f('desc'))
 
     @staticmethod
     def prep(config):
-        subdir = config['pathprefix'] + str(config['xcIndex']) + '_OCEAN'
+        subdir = config['pathprefix'] + str(config['xcIndex']) + '_CIF2CELL'
         xcDir = os.path.join(config['cwd'], subdir)
         # Make new output directory if if doesn't exist
         if not os.path.exists(xcDir):
@@ -85,111 +101,93 @@ class Ocean(Handler):
     #@staticmethod
     #def setDefaults(input,target):
 
-    # JJ Kas - run now performs all 3 methods, i.e., generateInput, run, translateOutput
-    # Maybe we should also include prep here. Is there a reason that we want to limit the directory names
-    # to automated Corvus_FEFFNN? Also if we have prep included here, we can decide on making a new directory
-    # or not. 
     @staticmethod
     def run(config, input, output):
         
-        # set atoms and potentials
-
-        # Set directory to ocean executables.
-        # Debug: FDV
-        #       pp_debug.pprint(config)
-        # Debug: FDV
-        #       sys.exit()
         dir = config['xcDir']
 
-        # Copy ocean related input to oceanInput here. Later we will be overriding some settings,
+        # Copy cif2cell related input to cif2cellInput here. Later we will be overriding some settings,
         # so we want to keep the original input intact.
-        oceanInput = {key:input[key] for key in input if (key.startswith('ocean.') and 'photon.' not in key)}
-        photonInput = {key:input[key] for key in input if (key.startswith('ocean.') and 'photon.' in key)}
-        photonfile = os.path.join(dir, 'photon1')
-        # Write photon1 input file
-        lines = []
-        lines.append(str(photonInput['ocean.photon.operator'][0][0]))
-        lines.append('cartesian ' + ' '.join([str(value) for value in photonInput['ocean.photon.polarization'][0]]))
-        lines.append('end')
-        if 'ocean.photon.qhat' in photonInput:
-            lines.append('cartesian ' + ' '.join([str(value) for value in photonInput['ocean.photon.qhat'][0]]))
-        lines.append('end')
-        lines.append(str(photonInput.get('ocean.photon.energy',0.0)[0][0]))
-        writeList(lines,photonfile)
+        cif2cellInput = {key:input[key] for key in input if key.startswith('cif2cell.')}
 
-        #writePhotonInput(photonInput,dir)
-
-        # Generate any data that is needed from generic input and populate oceanInput with
+        # Generate any data that is needed from generic input and populate cif2cellInput with
         # global data (needed for all feff runs.)
+        cif2cellInput['cif2cell.cif_input'] = input['cif_input']
 
-        # Set directory for this exchange
-        oceandir = config['ocean']
+        # Set executable directory for this exchange
+        cif2celldir = config['cif2cell']
 
-        
-        # Set input file
-        inpf = os.path.join(dir, 'ocean.in')
+        # Set input file - cif2cell takes input from command line, so no input file, however, maybe we can take commands from input file?
+        #inpf = os.path.join(dir, 'cif2cell.in')
 
         # Loop over targets in output. Not sure if there will ever be more than one output target here.
-        for target in output:
-            if (target == 'OceanXANES'):               
-                # Set output and error files
-                with open(os.path.join(dir, 'corvus.OCEAN.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.OCEAN.stderr'), 'w') as err:
-                    # Get pseudopotentials
-                     
-                    # Write input file for Ocean.
-                    writeXANESInput(oceanInput,inpf)
-                    
-                    # Copy necessary files to dir
-                    # If program is set to hamann, or not set, we are using
-                    # John Vinson's version of oncvpsp with q-e
-                    # Don't need fhi files, need to append UPF to
-                    # files listed in pp_list, and also copy oncvpsp
-                    # input file for absorber. In this case we don't 
-                    # need .opts or .fill files.
-                    if oceanInput.get('ocean.opf.program',[['hamann']])[0][0] == 'hamann':
-                        # By default, use q-e? However, this should depend on q-e being available?
-                        for file in oceanInput['ocean.pp_list']:
-                            fileUPF = file[0] + '.UPF'
-                            fileONCV = file[0] + '.in' # Should this always be named .in?
-                            # UPF file should exist, .in file should only exist for absorber. For now, check that .in
-                            # file exists for at least one of pp_list, and error otherwise.
-                            shutil.copy(fileUPF,dir)
-                            if os.path.exists(fileONCV):
-                                shutil.copy(fileONCV,dir)
-                    else:
-                        # This should work for abinit or q-e.
-                        for file in os.listdir("."):
-                            if file.endswith(".UPF"):
-                                shutil.copy(file,dir)
+        if set(output.keys()).issubset(set(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc'])):
+            # Set output and error files
+            with open(os.path.join(dir, 'corvus.CIF2CELL.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.CIF2CELL.stderr'), 'w') as err:
+                # Copy necessary files to dir
+                cif_file=cif2cellInput['cif2cell.cif_input'][0][0]
+                shutil.copy(cif_file,dir)
 
-                        for file in oceanInput['ocean.pp_list']:
-                            shutil.copy(file[0],dir)
+                # Loop over executables: This is specific to feff. Other codes
+                # will more likely have only one executable.
+                executables = ['cif2cell']
 
-                        if 'ocean.opf.fill' in oceanInput:
-                            for fill in oceanInput['ocean.opf.fill']:
-                                shutil.copy(fill[1],dir)
-
-                        if 'ocean.opf.opts' in oceanInput:
-                            for opt in oceanInput['ocean.opf.opts']:
-                                shutil.copy(opt[1],dir)
-
-
-                    # Loop over executables: This is specific to feff. Other codes
-                    # will more likely have only one executable.
-                    executables = ['ocean.pl']
-                    args=['ocean.in']
-                    iExec = 0
-                    for executable in executables:
-                        runExecutable(oceandir,dir,executable,args,out,err)
+                args=[cif_file, '-p', 'cif', '-o', 'out.cif']
+                iExec = 0
+                for executable in executables:
+                    runExecutable(cif2celldir,dir,executable,args,out,err)
 
                 
                 # For now, I am only passing the directory.
                 print('Setting output')
-                # Loop over output files? This is not possible in the output 
-                # right now.
+                outCif = os.path.join(dir,'out.cif')
+                cifFile=ReadCif(outCif)
+                # cifFile now contains an object that acts like a dictionary
+                # of dictionaries, with the outer keys the data for each 
+                # structure listed in the cif, next the normal cif data, like
+                # '_cell_angle_alpha', and '_atom_site_fract_[xyz]'.
+                # Note that as indicated above, the cif can hold multiple 
+                # structures. For now I will assume that there is only one. 
+                cif_dict = cifFile[cifFile.keys()[0]]
+                                 
+                # Now lets make all of the data structures that we want out of
+                # this. We are using the CellData structure from cif2cell's
+                # uctools package. Right now, I have cif2cell write another
+                # cif file first, then we read it in and analyze it. This is
+                # because we don't want to reproduce all of the sanity check
+                # that cif2cell already has in it. 
+                cell_data = CellData()
+                # Fill the cell data object from the cif file.
+                cell_data.getFromCIF(cif_dict)
+
+                # Calculate cell structure for the primitive cell for now. Supercells are
+                # represented as P1, so this will not harm that.
+                cell_data.primitive()
                 
-                outFile=os.path.join(dir,'absspct')
-                output[target] = np.loadtxt(outFile,usecols = (0,3)).T.tolist()
+                # The cell_data structure now has all cell data that we need 
+                # in it, or a method to get that data. 
+                if 'cell_vectors' in output:
+                    output['cell_vectors'] = cell_data.latticevectors
+
+                if 'cell_struct_xyz_red' in output:
+                    xred = []
+                    for atom in cell_data.atomdata:
+                        if atom:
+                            xred = xred + [atom[0].position]
+
+                    output['cell_struct_xyz_red'] = xred
+
+                if 'cell_scaling_iso' in output:
+                    output['cell_scaling_iso'] = [[cell_data.lengthscale]]
+                    
+                if 'cell_scaling_abc' in output:
+                    # For now I will output cell_data_abc as 1, since cif2cell seems to put things into lengthscale
+                    # and a,b,c are for convenience.
+                    output['cell_scaling_abc'] = [[1.0,1.0,1.0]]
+
+        elif 'cell_structure' in output:
+            # Return path to cif file.
+            output['cell_structure'] = [['Working']]
 
 
 
@@ -218,14 +216,14 @@ def writeInput(input,inpfile):
         lines = lines + getInpLines(input,key) 
         
     
-    # Print ocean input file
+    # Print cif2cell input file
     writeList(lines, inpfile)
     
 def getInpLines(input,token):
     lines=[]
     block=False
     endblock=' '
-    key = token[len('ocean.'):]
+    key = token[len('cif2cell.'):]
     if token in input:
         for element in input[token]: # Takes care of single and multi-line input.
             lines.append(' '.join([str(value) for value in element]))
@@ -271,7 +269,6 @@ def runExecutable(execDir,workDir,executable, args,out,err):
         if perr:
             print('###################################################')
             print('###################################################')
-            print('Error in executable: ' + executable)
             print(perr.strip())
             print('###################################################')
             print('###################################################')
@@ -316,11 +313,11 @@ def readColumns(filename, columns=[1,2]):
 
 #### Specific Helper Methods
 
-def writeXANESInput(input, oceaninp='ocean.in'):
+def writeXANESInput(input, cif2cellinp='cif2cell.in'):
     
     lines = []
     #setInput(input,'feff.print',[[5,0,0,0,0,0]],Force=True)
 
-    writeInput(input,oceaninp)
+    writeInput(input,cif2cellinp)
 
 

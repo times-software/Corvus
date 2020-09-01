@@ -39,6 +39,9 @@ def availableHandlers():
     if config['siesta']:
         from siesta import Siesta
         handlers = handlers + [Siesta]
+    if config['cif2cell']:
+        from cif2cell import cif2cell
+        handlers = handlers + [cif2cell]
     # import only if module lmfit exists (fit dependency). Should probably
     # do this with numpy and scipy as well. 
     try:
@@ -96,7 +99,8 @@ def configure(config):
                    'vasp'  :['vasp_gam','vasp_std'],
                    'nwchem':['nwchem'], 
                    'siesta':['siesta'],
-                   'ocean' :['ocean.pl']}
+                   'ocean' :['ocean.pl'],
+                   'cif2cell':['cif2cell']}
 
 
     exe_ext = ''
@@ -114,8 +118,10 @@ def configure(config):
     config['feff'] = path2feff
 
     path2siesta = rcp.get('Executables', 'siesta') 
+    path2siesta = rcp.get('Executables', 'cif2cell') 
     path2ocean = rcp.get('Executables', 'ocean') 
     config['siesta'] = path2siesta
+    config['cif2cell'] = path2siesta
     config['ocean'] = path2ocean
 # Initialize system with user input
 def initializeSystem(config, system):
@@ -208,6 +214,12 @@ def generateWorkflow(target, handlers, system, config, desc=''):
     mainTargets = workflow.getRequiredInput()
     #print mainTargets
     #print "Done printing ri" # Debug JJK
+    # JK - For now, this assumes that the list of targets supplied by the user is
+    # an ordered list that should be run sequentially. We should really have some way to input
+    # a list of lists of targets (we can actually do that easily) so that targets in a
+    # given list are to be run in parallel, while separate lists will be run sequentially.
+    # This gives the user easy access to simple workflows, while still allowing the power 
+    # of the underlying corvus machinery. 
     for t in reversed(mainTargets):
        targets = set([t])
        while len(targets) > 0:
@@ -228,21 +240,19 @@ def generateWorkflow(target, handlers, system, config, desc=''):
            for h in availHandlers:
                # In the below line we will want to check if target is a list, and if so, check
                # if h can produce any elements of target. Optionally, we can check 
+               print(h,targets,h.canProduce(list(targets)[0]))
                htargets = [target for target in targets if h.canProduce(target)]
                if htargets:
                    noMatch = False
+                   # JK - The following loops over all possible subsets of the list of targets
+                   # from largest subset to smallest, to try to find the smallest number
+                   # of handlers to handle all of the target properties. Note: CanProduce only
+                   # checks if a property is implemented, even though other properties are specified
+                   # as output of an implemented property. 
                    for subset in reversed(sorted(subs(htargets), key=len)):
                        l = list(subset)
                        if h.canProduce(l):
                            workflow.addExchangeAt(0, h.sequenceFor(l,system))
-                           # h.setDefaults(input,h)
-                           # JK - We need to replace the following line with code that
-                           # checks a list of lists rather than a list. If any requirement in an
-                           # inner list is found, the entire inner list can be removed.
-                           # For each target,
-                           #for target in targets:
-                           #    if isinstance(target,list):
-
                            targets.difference_update(subset)  
                            targets.update(set(workflow.getRequiredInput()))
                            break
@@ -280,15 +290,11 @@ def prettyprint(token, config, system):
             cols.append(data[l])
         for row in zip(*cols):
             f.write('    '.join(map(str,row)) + '\n')
-    elif isinstance(data, list):
+    elif isinstance(data, list) and len(data) > 1:
         # We have columns of data
         if isinstance(data[0], list) and len(data[0]) == len(data[1]):
             for row in zip(*data):
                 f.write('    '.join(map(str,row)) + '\n')
-        # Default to Python printing
-        else: 
-            pprint.pprint(data, stream=f)
-    # Default to Python printing
     else:
         pprint.pprint(data, stream=f)
 

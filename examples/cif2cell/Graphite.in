@@ -1,0 +1,12 @@
+# Set target to feffXANES (we will later change this to XANES.
+# The below will run cif2cell 4 times, which is not necessary. If an internal
+# handler requires any or all of the below, cif2cell will only run once. For
+# now, I have added implemented a compound "cell_structure" target which requires
+# the below to illustrate the ability. 
+#target_list { cell_vectors cell_scaling_abc  cell_struct_xyz_red  cell_scaling_iso }
+target_list { cell_structure }
+
+# Make Corvus use FEFF for XANES.
+usehandlers { cif2cell }
+
+cif_input { Graphite.cif }

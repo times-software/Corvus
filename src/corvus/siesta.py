@@ -185,8 +185,8 @@ def getInpLines(input,token):
         for element in input[token]: # Takes care of single and multi-line input.
             lines.append(' '.join([str(value) for value in element])) 
           	
-        if block:
-            lines.insert(0,'%block ' + key.upper())           # next line.
+        if isinstance(element,list):
+            lines.insert(0,'%block ' + key.upper())
             endblock = '%endblock ' + key.upper()
         else:                                     # Most have arguments on the same line as keyword.
             lines[0] = key.upper() + ' ' + lines[0]
