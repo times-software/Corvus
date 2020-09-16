@@ -4,6 +4,7 @@ import os, sys, subprocess, shutil, resource
 import re
 # Debug: FDV
 import pprint
+import numpy as np
 pp_debug = pprint.PrettyPrinter(indent=4)
 
 # Define dictionary of implemented calculations
@@ -188,8 +189,8 @@ class Ocean(Handler):
                 # Loop over output files? This is not possible in the output 
                 # right now.
                 
-                outFile=os.path.join(dir,'absspct')
-                output[target] = np.loadtxt(outFile,usecols = (0,3)).T.tolist()
+                outdir=os.path.join(dir,'CNBSE')
+                output[target] = [ fl for fl in os.listdir(outdir) if fl.startswith('absspct') ]
 
 
 
