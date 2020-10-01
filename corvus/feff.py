@@ -4,7 +4,7 @@ import os, sys, subprocess, shutil, resource
 import re
 import numpy as np
 from CifFile import ReadCif
-from uctools import *
+from cif2cell.uctools import *
 
 # Debug: FDV
 import pprint

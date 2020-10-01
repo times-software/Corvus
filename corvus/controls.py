@@ -40,7 +40,7 @@ def availableHandlers():
         from siesta import Siesta
         handlers = handlers + [Siesta]
     if config['cif2cell']:
-        from cif2cell import cif2cell
+        from Cif2Cell import cif2cell
         handlers = handlers + [cif2cell]
     # import only if module lmfit exists (fit dependency). Should probably
     # do this with numpy and scipy as well. 
