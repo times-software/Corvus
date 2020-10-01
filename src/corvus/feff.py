@@ -2,6 +2,9 @@ from structures import Handler, Exchange, Loop, Update
 import corvutils.pyparsing as pp
 import os, sys, subprocess, shutil, resource
 import re
+import numpy as np
+from CifFile import ReadCif
+from uctools import *
 
 # Debug: FDV
 import pprint
@@ -40,11 +43,15 @@ implemented['feffFMatrices'] = {'type':'Exchange','out':['feffFMatrices'],'cost'
 implemented['feffXANES'] = {'type':'Exchange','out':['feffXANES'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
 
+
 implemented['feffXES'] = {'type':'Exchange','out':['feffXES'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
 
 implemented['feffRIXS'] = {'type':'Exchange','out':['feffRIXS'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
+
+implemented['opcons'] = {'type':'Exchange','out':['opcons'],'cost':1,
+                        'req':['cif_input'],'desc':'Calculate optical constants using FEFF.'}
 
 # Added by FDV
 # Trying to implement and EXAFS with optimized geometry and ab initio DW factors
@@ -52,8 +59,6 @@ implemented['opt_dynmat_s2_exafs'] = {'type':'Exchange',
    'out':['opt_dynmat_s2_exafs'], 'cost':3,
    'req':['opt_dynmat','absorbing_atom'],
    'desc':'Calculate EXAFS with optimized geometry and ab initio DW factors from a dynamical matrix using FEFF.'}
-
-
 
 class Feff(Handler):
     def __str__(self):
@@ -111,11 +116,19 @@ class Feff(Handler):
 
     @staticmethod
     def prep(config):
-        subdir = config['pathprefix'] + str(config['xcIndex']) + '_FEFF'
-        xcDir = os.path.join(config['cwd'], subdir)
+        if 'xcIndexStart' in config:
+            if config['xcIndexStart'] > 0:
+                subdir = config['pathprefix'] + str(config['xcIndex']) + '_FEFF'
+                xcDir = os.path.join(config['cwd'], subdir)
+            else:
+                xcDir = config['xcDir']
+        else:
+            subdir = config['pathprefix'] + str(config['xcIndex']) + '_FEFF'
+            xcDir = os.path.join(config['cwd'], subdir)
+            
         # Make new output directory if if doesn't exist
         if not os.path.exists(xcDir):
-            os.mkdir(xcDir)
+            os.makedirs(xcDir)
         # Store current Exchange directory in configuration
         config['xcDir'] = xcDir
 
@@ -128,7 +141,6 @@ class Feff(Handler):
     # or not. 
     @staticmethod
     def run(config, input, output):
-        import numpy as np
         # set atoms and potentials
 
         # Set directory to feff executables.
@@ -144,10 +156,19 @@ class Feff(Handler):
 
         # Generate any data that is needed from generic input and populate feffInput with
         # global data (needed for all feff runs.)
-        atoms = getFeffAtomsFromCluster(input)
-        setInput(feffInput,'feff.atoms',atoms)
-        potentials = getFeffPotentialsFromCluster(input)
-        setInput(feffInput,'feff.potentials',potentials)
+        if 'cif_input' in input: # Prefer using cif for input, but still use REAL space
+            # Replace path with absolute path
+            feffInput['feff.cif'] = [[os.path.abspath(input['cif_input'][0][0])]]
+                
+            if 'feff.reciprocal' not in input:
+                feffInput['feff.real'] = [[True]]
+
+        if 'cluster' in input:
+            atoms = getFeffAtomsFromCluster(input)
+            setInput(feffInput,'feff.atoms',atoms)
+            potentials = getFeffPotentialsFromCluster(input)
+            setInput(feffInput,'feff.potentials',potentials)
+            
         debyeOpts = getFeffDebyeOptions(input)
         
         if 'feff.exchange' in feffInput:
@@ -596,6 +617,257 @@ class Feff(Handler):
 
                 outFile=os.path.join(dir,outFileName)
                 output[target] = np.loadtxt(outFile).T.tolist()
+    
+            elif (target == 'opcons'):
+                import copy
+                #import matplotlib.pyplot as plt
+                from controls import generateAndRunWorkflow
+                # Define some constants
+                    
+                hart = 2*13.605698
+                alpinv = 137.03598956
+                bohr = 0.529177249
+
+                # Set prefix for sdtout of feff runs.
+                runExecutable.prefix = '\t\t\t'
+                
+                # For each atom in absorbing_atoms run a full-spectrum calculation (all edges, XANES + EXAFS)
+                input2 = copy.deepcopy(input)
+
+                input2['feff.setedge'] = input.get('feff.setedge',[[True]])
+                input2['feff.absolute'] = [[True]]
+                input2['feff.rgrid'] = [[0.01]]
+                config2 = copy.deepcopy(config)
+                # Set directory to run in.
+                config2['cwd'] = config['xcDir']
+                # Set xcIndexStart to -1 so that xcDir will be set below rather than in prep.
+                config2['xcIndexStart'] = -1
+
+                
+                # Use absolute units for everything.
+                only_alpha = re.compile('[^a-zA-Z]')
+                config2['feff.absolute'] = [[True]]
+                NumberDensity = []
+                vtot = 0.0
+                xas_arr = []
+                xas0_arr = []
+                en_arr = []
+                component_labels = []
+                if 'absorbing_atom' not in input:
+                    absorbers = []
+                else:
+                    absorbers = input['absorbing_atom'][0]
+
+                # Calculate number density for each absorber
+                if 'cif_input' in input2:
+                    cifFile = ReadCif(os.path.abspath(input2['cif_input'][0][0]))
+                    cif_dict = cifFile[cifFile.keys()[0]]
+                    cell_data = CellData()
+                    cell_data.getFromCIF(cif_dict)
+                    cell_data.primitive()
+                    symmult = []
+                    cluster = []
+                
+                    i = 1
+                    for a in cell_data.atomdata: # This loops over sites in the original cif
+                        symmult = symmult + [len(a)]
+                        element = a[0].species.keys()[0]
+                        component_labels = component_labels + [element + str(i)]
+                        if 'absorbing_atom' not in input:
+                            absorbers = absorbers + [i]
+
+                        cluster = cluster + [['Cu', 0.0, 0.0, (i-1)*2.0 ]]
+
+                        i += 1
+
+                    if 'cluster' not in input2:    
+                        input2['cluster'] = cluster
+    
+                for absorber in absorbers:
+                    print('')
+                    print('')
+                    print("##########################################################")
+                    print("##########################################################")
+                    print("       Component: " + component_labels[absorber-1])
+                    print("##########################################################")
+                    print('')
+                    input2['absorbing_atom'] = [[absorber]]
+                    input2['feff.target'] = [[absorber]]
+                    if 'cif_input' in input2:
+                        input2['feff.target'] = [[absorber]]
+                        element = cell_data.atomdata[absorber-1][0].species.keys()[0]
+                        if 'number_density' not in input:
+                            NumberDensity = NumberDensity + [symmult[absorber - 1]]
+
+                    else:
+                        # This only works if all elements are treates as the same for our calculation
+                        element = input['cluster'][absorber-1][0]
+                        if 'number_density' not in input:
+                            n_element = 0
+                            for atm in input['cluster']:
+                                if element in atm:
+                                    n_element += 1
+                                    
+                            NumberDensity = NumberDensity + [n_element]
+                    
+                    print('Number in unit cell: ' + str(NumberDensity[-1]))
+                    # For each edge for this atom, run a XANES and EXAFS run
+                    FistEdge = True
+                    for edge in feff_edge_dict[only_alpha.sub('',element)]:
+                        print("\t" + edge)
+                        input2['feff.edge'] = [[edge]]
+                        print("\t\t" + 'XANES')
+                        # Run XANES 
+                        input2['taget_list'] = [['feffXANES']]
+                        # Set energy grid for XANES.
+                        input2['feff.egrid'] = [['e_grid', -10, 10, 0.1], ['k_grid','last',5,0.07]]
+                        config2['xcDir'] = os.path.join(config2['cwd'],component_labels[absorber-1],edge,'XANES')
+                        input2['feff.control'] = [[1,1,1,1,1,1]]
+                        targetList = [['feffXANES']]
+                        if 'feff.scf' in input:
+                            input2['feff.scf'] = input['feff.scf']
+                        else:
+                            input2['feff.scf'] = [[4.0,0,100,0.1,0]]
+                        if 'feff.fms' in input:
+                            input2['feff.fms'] = input['feff.fms']
+                        else:
+                            input2['feff.fms'] = [[6.0]]
+                            
+                        input2['feff.rpath'] = [[0.1]]
+                        if 'opcons.usesaved' not in input:
+                            generateAndRunWorkflow(config2, input2,targetList)
+                        else:
+                            # Run if xmu.dat doesn't exist.
+                            if not os.path.exists(os.path.join(config2['xcDir'],'xmu.dat')):
+                                generateAndRunWorkflow(config2, input2,targetList)
+                            else:
+                                print("\t\t\txmu.dat already calculated. Skipping.")
+                        if 'cif_input' in input:
+                            # Get total volume from cif in atomic units. 
+                            vtot = cell_data.volume()*(cell_data.lengthscale/bohr)**3
+                        else:
+                            # Get norman radii from xmu.dat
+                            with open(os.path.join(config2['xcDir'],'xmu.dat')) as f:
+                                for line in f: # Go through the lines one at a time
+                                    words = line.split()
+                                    if 'Rnm=' in words:
+                                        vtot = vtot + (float(words[words.index('Rnm=')+1])/bohr)**3*4.0/3.0*np.pi
+                                        break
+                                  
+                            f.close()
+
+                        outFile = os.path.join(config2['xcDir'],'xmu.dat')
+                        e1,k1,xanes = np.loadtxt(outFile,usecols = (0,2,3)).T
+                        xanes = np.maximum(xanes,0.0)
+                        FirstEdge = False
+                        xanesDir = config2['xcDir']
+                        exafsDir = os.path.join(config2['cwd'],component_labels[absorber-1],edge,'EXAFS')
+                        if not os.path.exists(exafsDir):
+                            os.makedirs(exafsDir)
+                        shutil.copyfile(os.path.join(xanesDir,'apot.bin'), os.path.join(exafsDir,'apot.bin'))
+                        shutil.copyfile(os.path.join(xanesDir,'pot.bin'), os.path.join(exafsDir,'pot.bin'))
+                        config2['xcDir'] = exafsDir
+                        input2['feff.control'] = [[0, 1, 1, 1, 1, 1]]
+                        input2['feff.egrid'] = [['k_grid', -20, -2, 1], ['k_grid',-2,0,0.07], ['k_grid', 0, 40, 0.07],['exp_grid', 'last', 500000.0, 10.0]]
+                        if 'feff.fms' in input:
+                            input2['feff.rpath'] = [[max(input['feff.fms'][0][0],0.1)]]
+                        else:
+                            input2['feff.rpath'] = [[6.0]]
+                            
+                        print("\t\t" + 'EXAFS')
+                        input2['feff.fms'] = [[0.0]]
+                        if 'opcons.usesaved' not in input2:
+                            generateAndRunWorkflow(config2, input2,targetList)
+                        else:
+                            # Run if xmu.dat doesn't exist.
+                            if not os.path.exists(os.path.join(config2['xcDir'],'xmu.dat')):
+                                generateAndRunWorkflow(config2, input2,targetList)
+
+
+                            
+                        outFile = os.path.join(config2['xcDir'],'xmu.dat')
+                        e2,k2,exafs,mu0 = np.loadtxt(outFile,usecols = (0,2,3,4)).T
+                        exafs = np.maximum(exafs,0.0)
+                        mu0 = np.maximum(mu0,0.0)
+                        e0 = e2[100] - (k2[100]*bohr)**2/2.0*hart
+                        
+                        # Interpolate onto a union of the two energy-grids and smoothly go from one to the other between  
+                        e_tot = np.unique(np.append(e1,e2))
+                        k_tot = np.where(e_tot > e0, np.sqrt(2.0*np.abs(e_tot-e0)/hart), -np.sqrt(2.0*np.abs(e0 - e_tot)/hart))/bohr
+                        kstart = 3.0
+                        kfin = 4.0
+                        weight1 = np.cos((np.minimum(np.maximum(k_tot,kstart),kfin)-kstart)/(kfin-kstart)*np.pi/2)**2
+                        weight2 = 1.0 - weight1
+                        xas_element = NumberDensity[-1]*(np.interp(e_tot,e1,xanes)*weight1 + np.interp(e_tot,e2,exafs)*weight2)
+                        xas0_element = NumberDensity[-1]*np.interp(e_tot,e2,mu0)
+
+                        xas_element[np.where(e_tot < e1[0])] = NumberDensity[-1]*np.interp(e_tot[np.where(e_tot < e1[0])],e2,mu0)
+                        xas_arr = xas_arr + [xas_element]
+                        xas0_arr = xas0_arr + [xas0_element]
+                        en_arr = en_arr + [e_tot]
+                        #plt.plot(e_tot, xas_element)
+                        #plt.show()
+                        
+                    print('')
+                print('')
+                # Interpolate onto common grid from 0 to 500000 eV
+                # Make common grid as union of all grids.
+                energy_grid = np.unique(np.concatenate(en_arr))
+
+                # Now loop through all elements and add xas from each element
+                xas_tot = np.zeros_like(energy_grid)
+                xas0_tot = np.zeros_like(energy_grid)
+                for i,en in enumerate(en_arr):
+                    xas_tot = xas_tot + np.interp(energy_grid,en,xas_arr[i],left=0.0,right=0.0)
+                    xas0_tot = xas0_tot + np.interp(energy_grid,en,xas0_arr[i],left=0.0,right=0.0)
+
+                xas_tot = xas_tot/vtot
+                xas0_tot = xas0_tot/vtot
+
+                # transform to eps2. xas_tot*-4pi/apha/\omega*bohr**2
+                energy_grid = energy_grid/hart
+                eps2 = xas_tot*4*np.pi*alpinv*bohr**2/energy_grid
+                eps2 = eps2[np.where(energy_grid > 0)]
+                eps2_bg = xas0_tot*4*np.pi*alpinv*bohr**2/energy_grid
+                eps2_bg = eps2_bg[np.where(energy_grid > 0)]
+ 
+                energy_grid = energy_grid[np.where(energy_grid > 0)]
+                #plt.plot(energy_grid,eps2)
+                #plt.show()
+
+                if False:
+                    # Test with Lorentzian
+                    eps2 = -5.0/((energy_grid - 277.0)**2 + 5.0**2) + 5.0/((energy_grid + 277.0)**2 + 5.0**2) 
+                
+                # Perform KK-transform
+                print('Performaing KK-transform of eps2:')
+                print('')
+                w,eps1_bg = kk_transform(energy_grid, eps2_bg)
+                w,eps1 = kk_transform(energy_grid, eps2)
+                eps2 = np.interp(w,energy_grid,eps2)
+                eps1 = eps1 + 1.0
+                eps2_bg = np.interp(w,energy_grid,eps2_bg)
+                eps1_bg = eps1_bg + 1.0
+                eps_bg = eps1_bg + 1j*eps2_bg
+                eps = eps1 + 1j*eps2
+                # Transform to optical constants
+                index_of_refraction = np.sqrt(eps)
+                index_of_refraction_bg = np.sqrt(eps_bg)
+                reflectance = np.abs((index_of_refraction-1)/(index_of_refraction+1))**2
+                reflectance_bg = np.abs((index_of_refraction_bg-1)/(index_of_refraction_bg+1))**2
+                absorption = 2*w*1.0/alpinv*np.imag(index_of_refraction)/bohr*1000
+                absorption_bg = 2*w*1.0/alpinv*np.imag(index_of_refraction_bg)/bohr*1000
+                energy_loss = -1.0*np.imag(eps**(-1))
+                energy_loss_bg = -1.0*np.imag(eps_bg**(-1))
+                
+                w = w*hart
+                np.savetxt('epsilon.dat',np.array([w,eps1,eps2,eps1_bg,eps2_bg]).transpose())
+                np.savetxt('index.dat',np.array([w,np.real(index_of_refraction),np.imag(index_of_refraction),np.real(index_of_refraction_bg),np.imag(index_of_refraction_bg)]).transpose())
+                np.savetxt('reflectance.dat',np.array([w,reflectance,reflectance_bg]).transpose())
+                np.savetxt('absorption.dat',np.array([w,absorption,absorption_bg]).transpose())
+                np.savetxt('loss.dat', np.array([w,energy_loss,energy_loss_bg]).transpose())
+                output[target] = (w,eps)
+                print('Finished with calculation of optical constants.')
 
 # Added by FDV
             elif (target == 'opt_dynmat_s2_exafs'):
@@ -724,11 +996,10 @@ def getICore(edge):
         sys.exit()
 
 
-
 def runExecutable(execDir,workDir,executable, args,out,err):
     # Runs executable located in execDir from working directory workDir.
     # Tees stdout to file out in real-time, and stderr to file err.
-    print('Running exectuable: ' + executable[0] + ' ' + ' '.join(args))
+    print(runExecutable.prefix + 'Running exectuable: ' + executable[0] + ' ' + ' '.join(args))
     # Modified by FDV:
     # Adding the / to make the config more generic
     # Modified by JJK to use os.path.join (even safer than above).
@@ -739,7 +1010,7 @@ def runExecutable(execDir,workDir,executable, args,out,err):
         if pout == '' and p.poll() is not None:
             break
         if pout:
-            print(pout.strip())
+            print(runExecutable.prefix + pout.strip())
             out.write(pout)
 
     while True:
@@ -747,17 +1018,18 @@ def runExecutable(execDir,workDir,executable, args,out,err):
         if perr == '' and p.poll() is not None:
             break
         if perr:
-            print('###################################################')
-            print('###################################################')
-            print('Error in executable: ' + executable[0])
-            print(perr.strip())
-            print('###################################################')
-            print('###################################################')
+            print(runExecutable.prefix + '###################################################')
+            print(runExecutable.prefix + '###################################################')
+            print(runExecutable.prefix + 'Error in executable: ' + executable[0])
+            print(runExecutable.prefix + perr.strip())
+            print(runExecutable.prefix + '###################################################')
+            print(runExecutable.prefix + '###################################################')
             err.write(perr)
 
 
     p.wait()
     
+runExecutable.prefix = ''    
     
 def readColumns(filename, columns=[1,2]):
     # Read file and clear out comments
@@ -1326,3 +1598,185 @@ def legacy_dym2feffinp(dym, center=1, feffinp='feff.inp', feffdym='feff.dym', sp
     writeList(lines, feffinp)
     # Print dym file
     writeDym(dym, feffdym)
+
+feff_edge_dict={ 'H':
+ ['K' ], 'He':
+ ['K' ], 'Li':
+ ['K' , 'L1' ], 'Be':
+ ['K' , 'L1' ], 'B':
+ ['K' , 'L1' , 'L2' ], 'C':
+ ['K' , 'L1' , 'L2' , 'L3' ], 'N':
+ ['K' , 'L1' , 'L2' , 'L3' ], 'O':
+ ['K' , 'L1' , 'L2' , 'L3' ], 'F':
+ ['K' , 'L1' , 'L2' , 'L3' ], 'Ne':
+ ['K' , 'L1' , 'L2' , 'L3' ], 'Na':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' ], 'Mg':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' ], 'Al':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' ], 'Si':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' ], 'P':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' ], 'S':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' ], 'Cl':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' ], 'Ar':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' ], 'K':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'N1' ], 'Ca':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'N1' , 'N2' ], 'Sc':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'N1' , 'N2' ], 'Ti':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'N1' , 'N2' ], 'V':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'N1' , 'N2' ], 'Cr':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'N1' , 'N2' ], 'Mn':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' ], 'Fe':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' ], 'Co':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' ], 'Ni':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' ], 'Cu':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' ], 'Zn':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' ], 'Ga':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' ], 'Ge':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' ], 'As':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' ], 'Se':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' ], 'Br':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' ], 'Kr':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' ], 'Rb':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'O1' ], 'Sr':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'O1' ], 'Y':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'O1' ], 'Zr':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'O1' ], 'Nb':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'O1' ], 'Mo':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'O1' ], 'Tc':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'O1' ], 'Ru':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'O1' ], 'Rh':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'O1' ], 'Pd':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' ], 'Ag':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'O1' ], 'Cd':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'O1' ], 'In':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'O1' , 'O2' ], 'Sn':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'O1' , 'O2' ], 'Sb':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'O1' , 'O2' , 'O3' ], 'Te':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'O1' , 'O2' , 'O3' ], 'I':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'O1' , 'O2' , 'O3' ], 'Xe':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'O1' , 'O2' , 'O3' ], 'Cs':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'O1' , 'O2' , 'O3' , 'O8' ], 'Ba':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'O1' , 'O2' , 'O3' , 'O8' ], 'La':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'Ce':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'Pr':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'Nd':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'Pm':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'Sm':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'Eu':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'Gd':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'Tb':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'Dy':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'Ho':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'Er':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'Tm':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'Yb':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'Lu':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'Hf':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'Ta':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O8' ], 'W':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' ], 'Re':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' ], 'Os':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' ], 'Ir':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' ], 'Pt':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' ], 'Au':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' ], 'Hg':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' ], 'Tl':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' , 'O9' ], 'Pb':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' , 'O9' ], 'Bi':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' , 'O9' , 'P1' ], 'Po':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' , 'O9' , 'P1' ], 'At':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' , 'O9' , 'P1' ], 'Rn':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' , 'O9' , 'P1' ], 'Fr':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' , 'O9' , 'P1' , 'P4' ], 'Ra':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' , 'O9' , 'P1' , 'P4' ], 'Ac':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' , 'O9' , 'P1' , 'P2' , 'P4' ], 'Th':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O8' , 'O9' , 'P1' , 'P2' , 'P4' ], 'Pa':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O8' , 'O9' , 'P1' , 'P2' , 'P4' ], 'U':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O8' , 'O9' , 'P1' , 'P2' , 'P4' ], 'Np':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O8' , 'O9' , 'P1' , 'P2' , 'P4' ], 'Pu':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O8' , 'O9' , 'P1' , 'P4' ], 'Am':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P4' ], 'Cm':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P4' ], 'Bk':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P4' ], 'Cf':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P4' ], 'Es':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P4' ], 'Fm':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P4' ], 'Md':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P4' ], 'No':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P4' ], 'Lr':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P4' , 'P5' ], 'Rf':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P4' ], 'Db':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P4' ], 'Sg':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P4' ], 'Bh':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' ], 'Hs':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' ], 'Mt':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' ], 'Ds':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' ], 'Rg':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' ], 'Cn':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' ], 'Uut':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' ], 'Fl':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' ], 'UUp':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' ], 'Lv':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' ], 'Uus':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' ], 'Uuo':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' ], 'Uue':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'S2' ], 'Ubn':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' ], 'Ubu':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' ], 'Ubb':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R3' ], 'Ubt':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R3' , 'R5' ], 'Ubq':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R5' ], 'Ubp':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R5' , 'S2' ], 'Ubh':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R5' , 'S2' ], 'Ubs':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R5' , 'S2' ], 'Ubo':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R5' , 'S2' ], 'Ube':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R5' , 'S2' ], 'Utn':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R5' , 'S2' ], 'Utu':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R5' , 'S2' ], 'Utb':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R5' , 'S2' ], 'Utt':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R5' , 'S2' ], 'Utq':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R5' , 'S2' ], 'Utp':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R5' , 'S2' , 'S3' ], 'Uth':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R5' , 'S2' , 'S3' ], 'Uts':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R5' , 'S2' , 'S3' ], 'Uto':
+ ['K' , 'L1' , 'L2' , 'L3' , 'M1' , 'M2' , 'M3' , 'M4' , 'M5' , 'N1' , 'N2' , 'N3' , 'N4' , 'N5' , 'N6' , 'N7' , 'O1' , 'O2' , 'O3' , 'O4' , 'O5' , 'O6' , 'O7' , 'O8' , 'O9' , 'P1' , 'P2' , 'P3' , 'P4' , 'P5' , 'P6' , 'P7' , 'R1' , 'R5' , 'S2' , 'S3' ] }
+
+
+def kk_transform(w,eps2):
+    
+    """ Performs kk-transform on imaginary part of spectrum from 0 to infty
+    input:
+        w  - energy grid, does not need to be even
+        eps2 - imaginary part of some spectrum
+
+    output:
+        f1 - real part of kk-tranform (will need to add constant if necessary
+    """
+
+    # Create new frequency grid that is centered between the points in w.
+    wnew = (w[:-1] + w[1:])/2.0
+    eps1 = np.zeros_like(wnew)
+    for iw, w0 in enumerate(wnew):
+        if False:
+            for jw,w1 in enumerate(w[:-1]):
+                integrand = w1*eps2[jw]/(w1**2-w0**2)
+                delta = w[jw+1]-w1
+                #eps1[iw] = np.trapz(integrand[:iw],w[:iw]) + np.trapz(integrand[iw+1:],w[iw+1:])
+                a = (eps2[jw+1] - eps2[jw])/delta
+                b = eps2[jw] - a*w[jw]
+                g1 = (w0 + w1)/(w0 - w1)*(w0 - w1 - delta)/(w0 + w1 + delta)
+                g1 = np.log(abs(g1))
+                g2 = ((w1 + delta)**2 - w0**2)/(w1**2 - w0**2)
+                g2 = np.log(abs(g2))
+                eps1[iw] = eps1[iw] + a*delta + a*w0/2.0*g1 + b/2.0*g2
+
+
+        integrand = w[:-1]*eps2[:-1]/(w[:-1]**2 - w0**2)
+        delta = w[1:] - w[:-1]
+        a = (eps2[1:] - eps2[:-1])/delta
+        b = eps2[:-1] - a*w[:-1]
+        g1 = (w0 + w[:-1])/(w0 - w[:-1])*(w0 - w[:-1] - delta)/(w0 + w[:-1] + delta)
+        g1 = np.log(np.abs(g1))
+        g2 = ((w[:-1] + delta)**2 - w0**2)/(w[:-1]**2 - w0**2)
+        g2 = np.log(np.abs(g2))
+        eps1[iw] = np.sum(a*delta + a*w0/2.0*g1 + b/2.0*g2)
+    return wnew,eps1*2/np.pi
+

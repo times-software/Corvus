@@ -240,7 +240,6 @@ def generateWorkflow(target, handlers, system, config, desc=''):
            for h in availHandlers:
                # In the below line we will want to check if target is a list, and if so, check
                # if h can produce any elements of target. Optionally, we can check 
-               print(h,targets,h.canProduce(list(targets)[0]))
                htargets = [target for target in targets if h.canProduce(target)]
                if htargets:
                    noMatch = False
