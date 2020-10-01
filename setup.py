@@ -26,7 +26,7 @@ setuptools.setup(name='corvus',
       url='http://feffproject.org',
       scripts=['bin/run-corvus'],
       packages=setuptools.find_packages(),
-      package_data={'':['corvus.conf'],'corvutils':['parsnip.corvus.config','parsnip.corvus.formats']},
+      package_data={'corvutils':['parsnip.corvus.config','parsnip.corvus.formats']},
       data_files=[('.',['corvus.conf']),('doc',['doc/Corvus_Manual.txt'])], #+Examples_Data
       install_requires=['numpy','lmfit','cif2cell'],
       python_requires='>=2.7,<3'

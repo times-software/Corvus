@@ -6,7 +6,9 @@ nwchem   : <path to nwchem executables dir>
 orca     : <path to orca executables dir>
 gaussian : <path to gaussian executables dir>
 vasp     : <path to vasp executables dir>
-siesta   : <path to vasp executables dir>
+siesta   : <path to siesta executables dir>
+ocean    : <path to ocean executables dir>
+cif2cell : <path to cif2cell executables dir>
 
 [Defaults]
 prefix      : Corvus
