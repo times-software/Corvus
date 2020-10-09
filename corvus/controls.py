@@ -63,14 +63,14 @@ def configure(config):
     from ConfigParser import RawConfigParser
     from platform import system
     
-    # Store path to Corvus executables
+    # Store path to corvus module
     config['bin'] = os.path.dirname(os.path.abspath(__file__))
     # Store path to current working directory (where user is running Corvus)
     config['cwd'] = os.getcwd()
 
     # Load Corvus defaults
     rcp = RawConfigParser(allow_no_value=True)
-    configFile = os.path.join(os.path.dirname(config['bin']), 'corvus.conf')
+    configFile = os.path.join(os.path.dirname(config['bin']), 'corvus','config')
     if configFile not in rcp.read(configFile):
         printAndExit('Error reading corvus.conf')
     config['pathprefix'] = rcp.get('Defaults', 'prefix')
