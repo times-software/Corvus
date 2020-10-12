@@ -401,6 +401,8 @@ class Feff(Handler):
                 # 4. Run rixs executable.
 
                 # Set global settings for all runs.
+                # Set default energy grid
+                setInput(feffInput,'feff.egrid',[['e_grid', -10, 10, 0.05],['k_grid', 'last', 4, 0.025]])
                 setInput(feffInput,'feff.exchange',[[0, 0.0, -20.0, 0]])
                 setInput(feffInput,'feff.corehole',[['RPA']],Force=True) # maybe not this one. Need 'NONE' for valence
 
@@ -532,6 +534,8 @@ class Feff(Handler):
                             feffInput['feff.xanes'] = xanesInput['feff.xanes']
                             
                         del feffInput['feff.xes']
+                        # Set default energy grid
+                        setInput(feffInput,'feff.egrid',[['e_grid', -10, 10, 0.05],['k_grid', 'last', 4, 0.025]],Force=True)
                         feffinp = os.path.join(dirname, 'feff.inp')
                         # Write XANES input for this run
                         writeXANESInput(feffInput,feffinp)
