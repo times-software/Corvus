@@ -63,14 +63,14 @@ def configure(config):
     from ConfigParser import RawConfigParser
     from platform import system
     
-    # Store path to Corvus executables
+    # Store path to corvus module
     config['bin'] = os.path.dirname(os.path.abspath(__file__))
     # Store path to current working directory (where user is running Corvus)
     config['cwd'] = os.getcwd()
 
     # Load Corvus defaults
     rcp = RawConfigParser(allow_no_value=True)
-    configFile = os.path.join(os.path.dirname(config['bin']), 'corvus.conf')
+    configFile = os.path.join(os.path.dirname(config['bin']), 'corvus','config')
     if configFile not in rcp.read(configFile):
         printAndExit('Error reading corvus.conf')
     config['pathprefix'] = rcp.get('Defaults', 'prefix')
@@ -240,7 +240,6 @@ def generateWorkflow(target, handlers, system, config, desc=''):
            for h in availHandlers:
                # In the below line we will want to check if target is a list, and if so, check
                # if h can produce any elements of target. Optionally, we can check 
-               #print(h,targets,h.canProduce(list(targets)[0]))
                htargets = [target for target in targets if h.canProduce(target)]
                if htargets:
                    noMatch = False

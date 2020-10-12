@@ -9,7 +9,7 @@ import pprint
 from CifFile import ReadCif
 # This one is from the cif2cell package. It allows calculations of 
 # cell properties from cif input.
-from uctools import *
+from cif2cell.uctools import *
 
 pp_debug = pprint.PrettyPrinter(indent=4)
 
@@ -18,7 +18,7 @@ pp_debug = pprint.PrettyPrinter(indent=4)
 implemented = {}
 strlistkey = lambda L:','.join(sorted(L))
 subs = lambda L:[{L[j] for j in range(len(L)) if 1<<j&k} for k in range(1,1<<len(L))]
-for s in subs(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc']):
+for s in subs(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc', 'number_density']):
     key = strlistkey(s)
     autodesc = 'Get ' + ', '.join(s) + ' using cif2cell'
     cost = 10
@@ -27,6 +27,8 @@ for s in subs(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_
 
 implemented['cell_structure'] = {'type':'Exchange','out':['cell_structure'],'cost':0,
                         'req':['cell_vectors','cell_struct_xyz_red','cell_scaling_iso','cell_scaling_abc'],'desc':'Calculate cell structure from cif file using cif2cell.'}
+
+
 #implemented['cell_structure'] = {'type':'Exchange','out':['cell_structure','cell_struc_xyz','cell_scaling_abc','cell_scaling_iso'],'cost':0,
 #                        'req':['cif_input'],'desc':'Calculate cell structure from cif file using cif2cell.'}
 
@@ -121,7 +123,7 @@ class cif2cell(Handler):
         #inpf = os.path.join(dir, 'cif2cell.in')
 
         # Loop over targets in output. Not sure if there will ever be more than one output target here.
-        if set(output.keys()).issubset(set(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc'])):
+        if set(output.keys()).issubset(set(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc','number_density'])):
             # Set output and error files
             with open(os.path.join(dir, 'corvus.CIF2CELL.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.CIF2CELL.stderr'), 'w') as err:
                 # Copy necessary files to dir
