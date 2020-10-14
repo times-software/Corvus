@@ -1,4 +1,4 @@
-from structures import Handler, Exchange, Loop, Update
+from corvus.structures import Handler, Exchange, Loop, Update
 import corvutils.pyparsing as pp
 import os, sys, subprocess, shutil, resource
 import re
@@ -36,27 +36,27 @@ implemented['cell_structure'] = {'type':'Exchange','out':['cell_structure'],'cos
 #implemented['cluster'] = 
 
 
-class cif2cell(Handler):
+class Cif2Cell(Handler):
     def __str__(self):
         return 'cif2cell Handler'
 
     @staticmethod
     def canProduce(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             return strlistkey(output) in implemented
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             return output in implemented
         else:
             raise TypeError('Output should be token or list of tokens')
 
     @staticmethod
     def requiredInputFor(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
-            unresolved = {o for o in output if not cif2cell.canProduce(o)}
-            canProduce = (o for o in output if cif2cell.canProduce(o))
+        if isinstance(output, list) and output and isinstance(output[0], str):
+            unresolved = {o for o in output if not Cif2Cell.canProduce(o)}
+            canProduce = (o for o in output if Cif2Cell.canProduce(o))
             additionalInput = (set(implemented[o]['req']) for o in canProduce)
             return list(set.union(unresolved,*additionalInput))
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             if output in implemented:
                 return implemented[output]['req']
             else:
@@ -66,9 +66,9 @@ class cif2cell(Handler):
 
     @staticmethod
     def cost(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             key = strlistkey(output)
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             key = output
         else:
             raise TypeError('Output should be token or list of tokens')
@@ -78,9 +78,9 @@ class cif2cell(Handler):
 
     @staticmethod
     def sequenceFor(output,inp=None):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             key = strlistkey(output)
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             key = output
         else:
             raise TypeError('Output should be token of list of tokens')
@@ -88,7 +88,7 @@ class cif2cell(Handler):
             raise LookupError('Corvus cannot currently produce ' + key + ' using FEFF')
         f = lambda subkey : implemented[key][subkey]
         if f('type') is 'Exchange':
-            return Exchange(cif2cell, f('req'), f('out'), cost=f('cost'), desc=f('desc'))
+            return Exchange(Cif2Cell, f('req'), f('out'), cost=f('cost'), desc=f('desc'))
 
     @staticmethod
     def prep(config):
@@ -125,7 +125,7 @@ class cif2cell(Handler):
         # Loop over targets in output. Not sure if there will ever be more than one output target here.
         if set(output.keys()).issubset(set(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc','number_density'])):
             # Set output and error files
-            with open(os.path.join(dir, 'corvus.CIF2CELL.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.CIF2CELL.stderr'), 'w') as err:
+            with open(os.path.join(dir, 'corvus.CIF2CELL.stdout'), 'wb') as out, open(os.path.join(dir, 'corvus.CIF2CELL.stderr'), 'w') as err:
                 # Copy necessary files to dir
                 cif_file=cif2cellInput['cif2cell.cif_input'][0][0]
                 shutil.copy(cif_file,dir)
@@ -150,7 +150,7 @@ class cif2cell(Handler):
                 # '_cell_angle_alpha', and '_atom_site_fract_[xyz]'.
                 # Note that as indicated above, the cif can hold multiple 
                 # structures. For now I will assume that there is only one. 
-                cif_dict = cifFile[cifFile.keys()[0]]
+                cif_dict = cifFile[list(cifFile.keys())[0]]
                                  
                 # Now lets make all of the data structures that we want out of
                 # this. We are using the CellData structure from cif2cell's
@@ -250,34 +250,42 @@ def writeList(lines, filename):
 def runExecutable(execDir,workDir,executable, args,out,err):
     # Runs executable located in execDir from working directory workDir.
     # Tees stdout to file out in real-time, and stderr to file err.
-    print('Running exectuable: ' + executable)
+    print(('Running exectuable: ' + executable))
     # Modified by FDV:
     # Adding the / to make the config more generic
     # Modified by JJK to use os.path.join (even safer than above).
     execList = [os.path.join(execDir,executable)] + args
-    p = subprocess.Popen(execList, bufsize=0, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    while True:
-        pout = p.stdout.readline()
-        if pout == '' and p.poll() is not None:
-            break
-        if pout:
-            print(pout.strip())
-            out.write(pout)
-
-    while True:
-        perr = p.stderr.readline()
-        if perr == '' and p.poll() is not None:
-            break
-        if perr:
-            print('###################################################')
-            print('###################################################')
-            print(perr.strip())
-            print('###################################################')
-            print('###################################################')
-            err.write(perr)
+    print(execList)
+    result = subprocess.run(execList, cwd=workDir, capture_output=True, text=True)
+    print("stdout:", result.stdout)
+    out.write(result.stdout)
+    print("stderr:", result.stderr)
+    out.write(result.stderr)
+#    p = subprocess.Popen(execList, bufsize=0, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+#    while True:
+#        pout = p.stdout.readline()
+#        if pout == '' and p.poll() is not None:
+#            break
+#        if pout:
+#            print((pout.strip()))
+#            out.write(pout)
+#
+#    while True:
+#        perr = p.stderr.readline()
+#        if perr == '' and p.poll() is not None:
+#            break
+#        if perr:
+#            print('###################################################')
+#            print('###################################################')
+#            print((perr.strip()))
+#            print('###################################################')
+#            print('###################################################')
+#            err.write(perr)
 
             
-    p.wait()
+#    print('waiting')
+#    p.wait()
+#    print('done waiting')
     
     
 
@@ -291,7 +299,7 @@ def readColumns(filename, columns=[1,2]):
     try:
         cleanStr = comments.transformString(cleanStr)
     except pp.ParseException as pe:
-        print('Parsing Error using pyparsing: invalid input:', pe)
+        print(('Parsing Error using pyparsing: invalid input:', pe))
         sys.exit()
     # Define grammar for ncols of data based on number of entries in first row
     floating = pp.Word(pp.nums + ".+-E").setParseAction(lambda t: float(t[0]))
@@ -308,9 +316,9 @@ def readColumns(filename, columns=[1,2]):
     try:
         data = text.parseString(cleanStr).asList()
     except pp.ParseException as pe:
-        print('Parsing Error using pyparsing: invalid input:', pe)
+        print(('Parsing Error using pyparsing: invalid input:', pe))
         sys.exit()
-    cols = map(list, zip(*data))
+    cols = list(map(list, list(zip(*data))))
     return [cols[i-1] for i in columns]
 
 #### Specific Helper Methods

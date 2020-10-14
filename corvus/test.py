@@ -3091,4 +3091,4 @@ edge_dict={
  ]
  }
 
-print(edge_dict[input("Enter element:")])
+print((edge_dict[eval(input("Enter element:"))]))

@@ -104,7 +104,7 @@ class Exchange(object):
 
 class Update(object):
     def __init__(self, token, newToken=None, newValue=None):
-        isStr = lambda x: isinstance(x, basestring)
+        isStr = lambda x: isinstance(x, str)
         isList = lambda x: isinstance(x, list)
         isStrList = lambda L: isList(L) and L and all(map(isStr, L))
         if isStr(token):
@@ -155,7 +155,7 @@ class Update(object):
 
 class Loop(object):
     def __init__(self, exchange, token, gridToken=None, gridValues=None):
-        isStr = lambda x: isinstance(x, basestring)
+        isStr = lambda x: isinstance(x, str)
         isList = lambda x: isinstance(x, list)
         isStrList = lambda L: isList(L) and L and all(map(isStr, L))
         if isStr(token):
@@ -232,10 +232,8 @@ class Loop(object):
                 table[token + '-grid'].append(system[token])
         system.update(table)                 
 
-class Handler():
+class Handler(metaclass=ABCMeta):
     
-    __metaclass__ = ABCMeta
-
     @classmethod
     def exchange(self, config, input, output):
         self.prep(config)

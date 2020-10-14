@@ -14,39 +14,39 @@ def availableHandlers():
     configure(config)
     handlers = []
     if config['abinit'] and config['anaddb'] and config['mrgddb'] and config['mrggkk']:
-        from abinit import Abinit
+        from corvus.abinit import Abinit
         handlers = handlers + [Abinit]
     if config['dmdw']:
-        from dmdw import Dmdw
+        from corvus.dmdw import Dmdw
         handlers = handlers + [Dmdw]
     if config['feff']:
-        from feff import Feff
+        from corvus.feff import Feff
         handlers = handlers + [Feff]
     if config['vasp_gam'] and config['vasp_std']:
-        from vasp import Vasp
+        from corvus.vasp import Vasp
         handlers = handlers + [Vasp]
     if config['nwchem']:
-        from nwchem import Nwchem
+        from corvus.nwchem import Nwchem
         handlers = handlers + [Nwchem]
     if config['ocean']:
-        from ocean import Ocean
+        from corvus.ocean import Ocean
         handlers = handlers + [Ocean]
     if config['orca']: 
         # JK - Note that there is another command named orca on many linux systems.
         # Need to figure out how to check that this is indeed orca electronic structure code.
-        from orca import Orca
+        from corvus.orca import Orca
         handlers = handlers + [Orca]
     if config['siesta']:
-        from siesta import Siesta
+        from corvus.siesta import Siesta
         handlers = handlers + [Siesta]
     if config['cif2cell']:
-        from Cif2Cell import Cif2Cell
+        from corvus.Cif2Cell import Cif2Cell
         handlers = handlers + [Cif2Cell]
     # import only if module lmfit exists (fit dependency). Should probably
     # do this with numpy and scipy as well. 
     try:
         import lmfit
-        from fit import fit
+        from corvus.fit import fit
         handlers = handlers + [fit]
     except ImportError:
         print("Warning: lmfit not found. fit handler will be disabled.")
@@ -60,7 +60,7 @@ def availableHandlers():
 #   return [Feff, FeffRixs, Dmdw, Abinit, Vasp, Nwchem, Orca]
 
 def configure(config):
-    from ConfigParser import RawConfigParser
+    from configparser import RawConfigParser
     from platform import system
     
     # Store path to corvus module
@@ -107,7 +107,7 @@ def configure(config):
     if system()[0:6]=='CYGWIN':
       exe_ext = '.exe'
 
-    for code in Execs_Dict.keys():
+    for code in list(Execs_Dict.keys()):
       path2code = rcp.get('Executables', code)
       for cmd in Execs_Dict[code]:
         config[cmd] = which(cmd+exe_ext, path2code)
@@ -125,7 +125,7 @@ def configure(config):
     config['ocean'] = path2ocean
 # Initialize system with user input
 def initializeSystem(config, system):
-    from corvutils import parsnip
+    import corvutils.parsnip
 
     conf    = checkFile(config['parsnipConf'])
     inp     = config['inputFile']
@@ -135,7 +135,7 @@ def initializeSystem(config, system):
 #   sys.exit()
 
     if os.path.exists(inp):
-        system.update(parsnip.parse(conf, inp, mode=['read','UseDefaults']))
+        system.update(corvutils.parsnip.parse(conf, inp, mode=['read','UseDefaults']))
 
 # Debug: FDV
 #   pp_debug.pprint(system)
@@ -147,7 +147,7 @@ def initializeSystem(config, system):
 # JK - added config as input to allow use of paths to check for necessary executables
 # before adding handlers to available handler list.
 def generateWorkflow(target, handlers, system, config, desc=''):
-    from structures import Workflow
+    from corvus.structures import Workflow
 
 # Note FDV: Moving to top so this is available throughout
 # Define the available handlers by hand here
@@ -168,13 +168,13 @@ def generateWorkflow(target, handlers, system, config, desc=''):
     #print handlers
     #print availableHandlers_map.keys()
     for handler_name in handlers:
-      if handler_name in availableHandlers_map.keys():
+      if handler_name in list(availableHandlers_map.keys()):
         useHandlers.append(availableHandlers_map[handler_name])
         #print useHandlers
       else:
-        print("Handler %s not in list of available handlers:" % (handler_name))
-        for s in availableHandlers_map.keys():
-          print("%s" % s)
+        print(("Handler %s not in list of available handlers:" % (handler_name)))
+        for s in list(availableHandlers_map.keys()):
+          print(("%s" % s))
         sys.exit()
 
 # Debuf: FDV
@@ -350,7 +350,7 @@ def generateAndRunWorkflow(config, system, targetList):
     #  print 'Provide target properties or Workflow'
     #  sys.exit()
 
-    if 'usehandlers' in system.keys():
+    if 'usehandlers' in list(system.keys()):
       handlerList = system['usehandlers'][0]
     else:
       print('Provide the handler list to be used in this calculation')
@@ -408,7 +408,7 @@ def oneshot(argv):
     try:
         opts, args = getopt.getopt(argv[1:], shortopts, longopts)
     except getopt.GetoptError as err:
-        print(str(err))
+        print((str(err)))
         usage()
         sys.exit(2)
 
@@ -491,7 +491,7 @@ def oneshot(argv):
 # Added by FDV
 # At this point we set the target list based on the content of the input file,
 # rather than the command line.
-    if 'target_list' in system.keys():
+    if 'target_list' in list(system.keys()):
       targetList = system['target_list']
     else:
       print('Provide target properties or Workflow')
@@ -500,7 +500,7 @@ def oneshot(argv):
 # Added by FDV
 # At this point we set the handler list to make the workflow generator work more
 # generally.
-    if 'usehandlers' in system.keys():
+    if 'usehandlers' in list(system.keys()):
       handlerList = system['usehandlers'][0]
     else:
       print('Provide the handler list to be used in this calculation')
@@ -572,7 +572,7 @@ def oneshot(argv):
         i += 1
     # Save completed state
     saveState['system'] = system
-    with open(config['saveFile'], 'w') as saveFile:
+    with open(config['saveFile'], 'wb') as saveFile:
         pickle.dump(saveState, saveFile, pickle.HIGHEST_PROTOCOL)
 
     # Print output

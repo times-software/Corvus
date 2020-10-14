@@ -1,5 +1,5 @@
 isNum = lambda x: isinstance(x, (int, float)) 
-isStr = lambda x: isinstance(x, basestring)
+isStr = lambda x: isinstance(x, str)
 isList = lambda x: isinstance(x, list)
 
 def bohr2angstrom(x):

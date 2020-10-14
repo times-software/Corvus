@@ -1,4 +1,4 @@
-from structures import Handler, Exchange, Loop, Update
+from corvus.structures import Handler, Exchange, Loop, Update
 import corvutils.pyparsing as pp
 import os, sys, subprocess, shutil, resource
 import re
@@ -66,21 +66,21 @@ class Feff(Handler):
 
     @staticmethod
     def canProduce(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             return strlistkey(output) in implemented
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             return output in implemented
         else:
             raise TypeError('Output should be token or list of tokens')
 
     @staticmethod
     def requiredInputFor(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             unresolved = {o for o in output if not Feff.canProduce(o)}
             canProduce = (o for o in output if Feff.canProduce(o))
             additionalInput = (set(implemented[o]['req']) for o in canProduce)
             return list(set.union(unresolved,*additionalInput))
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             if output in implemented:
                 return implemented[output]['req']
             else:
@@ -90,9 +90,9 @@ class Feff(Handler):
 
     @staticmethod
     def cost(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             key = strlistkey(output)
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             key = output
         else:
             raise TypeError('Output should be token or list of tokens')
@@ -102,9 +102,9 @@ class Feff(Handler):
 
     @staticmethod
     def sequenceFor(output,inp=None):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             key = strlistkey(output)
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             key = output
         else:
             raise TypeError('Output should be token of list of tokens')
@@ -625,7 +625,7 @@ class Feff(Handler):
             elif (target == 'opcons'):
                 import copy
                 #import matplotlib.pyplot as plt
-                from controls import generateAndRunWorkflow
+                from corvus.controls import generateAndRunWorkflow
                 # Define some constants
                     
                 hart = 2*13.605698
@@ -665,7 +665,7 @@ class Feff(Handler):
                 # Calculate number density for each absorber
                 if 'cif_input' in input2:
                     cifFile = ReadCif(os.path.abspath(input2['cif_input'][0][0]))
-                    cif_dict = cifFile[cifFile.keys()[0]]
+                    cif_dict = cifFile[list(cifFile.keys())[0]]
                     cell_data = CellData()
                     cell_data.getFromCIF(cif_dict)
                     cell_data.primitive()
@@ -675,7 +675,7 @@ class Feff(Handler):
                     i = 1
                     for a in cell_data.atomdata: # This loops over sites in the original cif
                         symmult = symmult + [len(a)]
-                        element = a[0].species.keys()[0]
+                        element = list(a[0].species.keys())[0]
                         component_labels = component_labels + [element + str(i)]
                         if 'absorbing_atom' not in input:
                             absorbers = absorbers + [i]
@@ -692,14 +692,14 @@ class Feff(Handler):
                     print('')
                     print("##########################################################")
                     print("##########################################################")
-                    print("       Component: " + component_labels[absorber-1])
+                    print(("       Component: " + component_labels[absorber-1]))
                     print("##########################################################")
                     print('')
                     input2['absorbing_atom'] = [[absorber]]
                     input2['feff.target'] = [[absorber]]
                     if 'cif_input' in input2:
                         input2['feff.target'] = [[absorber]]
-                        element = cell_data.atomdata[absorber-1][0].species.keys()[0]
+                        element = list(cell_data.atomdata[absorber-1][0].species.keys())[0]
                         if 'number_density' not in input:
                             NumberDensity = NumberDensity + [symmult[absorber - 1]]
 
@@ -714,13 +714,13 @@ class Feff(Handler):
                                     
                             NumberDensity = NumberDensity + [n_element]
                     
-                    print('Number in unit cell: ' + str(NumberDensity[-1]))
+                    print(('Number in unit cell: ' + str(NumberDensity[-1])))
                     # For each edge for this atom, run a XANES and EXAFS run
                     FistEdge = True
                     for edge in feff_edge_dict[only_alpha.sub('',element)]:
-                        print("\t" + edge)
+                        print(("\t" + edge))
                         input2['feff.edge'] = [[edge]]
-                        print("\t\t" + 'XANES')
+                        print(("\t\t" + 'XANES'))
                         # Run XANES 
                         input2['taget_list'] = [['feffXANES']]
                         # Set energy grid for XANES.
@@ -778,7 +778,7 @@ class Feff(Handler):
                         else:
                             input2['feff.rpath'] = [[6.0]]
                             
-                        print("\t\t" + 'EXAFS')
+                        print(("\t\t" + 'EXAFS'))
                         input2['feff.fms'] = [[0.0]]
                         if 'opcons.usesaved' not in input2:
                             generateAndRunWorkflow(config2, input2,targetList)
@@ -897,7 +897,7 @@ class Feff(Handler):
 
 # Before running, we need to write the dym file to be used in this run
                   dymFilename = 'corvus.dym'
-                  from dmdw import writeDym
+                  from corvus.dmdw import writeDym
                   writeDym(input['opt_dynmat'], os.path.join(dir, dymFilename))
 #                 sys.exit()
 
@@ -1003,35 +1003,47 @@ def getICore(edge):
 def runExecutable(execDir,workDir,executable, args,out,err):
     # Runs executable located in execDir from working directory workDir.
     # Tees stdout to file out in real-time, and stderr to file err.
-    print(runExecutable.prefix + 'Running exectuable: ' + executable[0] + ' ' + ' '.join(args))
+    print((runExecutable.prefix + 'Running exectuable: ' + executable[0] + ' ' + ' '.join(args)))
     # Modified by FDV:
     # Adding the / to make the config more generic
     # Modified by JJK to use os.path.join (even safer than above).
     execList = [os.path.join(execDir,executable[0])] + args
-    p = subprocess.Popen(execList, bufsize=0, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(execList, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf8')
     while True:
-        pout = p.stdout.readline()
-        if pout == '' and p.poll() is not None:
+        output = p.stdout.readline()
+        error = p.stderr.readline()
+        if output == '' and p.poll() is not None:
             break
-        if pout:
-            print(runExecutable.prefix + pout.strip())
-            out.write(pout)
+        if output:
+            print(output.strip())
+            out.write(output.strip() + os.linesep)
+        if error:
+            print(error.strip())
+            err.write(error.strip() + os.linesep)
+    rc = p.poll()
+    #while True:
+    #    pout = p.stdout.readline()
+    #    if pout == '' and p.poll() is not None:
+    #        break
+    #    if pout:
+    #        print((runExecutable.prefix + pout.strip()))
+    #        out.write(pout)
 
-    while True:
-        perr = p.stderr.readline()
-        if perr == '' and p.poll() is not None:
-            break
-        if perr:
-            print(runExecutable.prefix + '###################################################')
-            print(runExecutable.prefix + '###################################################')
-            print(runExecutable.prefix + 'Error in executable: ' + executable[0])
-            print(runExecutable.prefix + perr.strip())
-            print(runExecutable.prefix + '###################################################')
-            print(runExecutable.prefix + '###################################################')
-            err.write(perr)
+    #while True:
+    #    perr = p.stderr.readline()
+    #    if perr == '' and p.poll() is not None:
+    #        break
+    #    if perr:
+    #        print((runExecutable.prefix + '###################################################'))
+    #        print((runExecutable.prefix + '###################################################'))
+    #        print((runExecutable.prefix + 'Error in executable: ' + executable[0]))
+    #        print((runExecutable.prefix + perr.strip()))
+    #        print((runExecutable.prefix + '###################################################'))
+    #        print((runExecutable.prefix + '###################################################'))
+    #        err.write(perr)
 
 
-    p.wait()
+    #p.wait()
     
 runExecutable.prefix = ''    
     
@@ -1043,7 +1055,7 @@ def readColumns(filename, columns=[1,2]):
     try:
         cleanStr = comments.transformString(cleanStr)
     except pp.ParseException as pe:
-        print('Parsing Error using pyparsing: invalid input:', pe)
+        print(('Parsing Error using pyparsing: invalid input:', pe))
         sys.exit()
     # Define grammar for ncols of data based on number of entries in first row
     floating = pp.Word(pp.nums + ".+-E").setParseAction(lambda t: float(t[0]))
@@ -1060,9 +1072,9 @@ def readColumns(filename, columns=[1,2]):
     try:
         data = text.parseString(cleanStr).asList()
     except pp.ParseException as pe:
-        print('Parsing Error using pyparsing: invalid input:', pe)
+        print(('Parsing Error using pyparsing: invalid input:', pe))
         sys.exit()
-    cols = map(list, zip(*data))
+    cols = list(map(list, list(zip(*data))))
     return [cols[i-1] for i in columns]
 
 #### Specific Helper Methods
@@ -1099,7 +1111,7 @@ atomicSymbols = [
     'Bk',    'Cf',    'Es',    'Fm',    'Md',    'No',    'Lr' ]  
 assert len(atomicMasses) == len(atomicSymbols), "FEFF Handler: Mismatch in periodic table!"
 nElem = len(atomicSymbols)
-for i in xrange(nElem):
+for i in range(nElem):
     num = i + 1
     sym = atomicSymbols[i]
     mass = atomicMasses[i]
@@ -1190,13 +1202,13 @@ def cell2atoms(cellatoms, acell, rprim=None, angdeg=None, cutoff=None, nmax=1000
         at['coord'] = [scale * reduced for scale, reduced in zip(acell, at['coord'])]
     atoms = []
     nord = 3 
-    iRange = range(-nord, nord+1)
+    iRange = list(range(-nord, nord+1))
     grid = ((i,j,k) for i in iRange for j in iRange for k in iRange)
     for ijk in grid:
         dx = [a*sum(i*c for i,c in zip(ijk,row)) for row, a in zip(rprim,acell)]
         for at in cellatoms:
-            copyAt = {k:v for k,v in at.items()}
-            copyAt['coord'] = map(sum, zip(at['coord'], dx))
+            copyAt = {k:v for k,v in list(at.items())}
+            copyAt['coord'] = list(map(sum, list(zip(at['coord'], dx))))
             copyAt['dist'] = sqrt(sum(x*x for x in copyAt['coord']))
             atoms.append(copyAt) 
     ru8 = lambda x: Decimal(x).quantize(Decimal('0.12345678'),rounding=ROUND_UP)
@@ -1207,32 +1219,32 @@ def cell2atoms(cellatoms, acell, rprim=None, angdeg=None, cutoff=None, nmax=1000
         return atoms
 
 def abcell2atoms(input):
-    from abinit import expandedList
-    from conversions import bohr2angstrom
+    from corvus.abinit import expandedList
+    from corvus.conversions import bohr2angstrom
     for key in ['acell','znucl','xred','rprim','natom']:
         assert key in input
         # Expecting input parsed to strings for now
-        assert isinstance(input[key], basestring) 
+        assert isinstance(input[key], str) 
     # Parsing grammar 
     vector = pp.Group(pp.Word(pp.nums + ".+-E") * 3)
     listVectors = pp.Group(pp.OneOrMore(vector))
     # Translate strings into useable lists/numbers
-    acell = bohr2angstrom(map(float, expandedList(input['acell'])))
-    atnums = map(int, expandedList(input['znucl'], length=input['natom']))
+    acell = bohr2angstrom(list(map(float, expandedList(input['acell']))))
+    atnums = list(map(int, expandedList(input['znucl'], length=input['natom'])))
     coords = input['xred']
     rprim = input['rprim']
     try:
         coords = listVectors.parseString(coords).asList()[0]
-        coords = [map(float, v) for v in coords]
+        coords = [list(map(float, v)) for v in coords]
         rprim = listVectors.parseString(rprim).asList()[0]
-        rprim = [map(float, v) for v in rprim]
+        rprim = [list(map(float, v)) for v in rprim]
     except pp.ParseException as pe:
-        print("Parsing Error using pyparsing: invalid input:", pe)
+        print(("Parsing Error using pyparsing: invalid input:", pe))
     # Specify a single lmax for each atomic species
     if 'lmax' in input:
-        lmax = map(int, expandedList(input['lmax'], length=input['natom']))
+        lmax = list(map(int, expandedList(input['lmax'], length=input['natom'])))
     else:
-        lmax = map(int, expandedList('*-1', length=input['natom']))
+        lmax = list(map(int, expandedList('*-1', length=input['natom'])))
     lmax_by_atnum = {}
     for i,num in enumerate(atnums):
         if num in lmax_by_atnum:
@@ -1243,7 +1255,7 @@ def abcell2atoms(input):
     # Start with creating cellatoms object to duplicate
     cellatoms = []
     atnumSet = set()
-    shift = lambda x: map(lambda (a,b): a-b, zip(x, coords[0]))
+    shift = lambda x: list(map(lambda a,b: a-b, list(zip(x, coords[0]))))
     for i, num in enumerate(atnums):
         at = {'atnum':num, 'symbol':ptable[num]['symbol'], 'coord':shift(coords[i])}
         atnumSet.add(at['atnum'])
@@ -1267,7 +1279,7 @@ def abcell2atoms(input):
 def dym2atoms(input, center=1):
     from operator import itemgetter
     from math import sqrt
-    from conversions import bohr2angstrom
+    from corvus.conversions import bohr2angstrom
     assert 'dynmat' in input
     dym = input['dynmat']
     # Check that we have a valid center atom number
@@ -1276,12 +1288,12 @@ def dym2atoms(input, center=1):
         raise ValueError('Index for central atom is invalid')
     iCenter = center - 1 
     # Recenter and order by distance
-    shift = lambda x: map(lambda (a,b): a-b, zip(x,dym['atCoords'][iCenter]))
-    swapcoords = [[i,bohr2angstrom(shift(dym['atCoords'][i]))] for i in xrange(nAt)]
+    shift = lambda x: list(map(lambda a,b: a-b, list(zip(x,dym['atCoords'][iCenter]))))
+    swapcoords = [[i,bohr2angstrom(shift(dym['atCoords'][i]))] for i in range(nAt)]
     for a in swapcoords:
         a.append(sqrt(sum(x*x for x in a[1])))
     swapcoords.sort(key=itemgetter(2))
-    dym['printOrder'] = [swapcoords[iAt][0] for iAt in xrange(nAt)]
+    dym['printOrder'] = [swapcoords[iAt][0] for iAt in range(nAt)]
     # Core hole atom denoted by atomic symbol, remaining atoms denoted by atomic number
     #   (keys for 'ptable' lookup below)
     atTypeKeys = [ptable[dym['atNums'][iCenter]]['symbol']] + sorted(set(dym['atNums']))
@@ -1302,7 +1314,7 @@ def dym2atoms(input, center=1):
 
 def headerLines(input, lines):
     if 'title' in input:
-        isStr = lambda x: isinstance(x, basestring)
+        isStr = lambda x: isinstance(x, str)
         if isStr(input['title']):
             for t in input['title'].split('\n'):
                 lines.append('TITLE ' + t)
@@ -1507,7 +1519,7 @@ def writeEXAFSDMDWInput(input, feffinp='feff.inp'):
 def legacy_dym2feffinp(dym, center=1, feffinp='feff.inp', feffdym='feff.dym', spectrum='EXAFS', header=True, input={}):
     from operator import itemgetter
     from math import sqrt
-    from dmdw import writeDym
+    from corvus.dmdw import writeDym
 
     # Check that we have a valid center atom number
     nAt = dym['nAt']
@@ -1516,12 +1528,12 @@ def legacy_dym2feffinp(dym, center=1, feffinp='feff.inp', feffdym='feff.dym', sp
     iCenter = center - 1 
 
     # Recenter and order by distance
-    shift = lambda x: map(lambda (a,b): a-b, zip(x,dym['atCoords'][iCenter]))
-    swapcoords = [[i,shift(dym['atCoords'][i])] for i in xrange(nAt)]
+    shift = lambda x: list(map(lambda a,b: a-b, list(zip(x,dym['atCoords'][iCenter]))))
+    swapcoords = [[i,shift(dym['atCoords'][i])] for i in range(nAt)]
     for a in swapcoords:
         a.append(sqrt(sum(x*x for x in a[1])))
     swapcoords.sort(key=itemgetter(2))
-    dym['printOrder'] = [swapcoords[j][0] for j in xrange(nAt)]
+    dym['printOrder'] = [swapcoords[j][0] for j in range(nAt)]
     
     # Atomic types as list of keys for periodic table
     #   center atom indicated by symbol instead of number for bijective map between

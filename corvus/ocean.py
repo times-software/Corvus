@@ -1,4 +1,4 @@
-from structures import Handler, Exchange, Loop, Update
+from corvus.structures import Handler, Exchange, Loop, Update
 import corvutils.pyparsing as pp
 import os, sys, subprocess, shutil, resource
 import re
@@ -25,21 +25,21 @@ class Ocean(Handler):
 
     @staticmethod
     def canProduce(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             return strlistkey(output) in implemented
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             return output in implemented
         else:
             raise TypeError('Output should be token or list of tokens')
 
     @staticmethod
     def requiredInputFor(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             unresolved = {o for o in output if not Ocean.canProduce(o)}
             canProduce = (o for o in output if Ocean.canProduce(o))
             additionalInput = (set(implemented[o]['req']) for o in canProduce)
             return list(set.union(unresolved,*additionalInput))
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             if output in implemented:
                 return implemented[output]['req']
             else:
@@ -49,9 +49,9 @@ class Ocean(Handler):
 
     @staticmethod
     def cost(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             key = strlistkey(output)
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             key = output
         else:
             raise TypeError('Output should be token or list of tokens')
@@ -61,9 +61,9 @@ class Ocean(Handler):
 
     @staticmethod
     def sequenceFor(output,inp=None):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             key = strlistkey(output)
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             key = output
         else:
             raise TypeError('Output should be token of list of tokens')
@@ -251,37 +251,24 @@ def writeList(lines, filename):
 def runExecutable(execDir,workDir,executable, args,out,err):
     # Runs executable located in execDir from working directory workDir.
     # Tees stdout to file out in real-time, and stderr to file err.
-    print('Running exectuable: ' + executable)
+    print(('Running exectuable: ' + executable))
     # Modified by FDV:
     # Adding the / to make the config more generic
     # Modified by JJK to use os.path.join (even safer than above).
     execList = [os.path.join(execDir,executable)] + args
-    p = subprocess.Popen(execList, bufsize=0, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(execList, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf8')
     while True:
-        pout = p.stdout.readline()
-        if pout == '' and p.poll() is not None:
+        output = p.stdout.readline()
+        error = p.stderr.readline()
+        if output == '' and p.poll() is not None:
             break
-        if pout:
-            print(pout.strip())
-            out.write(pout)
-
-    while True:
-        perr = p.stderr.readline()
-        if perr == '' and p.poll() is not None:
-            break
-        if perr:
-            print('###################################################')
-            print('###################################################')
-            print('Error in executable: ' + executable)
-            print(perr.strip())
-            print('###################################################')
-            print('###################################################')
-            err.write(perr)
-
-            
-    p.wait()
-    
-    
+        if output:
+            print(output.strip())
+            out.write(output.strip() + os.linesep)
+        if error:
+            print(error.strip())
+            err.write(error.strip() + os.linesep)
+    rc = p.poll()
 
 
     
@@ -293,7 +280,7 @@ def readColumns(filename, columns=[1,2]):
     try:
         cleanStr = comments.transformString(cleanStr)
     except pp.ParseException as pe:
-        print('Parsing Error using pyparsing: invalid input:', pe)
+        print(('Parsing Error using pyparsing: invalid input:', pe))
         sys.exit()
     # Define grammar for ncols of data based on number of entries in first row
     floating = pp.Word(pp.nums + ".+-E").setParseAction(lambda t: float(t[0]))
@@ -310,9 +297,9 @@ def readColumns(filename, columns=[1,2]):
     try:
         data = text.parseString(cleanStr).asList()
     except pp.ParseException as pe:
-        print('Parsing Error using pyparsing: invalid input:', pe)
+        print(('Parsing Error using pyparsing: invalid input:', pe))
         sys.exit()
-    cols = map(list, zip(*data))
+    cols = list(map(list, list(zip(*data))))
     return [cols[i-1] for i in columns]
 
 #### Specific Helper Methods

@@ -1,4 +1,4 @@
-from structures import Handler, Exchange, Loop, Update
+from corvus.structures import Handler, Exchange, Loop, Update
 import corvutils.pyparsing as pp
 import os, sys, subprocess
 
@@ -24,21 +24,21 @@ class Orca(Handler):
 
     @staticmethod
     def canProduce(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             return strlistkey(output) in implemented
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             return output in implemented
         else:
             raise TypeError('Output should be token or list of tokens')
 
     @staticmethod
     def requiredInputFor(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             unresolved = {o for o in output if not Orca.canProduce(o)}
             canProduce = (o for o in output if Orca.canProduce(o))
             additionalInput = (set(implemented[o]['req']) for o in canProduce)
             return list(set.union(unresolved,*additionalInput))
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             if output in implemented:
                 return implemented[output]['req']
             else:
@@ -48,9 +48,9 @@ class Orca(Handler):
 
     @staticmethod
     def cost(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             key = strlistkey(output)
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             key = output
         else:
             raise TypeError('Output should be token or list of tokens')
@@ -60,9 +60,9 @@ class Orca(Handler):
 
     @staticmethod
     def sequenceFor(output,inp=None):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             key = strlistkey(output)
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             key = output
         else:
             raise TypeError('Output should be token of list of tokens')
@@ -110,8 +110,18 @@ class Orca(Handler):
             executable = [ config['orca'], Orca_In_File_Name ]
 #           p = subprocess.Popen([config['orca']], cwd=dir)
             p = subprocess.Popen(executable, cwd=dir, stdin=None, stdout=out, stderr=err)
-
-            p.wait()
+            while True:
+                output = p.stdout.readline()
+                error = p.stderr.readline()
+                if output == '' and p.poll() is not None:
+                    break
+                if output:
+                    print(output.strip())
+                    out.write(output.strip() + os.linesep)
+                if error:
+                    print(error.strip())
+                    err.write(error.strip() + os.linesep)
+            rc = p.poll() 
             out.close()
             err.close()
 
@@ -161,7 +171,7 @@ def readColumns(filename, columns=[1,2]):
     try:
         cleanStr = comments.transformString(cleanStr)
     except pp.ParseException as pe:
-        print('Parsing Error using pyparsing: invalid input:', pe)
+        print(('Parsing Error using pyparsing: invalid input:', pe))
         sys.exit()
     # Define grammar for ncols of data based on number of entries in first row
     floating = pp.Word(pp.nums + ".+-E").setParseAction(lambda t: float(t[0]))
@@ -178,9 +188,9 @@ def readColumns(filename, columns=[1,2]):
     try:
         data = text.parseString(cleanStr).asList()
     except pp.ParseException as pe:
-        print('Parsing Error using pyparsing: invalid input:', pe)
+        print(('Parsing Error using pyparsing: invalid input:', pe))
         sys.exit()
-    cols = map(list, zip(*data))
+    cols = list(map(list, list(zip(*data))))
     return [cols[i-1] for i in columns]
 
 #### Specific Helper Methods
@@ -217,7 +227,7 @@ atomicSymbols = [
     'Bk',    'Cf',    'Es',    'Fm',    'Md',    'No',    'Lr' ]  
 assert len(atomicMasses) == len(atomicSymbols), "ORCA Handler: Mismatch in periodic table!"
 nElem = len(atomicSymbols)
-for i in xrange(nElem):
+for i in range(nElem):
     num = i + 1
     sym = atomicSymbols[i]
     mass = atomicMasses[i]

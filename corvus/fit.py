@@ -1,4 +1,4 @@
-from structures import Handler, Exchange, Loop, Update
+from .structures import Handler, Exchange, Loop, Update
 import numpy as np
 import corvutils.pyparsing as pp
 import os, sys, subprocess, shutil, resource
@@ -24,21 +24,21 @@ class fit(Handler):
 
     @staticmethod
     def canProduce(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             return strlistkey(output) in implemented
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             return output in implemented
         else:
             raise TypeError('Output should be token or list of tokens')
 
     @staticmethod
     def requiredInputFor(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             unresolved = {o for o in output if not Feff.canProduce(o)}
             canProduce = (o for o in output if Feff.canProduce(o))
             additionalInput = (set(implemented[o]['req']) for o in canProduce)
             return list(set.union(unresolved,*additionalInput))
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             if output in implemented:
                 return implemented[output]['req']
             else:
@@ -48,9 +48,9 @@ class fit(Handler):
 
     @staticmethod
     def cost(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             key = strlistkey(output)
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             key = output
         else:
             raise TypeError('Output should be token or list of tokens')
@@ -60,11 +60,11 @@ class fit(Handler):
 
     @staticmethod
     def sequenceFor(output,inp=None):
-        from controls import availableHandlers
+        from .controls import availableHandlers
 
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             key = strlistkey(output)
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             key = output
         else:
             raise TypeError('Output should be token of list of tokens')
@@ -73,7 +73,7 @@ class fit(Handler):
         f = lambda subkey : implemented[key][subkey]
         required = f('req')
         # JJK - Need to add requirements of internal workflow here.
-        if 'fit.target' in inp.keys():
+        if 'fit.target' in list(inp.keys()):
             target = inp['fit.target'][0]
             for h in availableHandlers():
                 if h.canProduce(target):
@@ -132,7 +132,7 @@ class fit(Handler):
 
 # Global functions
 def Xanes2Min(params, x, data, input, config, output):
-    from controls import generateAndRunWorkflow
+    from .controls import generateAndRunWorkflow
     import copy
     Xanes2Min.count
     #lastParams
@@ -150,9 +150,9 @@ def Xanes2Min(params, x, data, input, config, output):
     else:
         control = [0, 0, 0, 0, 0, 0]
     ipar = 0
-    for param in params.values():
+    for param in list(params.values()):
         if Xanes2Min.lastParams is not None:            
-            diff = param != Xanes2Min.lastParams.values()[ipar] 
+            diff = param != list(Xanes2Min.lastParams.values())[ipar] 
         else: 
             diff = True 
 
@@ -203,7 +203,7 @@ def Xanes2Min(params, x, data, input, config, output):
         elif param.name.lower() == 'amplitude':
             amp = param.value
         else:
-            print('WARNING: UNKOWN PARAMETER ' + param.name + '!')
+            print(('WARNING: UNKOWN PARAMETER ' + param.name + '!'))
             print('STOPPING NOW!!!')
             exit()
         

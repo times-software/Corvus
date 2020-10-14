@@ -1,4 +1,4 @@
-from structures import Handler, Exchange, Loop, Update
+from .structures import Handler, Exchange, Loop, Update
 import corvutils.pyparsing as pp
 import os, sys, subprocess
 
@@ -28,21 +28,21 @@ class Dmdw(Handler):
 
     @staticmethod
     def canProduce(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             return strlistkey(output) in implemented
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             return output in implemented
         else:
             raise TypeError('Output should be token or list of tokens')
 
     @staticmethod
     def requiredInputFor(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             unresolved = {o for o in output if not Dmdw.canProduce(o)}
             canProduce = (o for o in output if Dmdw.canProduce(o))
             additionalInput = (set(implemented[o]['req']) for o in canProduce)
             return list(set.union(unresolved,*additionalInput))
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             if output in implemented:
                 return implemented[output]['req']
             else:
@@ -52,9 +52,9 @@ class Dmdw(Handler):
 
     @staticmethod
     def cost(output):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             key = strlistkey(output)
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             key = output
         else:
             raise TypeError('Output should be token or list of tokens')
@@ -64,9 +64,9 @@ class Dmdw(Handler):
 
     @staticmethod
     def sequenceFor(output,inp=None):
-        if isinstance(output, list) and output and isinstance(output[0], basestring):
+        if isinstance(output, list) and output and isinstance(output[0], str):
             key = strlistkey(output)
-        elif isinstance(output, basestring):
+        elif isinstance(output, str):
             key = output
         else:
             raise TypeError('Output should be token of list of tokens')
@@ -95,8 +95,7 @@ class Dmdw(Handler):
         dir = config['xcDir']
         out = open(os.path.join(dir, 'corvus.DMDW.stdout'), 'w')
         err = open(os.path.join(dir, 'corvus.DMDW.stderr'), 'w')
-        p = subprocess.Popen([config['dmdw']], cwd=dir, stdout=out, stderr=err)
-        p.wait()
+        p = subprocess.run([config['dmdw']], cwd=dir, stdout=out, stderr=err, text=True)
         out.close()
         err.close()
 
@@ -139,10 +138,10 @@ def writeDym(dym, dymFilename, shiftCoords=True):
     if 'printOrder' in dym:
         atRange = dym['printOrder']
     else:
-        atRange = range(dym['nAt'])
+        atRange = list(range(dym['nAt']))
     # By default, shift atomic coordinates so central atom is at origin
     if shiftCoords:
-        shift = lambda x: map(lambda (a,b): a-b, zip(x,dym['atCoords'][atRange[0]]))
+        shift = lambda x: [a_b[0]-a_b[1] for a_b in zip(x,dym['atCoords'][atRange[0]])]
     else:
         shift = lambda x: x
     lines = []
@@ -162,7 +161,7 @@ def writeDym(dym, dymFilename, shiftCoords=True):
         nUnique = dym['nTypeAt'] # number of unique atom types
         nCell = dym['nCellAt']   # number of atoms in cell 
         lines.append(str(nUnique) + ' '*4 + str(nCell))
-        for z, zAtomList in dym['centerAt'].iteritems():
+        for z, zAtomList in dym['centerAt'].items():
             lines.append(str(z) + ' '*4 + str(len(zAtomList)))
             for zAtom in zAtomList:
                 clustIndexStr = str(zAtom['clustIndex'] + 1)
@@ -197,7 +196,7 @@ def readDym(dymFilename):
         try:
             data = text.parseString(f.read()).asList()
         except pp.ParseException as pe:
-            print('Parsing Error using pyparsing: invalid input:', pe)
+            print(('Parsing Error using pyparsing: invalid input:', pe))
             sys.exit()
 
     # Construct dym object
@@ -206,8 +205,8 @@ def readDym(dymFilename):
     dym['atNums'] = data[2]
     dym['atMasses'] = data[3]
     dym['atCoords'] = data[4]
-    dym['dm'] = [[None for j in xrange(dym['nAt'])] for i in xrange(dym['nAt'])]
-    for i,j in ((i,j) for i in xrange(dym['nAt']) for j in xrange(dym['nAt'])):
+    dym['dm'] = [[None for j in range(dym['nAt'])] for i in range(dym['nAt'])]
+    for i,j in ((i,j) for i in range(dym['nAt']) for j in range(dym['nAt'])):
         index = i * dym['nAt'] + j
         if data[5][index][0] == i+1 and data[5][index][1] == j+1:
             dym['dm'][i][j] = data[5][index][2] 
@@ -224,7 +223,7 @@ def readDym(dymFilename):
     try:
         data = typeSpecific.parseString(data[6]).asList()
     except pp.ParseException as pe:
-        print('Parsing Error using pyparsing: invalid input:', pe)
+        print(('Parsing Error using pyparsing: invalid input:', pe))
         sys.exit()
     
     # Store type-specific information
@@ -252,10 +251,10 @@ def readSpecFn(filename):
     try:
         data = text.parseString(f.read()).asList()
     except pp.ParseException as pe:
-        print('Parsing Error using pyparsing: invalid input:', pe)
+        print(('Parsing Error using pyparsing: invalid input:', pe))
         sys.exit()
     f.close()
-    cols = map(list, zip(*data))
+    cols = list(map(list, list(zip(*data))))
     # w [meV], mag, ph, re, im
     return [cols[0], cols[3], cols[4]]
 
@@ -269,13 +268,13 @@ def combineReImSE(reFilename, imFilename):
         rePts = text.parseString(reFile.read()).asList()
         imPts = text.parseString(imFile.read()).asList()
     except pp.ParseException as pe:
-        print('Parsing Error using pyparsing: invalid input:', pe)
+        print(('Parsing Error using pyparsing: invalid input:', pe))
         sys.exit()
     reFile.close()
     imFile.close()
-    enCol = map(list, zip(*rePts))[0] # in meV?
-    reCol = map(list, zip(*rePts))[1] # in meV?
-    imCol = map(list, zip(*imPts))[1]
+    enCol = list(map(list, list(zip(*rePts))))[0] # in meV?
+    reCol = list(map(list, list(zip(*rePts))))[1] # in meV?
+    imCol = list(map(list, list(zip(*imPts))))[1]
     se = [enCol,[]]
     for i in range(len(enCol)):
         se[1].append(complex(float(reCol[i]), float(imCol[i])))
@@ -311,7 +310,7 @@ def read_s2(filename, tempgrid):
             cleanStr = grammar.transformString(cleanStr)
         ppresults = data.parseString(cleanStr).asList()
     except pp.ParseException as pe:
-        print('Parsing Error using pyparsing: invalid input:', pe)
+        print(('Parsing Error using pyparsing: invalid input:', pe))
         sys.exit()
     # Format Results
     results = {}
@@ -321,8 +320,8 @@ def read_s2(filename, tempgrid):
             temps = float(tempgrid.split()[1])
             dwfs = float(ppr[2])
         else:
-            temps = map(float, zip(*ppr[2])[0])
-            dwfs = map(float, zip(*ppr[2])[1])
+            temps = list(map(float, list(zip(*ppr[2]))[0]))
+            dwfs = list(map(float, list(zip(*ppr[2]))[1]))
         results[key] = {'Pathlength (Ang)':float(ppr[1]), 'Temp (K)':temps, 's^2':dwfs}
     return results
 
@@ -360,7 +359,7 @@ def read_u2(filename, tempgrid):
             cleanStr = grammar.transformString(cleanStr)
         ppresults = data.parseString(cleanStr).asList()
     except pp.ParseException as pe:
-        print('Parsing Error using pyparsing: invalid input:', pe)
+        print(('Parsing Error using pyparsing: invalid input:', pe))
         sys.exit()
     # Format Results
     results = {}
@@ -370,8 +369,8 @@ def read_u2(filename, tempgrid):
             temps = float(tempgrid.split()[1])
             dwfs = float(ppr[2])
         else:
-            temps = map(float, zip(*ppr[2])[0])
-            dwfs = map(float, zip(*ppr[2])[1])
+            temps = list(map(float, list(zip(*ppr[2]))[0]))
+            dwfs = list(map(float, list(zip(*ppr[2]))[1]))
         results[key] = {'Temp (K)':temps, 'u^2':dwfs}
     return results
 
@@ -392,13 +391,13 @@ def readVFE(filename):
             cleanStr = grammar.transformString(cleanStr)
         ppresults = data.parseString(cleanStr).asList()
     except pp.ParseException as pe:
-        print('Parsing Error using pyparsing: invalid input:', pe)
+        print(('Parsing Error using pyparsing: invalid input:', pe))
         sys.exit()
     # Format Results
     results = {}
     for ppr in ppresults:
-        temps = map(float, zip(*ppr[0])[0])
-        vfes = map(float, zip(*ppr[0])[1])
+        temps = list(map(float, list(zip(*ppr[0]))[0]))
+        vfes = list(map(float, list(zip(*ppr[0]))[1]))
         key = 'Temp (K)'
         if key not in results:
             results[key] = temps
@@ -442,7 +441,7 @@ def generateInput(config, input, output):
         dispopt = check(input, 'dispopt', default=0)
         if isinstance(dispopt, int) and dispopt in range(4):
             dispflag = dispopt 
-        elif isinstance(dispopt, basestring):
+        elif isinstance(dispopt, str):
             if dispopt.isdigit():
                 dispflag = int(dispopt)
             else:

@@ -7,6 +7,6 @@
 target_list { cell_structure }
 
 # Make Corvus use FEFF for XANES.
-usehandlers { cif2cell }
+usehandlers { Cif2Cell }
 
 cif_input { Graphite.cif }

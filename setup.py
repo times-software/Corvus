@@ -46,6 +46,5 @@ setuptools.setup(name='corvus',
       packages=setuptools.find_packages(),
       # J Kas - Moved corvus.conf to corvus/config since pip/setuptools don't like names that start with the module name?
       package_data={'corvutils':['parsnip.corvus.config','parsnip.corvus.formats'],'corvus':['config']},
-      python_requires='>=2.7,<3.0',
       install_requires=['cif2cell','lmfit'],
       )
