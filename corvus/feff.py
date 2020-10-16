@@ -686,6 +686,7 @@ class Feff(Handler):
                     symmult = []
                     cluster = []
                 
+                    i=1
                     for ia,a in enumerate(cell_data.atomdata): # This loops over sites in the original cif
                         symmult = symmult + [len(a)]
                         element = list(a[0].species.keys())[0]
@@ -693,6 +694,7 @@ class Feff(Handler):
                         if 'absorbing_atom' not in input:
                             absorbers = absorbers + [ia+1]
                         cluster = cluster + [['Cu', 0.0, 0.0, ia*2.0 ]]
+                        i += 1
 
                     if 'cluster' not in input2:    
                         input2['cluster'] = cluster
@@ -816,7 +818,7 @@ class Feff(Handler):
                 pp_debug.pprint(WF_Params_Dict)
 # Monty has issue on 2.7, so will just use pickle
                 import pickle
-                pickle.dump(WF_Params_Dict,open('WF_Params_Dict.pickle','w'))
+                pickle.dump(WF_Params_Dict,open('WF_Params_Dict.pickle','wb'))
 # Debug
 #               sys.exit()
 
