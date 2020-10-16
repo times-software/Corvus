@@ -1,10 +1,28 @@
 import setuptools 
 #from os import walk
+from shutil import copyfile
 import sys
 
 # Generate the examples data by scavenging the examples directory
 #Examples_Dir = 'examples'
 
+# J. Kas - copy corvus.conf to corvus/config for backward compatibility.
+try:
+    copyfile('corvus.conf','corvus/config')
+except:
+    print('')
+    print('')
+    print('')
+    print('')
+    print('')
+    print('')
+    print('############################################################################')
+    print('############################################################################')
+    print('#        Corvus has not been configured. Please make corvus.conf file.     #')
+    print('#        You can start from corvus.conf.template for reference.            #')
+    print('############################################################################')
+    print('############################################################################')
+    sys.exit('')
 # J. Kas - Don't copy examples. We don't need them in the python path.
 #Examples_Data = []
 #for root, dirs, files in walk(Examples_Dir):
@@ -26,8 +44,8 @@ setuptools.setup(name='corvus',
       url='http://feffproject.org',
       scripts=['bin/run-corvus'],
       packages=setuptools.find_packages(),
-      package_data={'corvutils':['parsnip.corvus.config','parsnip.corvus.formats']},
-      data_files=[('.',['corvus.conf']),('doc',['doc/Corvus_Manual.txt'])], #+Examples_Data
-      install_requires=['numpy','lmfit','cif2cell'],
-      python_requires='>=2.7,<3'
+      # J Kas - Moved corvus.conf to corvus/config since pip/setuptools don't like names that start with the module name?
+      package_data={'corvutils':['parsnip.corvus.config','parsnip.corvus.formats'],'corvus':['config']},
+      python_requires='>=2.7,<3.0',
+      install_requires=['cif2cell','lmfit'],
       )
