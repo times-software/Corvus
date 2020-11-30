@@ -622,7 +622,10 @@ class Feff(Handler):
                 outFile=os.path.join(dir,outFileName)
                 output[target] = np.loadtxt(outFile).T.tolist()
     
+## OPCONS BEGIN
             elif (target == 'opcons'):
+
+# Opcons imports
                 import copy
                 #import matplotlib.pyplot as plt
                 from corvus.controls import generateAndRunWorkflow
@@ -632,37 +635,48 @@ class Feff(Handler):
                 alpinv = 137.03598956
                 bohr = 0.529177249
 
-                # Set prefix for sdtout of feff runs.
+# Used in fixing element symbols
+                only_alpha = re.compile('[^a-zA-Z]')
+                
+# Set prefix for sdtout of feff runs.
                 runExecutable.prefix = '\t\t\t'
                 
-                # For each atom in absorbing_atoms run a full-spectrum calculation (all edges, XANES + EXAFS)
+# Copy general input to local one
                 input2 = copy.deepcopy(input)
 
+# Modify the common values of local input
                 input2['feff.setedge'] = input.get('feff.setedge',[[True]])
                 input2['feff.absolute'] = [[True]]
                 input2['feff.rgrid'] = [[0.01]]
+
+# Copy general config to local one
                 config2 = copy.deepcopy(config)
-                # Set directory to run in.
+
+# Set directory to run in.
                 config2['cwd'] = config['xcDir']
-                # Set xcIndexStart to -1 so that xcDir will be set below rather than in prep.
+
+# Set xcIndexStart to -1 so that xcDir will be set below rather than in prep.
                 config2['xcIndexStart'] = -1
 
-                
-                # Use absolute units for everything.
-                only_alpha = re.compile('[^a-zA-Z]')
+# Use absolute units for everything.
                 config2['feff.absolute'] = [[True]]
+
+# Initialize variables that collect results (?)
                 NumberDensity = []
                 vtot = 0.0
                 xas_arr = []
                 xas0_arr = []
                 en_arr = []
                 component_labels = []
+
+# The logic of the lines below is weird: In opcons calculations the absorber is chosen on the fly by looping over all unique atoms
                 if 'absorbing_atom' not in input:
                     absorbers = []
                 else:
                     absorbers = input['absorbing_atom'][0]
 
-                # Calculate number density for each absorber
+# Build a list of absorbers for the system
+# I think this also build a fake cluster to go in the input
                 if 'cif_input' in input2:
                     cifFile = ReadCif(os.path.abspath(input2['cif_input'][0][0]))
                     cif_dict = cifFile[list(cifFile.keys())[0]]
@@ -672,31 +686,41 @@ class Feff(Handler):
                     symmult = []
                     cluster = []
                 
-                    i = 1
-                    for a in cell_data.atomdata: # This loops over sites in the original cif
+                    i=1
+                    for ia,a in enumerate(cell_data.atomdata): # This loops over sites in the original cif
                         symmult = symmult + [len(a)]
                         element = list(a[0].species.keys())[0]
                         component_labels = component_labels + [element + str(i)]
                         if 'absorbing_atom' not in input:
-                            absorbers = absorbers + [i]
-
-                        cluster = cluster + [['Cu', 0.0, 0.0, (i-1)*2.0 ]]
-
+                            absorbers = absorbers + [ia+1]
+                        cluster = cluster + [['Cu', 0.0, 0.0, ia*2.0 ]]
                         i += 1
 
                     if 'cluster' not in input2:    
                         input2['cluster'] = cluster
-    
+ 
+# Debug: FDV
+#               print('ABSORBERS')
+#               pp_debug.pprint(absorbers)
+
+# OPCONS LOOP SETUP BEGIN -------------------------------------------------------------------------------------
+# Added by FDV
+# Creating a list to collect the inputs for delayed execution
+                WF_Params_Dict = {}
+
+# For each atom in absorbing_atoms run a full-spectrum calculation (all edges, XANES + EXAFS)
                 for absorber in absorbers:
-                    print('')
+
                     print('')
                     print("##########################################################")
-                    print("##########################################################")
-                    print(("       Component: " + component_labels[absorber-1]))
+                    print("       Component: " + component_labels[absorber-1])
                     print("##########################################################")
                     print('')
+
+### BEGIN INPUT GEN --------------------------------------------------------------------------------------------
                     input2['absorbing_atom'] = [[absorber]]
                     input2['feff.target'] = [[absorber]]
+
                     if 'cif_input' in input2:
                         input2['feff.target'] = [[absorber]]
                         element = list(cell_data.atomdata[absorber-1][0].species.keys())[0]
@@ -704,7 +728,7 @@ class Feff(Handler):
                             NumberDensity = NumberDensity + [symmult[absorber - 1]]
 
                     else:
-                        # This only works if all elements are treates as the same for our calculation
+# This only works if all elements are treates as the same for our calculation
                         element = input['cluster'][absorber-1][0]
                         if 'number_density' not in input:
                             n_element = 0
@@ -714,19 +738,32 @@ class Feff(Handler):
                                     
                             NumberDensity = NumberDensity + [n_element]
                     
-                    print(('Number in unit cell: ' + str(NumberDensity[-1])))
+                    print('Number in unit cell: ' + str(NumberDensity[-1]))
+
+### END INPUT GEN --------------------------------------------------------------------------------------------
+
                     # For each edge for this atom, run a XANES and EXAFS run
-                    FistEdge = True
+
+# Commented out by FDV, unused, simplifying
+#                   FirstEdge = True
+                    Item_Absorber = {}
                     for edge in feff_edge_dict[only_alpha.sub('',element)]:
-                        print(("\t" + edge))
+
+                        Item_Edge = {}
+                        print("\t" + edge)
+                        print("\t\t" + 'XANES')
+
+### BEGIN INPUT GEN --------------------------------------------------------------------------------------------
                         input2['feff.edge'] = [[edge]]
-                        print(("\t\t" + 'XANES'))
-                        # Run XANES 
+
+# Run XANES 
                         input2['taget_list'] = [['feffXANES']]
-                        # Set energy grid for XANES.
+
+# Set energy grid for XANES.
                         input2['feff.egrid'] = [['e_grid', -10, 10, 0.1], ['k_grid','last',5,0.07]]
-                        config2['xcDir'] = os.path.join(config2['cwd'],component_labels[absorber-1],edge,'XANES')
                         input2['feff.control'] = [[1,1,1,1,1,1]]
+
+                        config2['xcDir'] = os.path.join(config2['cwd'],component_labels[absorber-1],edge,'XANES')
                         targetList = [['feffXANES']]
                         if 'feff.scf' in input:
                             input2['feff.scf'] = input['feff.scf']
@@ -738,6 +775,78 @@ class Feff(Handler):
                             input2['feff.fms'] = [[6.0]]
                             
                         input2['feff.rpath'] = [[0.1]]
+### END INPUT GEN --------------------------------------------------------------------------------------------
+
+# Added by FDV
+                        Item_xanes = { 'config2':copy.deepcopy(config2),
+                                       'input2':copy.deepcopy(input2),
+                                       'targetList':copy.deepcopy(targetList) }
+
+# Commented out by FDV, unused, simplifying
+#                       FirstEdge = False
+
+### BEGIN INPUT GEN --------------------------------------------------------------------------------------------
+                        print("\t\t" + 'EXAFS')
+
+                        xanesDir = config2['xcDir']
+                        exafsDir = os.path.join(config2['cwd'],component_labels[absorber-1],edge,'EXAFS')
+                        config2['xcDir'] = exafsDir
+                        input2['feff.control'] = [[0, 1, 1, 1, 1, 1]]
+                        input2['feff.egrid'] = [['k_grid', -20, -2, 1], ['k_grid',-2,0,0.07], ['k_grid', 0, 40, 0.07],['exp_grid', 'last', 500000.0, 10.0]]
+                        if 'feff.fms' in input:
+                            input2['feff.rpath'] = [[max(input['feff.fms'][0][0],0.1)]]
+                        else:
+                            input2['feff.rpath'] = [[6.0]]
+                        input2['feff.fms'] = [[0.0]]
+### END INPUT GEN --------------------------------------------------------------------------------------------
+
+# Added by FDV
+                        Item_exafs = { 'config2':copy.deepcopy(config2),
+                                       'input2':copy.deepcopy(input2),
+                                       'targetList':copy.deepcopy(targetList) }
+
+                        Item_Absorber[edge] = { 'xanes':Item_xanes,
+                                                'exafs':Item_exafs }
+                    print('')
+                    WF_Params_Dict[absorber] = Item_Absorber
+                print('')
+# OPCONS LOOP SETUP END ---------------------------------------------------------------------------------------
+
+# Debug: FDV
+                print('#### FDV ####')
+                print('#### All WF Params ####')
+                pp_debug.pprint(WF_Params_Dict)
+# Monty has issue on 2.7, so will just use pickle
+                import pickle
+                pickle.dump(WF_Params_Dict,open('WF_Params_Dict.pickle','wb'))
+# Debug
+#               sys.exit()
+
+# OPCONS LOOP RUN BEGIN ---------------------------------------------------------------------------------------
+
+# For each atom in absorbing_atoms run a full-spectrum calculation (all edges, XANES + EXAFS)
+                for absorber in absorbers:
+
+                    print('')
+                    print("##########################################################")
+                    print("       Component: " + component_labels[absorber-1])
+                    print("##########################################################")
+                    print('')
+
+                    print('--- FDV ---', 'absorber', absorber)
+
+                    for edge in WF_Params_Dict[absorber].keys():
+
+                        print("\t" + edge)
+                        print("\t\t" + 'XANES')
+
+# Added by FDV
+# Modified by FDV
+# Commented out and moved to an independent loop
+                        print('--- FDV ---', 'edge', edge)
+                        config2    = WF_Params_Dict[absorber][edge]['xanes']['config2']
+                        input2     = WF_Params_Dict[absorber][edge]['xanes']['input2']
+                        targetList = WF_Params_Dict[absorber][edge]['xanes']['targetList']
                         if 'opcons.usesaved' not in input:
                             generateAndRunWorkflow(config2, input2,targetList)
                         else:
@@ -746,6 +855,55 @@ class Feff(Handler):
                                 generateAndRunWorkflow(config2, input2,targetList)
                             else:
                                 print("\t\t\txmu.dat already calculated. Skipping.")
+
+### BEGIN INPUT GEN --------------------------------------------------------------------------------------------
+                        print("\t\t" + 'EXAFS')
+
+                        xanesDir = config2['xcDir']
+                        exafsDir = os.path.join(config2['cwd'],component_labels[absorber-1],edge,'EXAFS')
+                        if not os.path.exists(exafsDir):
+                            os.makedirs(exafsDir)
+                        shutil.copyfile(os.path.join(xanesDir,'apot.bin'), os.path.join(exafsDir,'apot.bin'))
+                        shutil.copyfile(os.path.join(xanesDir,'pot.bin'), os.path.join(exafsDir,'pot.bin'))
+
+# Modified by FDV
+# Commented out and moved to an independent loop
+                        config2    = WF_Params_Dict[absorber][edge]['exafs']['config2']
+                        input2     = WF_Params_Dict[absorber][edge]['exafs']['input2']
+                        targetList = WF_Params_Dict[absorber][edge]['exafs']['targetList']
+                        if 'opcons.usesaved' not in input2:
+                            generateAndRunWorkflow(config2, input2,targetList)
+                        else:
+                            # Run if xmu.dat doesn't exist.
+                            if not os.path.exists(os.path.join(config2['xcDir'],'xmu.dat')):
+                                generateAndRunWorkflow(config2, input2,targetList)
+                            
+                    print('')
+                print('')
+# OPCONS LOOP RUN END -----------------------------------------------------------------------------------------
+
+# OPCONS LOOP ANA BEGIN ---------------------------------------------------------------------------------------
+# For each atom in absorbing_atoms run a full-spectrum calculation (all edges, XANES + EXAFS)
+                for absorber in absorbers:
+
+                    print('')
+                    print("##########################################################")
+                    print("       Component: " + component_labels[absorber-1])
+                    print("##########################################################")
+                    print('')
+
+# Commented out by FDV, unused, simplifying
+#                   FirstEdge = True
+                    for edge in WF_Params_Dict[absorber].keys():
+
+                        print("\t" + edge)
+                        print("\t\t" + 'XANES')
+
+# Added by FDV
+                        config2    = WF_Params_Dict[absorber][edge]['xanes']['config2']
+                        input2     = WF_Params_Dict[absorber][edge]['xanes']['input2']
+                        targetList = WF_Params_Dict[absorber][edge]['xanes']['targetList']
+### BEGIN OUTPUT ANA --------------------------------------------------------------------------------------------
                         if 'cif_input' in input:
                             # Get total volume from cif in atomic units. 
                             vtot = cell_data.volume()*(cell_data.lengthscale/bohr)**3
@@ -763,32 +921,13 @@ class Feff(Handler):
                         outFile = os.path.join(config2['xcDir'],'xmu.dat')
                         e1,k1,xanes = np.loadtxt(outFile,usecols = (0,2,3)).T
                         xanes = np.maximum(xanes,0.0)
-                        FirstEdge = False
-                        xanesDir = config2['xcDir']
-                        exafsDir = os.path.join(config2['cwd'],component_labels[absorber-1],edge,'EXAFS')
-                        if not os.path.exists(exafsDir):
-                            os.makedirs(exafsDir)
-                        shutil.copyfile(os.path.join(xanesDir,'apot.bin'), os.path.join(exafsDir,'apot.bin'))
-                        shutil.copyfile(os.path.join(xanesDir,'pot.bin'), os.path.join(exafsDir,'pot.bin'))
-                        config2['xcDir'] = exafsDir
-                        input2['feff.control'] = [[0, 1, 1, 1, 1, 1]]
-                        input2['feff.egrid'] = [['k_grid', -20, -2, 1], ['k_grid',-2,0,0.07], ['k_grid', 0, 40, 0.07],['exp_grid', 'last', 500000.0, 10.0]]
-                        if 'feff.fms' in input:
-                            input2['feff.rpath'] = [[max(input['feff.fms'][0][0],0.1)]]
-                        else:
-                            input2['feff.rpath'] = [[6.0]]
-                            
-                        print(("\t\t" + 'EXAFS'))
-                        input2['feff.fms'] = [[0.0]]
-                        if 'opcons.usesaved' not in input2:
-                            generateAndRunWorkflow(config2, input2,targetList)
-                        else:
-                            # Run if xmu.dat doesn't exist.
-                            if not os.path.exists(os.path.join(config2['xcDir'],'xmu.dat')):
-                                generateAndRunWorkflow(config2, input2,targetList)
+### END OUTPUT ANA --------------------------------------------------------------------------------------------
 
-
-                            
+# Added by FDV
+                        config2    = WF_Params_Dict[absorber][edge]['exafs']['config2']
+                        input2     = WF_Params_Dict[absorber][edge]['exafs']['input2']
+                        targetList = WF_Params_Dict[absorber][edge]['exafs']['targetList']
+### BEGIN OUTPUT ANA --------------------------------------------------------------------------------------------
                         outFile = os.path.join(config2['xcDir'],'xmu.dat')
                         e2,k2,exafs,mu0 = np.loadtxt(outFile,usecols = (0,2,3,4)).T
                         exafs = np.maximum(exafs,0.0)
@@ -811,9 +950,12 @@ class Feff(Handler):
                         en_arr = en_arr + [e_tot]
                         #plt.plot(e_tot, xas_element)
                         #plt.show()
-                        
+### END OUTPUT ANA --------------------------------------------------------------------------------------------
                     print('')
                 print('')
+# OPCONS LOOP ANA END -----------------------------------------------------------------------------------------
+
+# POST LOOP ANALYSYS: If everything is correct we should not have to change anything below
                 # Interpolate onto common grid from 0 to 500000 eV
                 # Make common grid as union of all grids.
                 energy_grid = np.unique(np.concatenate(en_arr))
@@ -872,6 +1014,7 @@ class Feff(Handler):
                 np.savetxt('loss.dat', np.array([w,energy_loss,energy_loss_bg]).transpose())
                 output[target] = (w,eps)
                 print('Finished with calculation of optical constants.')
+## OPCONS END
 
 # Added by FDV
             elif (target == 'opt_dynmat_s2_exafs'):
