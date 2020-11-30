@@ -125,7 +125,7 @@ class Cif2Cell(Handler):
         # Loop over targets in output. Not sure if there will ever be more than one output target here.
         if set(output.keys()).issubset(set(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc','number_density'])):
             # Set output and error files
-            with open(os.path.join(dir, 'corvus.CIF2CELL.stdout'), 'wb') as out, open(os.path.join(dir, 'corvus.CIF2CELL.stderr'), 'w') as err:
+            with open(os.path.join(dir, 'corvus.CIF2CELL.stdout'), 'wb') as out, open(os.path.join(dir, 'corvus.CIF2CELL.stderr'), 'wb') as err:
                 # Copy necessary files to dir
                 cif_file=cif2cellInput['cif2cell.cif_input'][0][0]
                 shutil.copy(cif_file,dir)
@@ -256,11 +256,11 @@ def runExecutable(execDir,workDir,executable, args,out,err):
     # Modified by JJK to use os.path.join (even safer than above).
     execList = [os.path.join(execDir,executable)] + args
     print(execList)
-    result = subprocess.run(execList, cwd=workDir, capture_output=True, text=True)
-    print("stdout:", result.stdout)
-    out.write(result.stdout)
-    print("stderr:", result.stderr)
-    out.write(result.stderr)
+    result = subprocess.run(execList, cwd=workDir, stdout=out, stderr=err)
+    #print("stdout:", result.stdout)
+    #out.write(result.stdout)
+    #print("stderr:", result.stderr)
+    #out.write(result.stderr)
 #    p = subprocess.Popen(execList, bufsize=0, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 #    while True:
 #        pout = p.stdout.readline()
