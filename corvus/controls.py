@@ -62,15 +62,21 @@ def availableHandlers():
 def configure(config):
     from configparser import RawConfigParser
     from platform import system
+    from pathlib import Path
     
     # Store path to corvus module
-    config['bin'] = os.path.dirname(os.path.abspath(__file__))
+    # J. Kas - Now we are going to store things in home directories under the .Corvus folder.
+    #config['bin'] = os.path.dirname(os.path.abspath(__file__))
+    config['bin'] = os.path.join(str(Path.home()),'.Corvus')
+
     # Store path to current working directory (where user is running Corvus)
     config['cwd'] = os.getcwd()
 
     # Load Corvus defaults
     rcp = RawConfigParser(allow_no_value=True)
-    configFile = os.path.join(os.path.dirname(config['bin']), 'corvus','config')
+    #configFile = os.path.join(os.path.dirname(config['bin']), 'corvus','config')
+    configFile = os.path.join(config['bin'], 'corvus.conf')
+
     if configFile not in rcp.read(configFile):
         printAndExit('Error reading corvus.conf')
     config['pathprefix'] = rcp.get('Defaults', 'prefix')
@@ -80,7 +86,7 @@ def configure(config):
     config['saveFile'] = config['pathprefix'] + config['savesuffix']
     config['checkpoints'] = rcp.getboolean('Defaults', 'checkpoints') 
     config['parallelRun'] = rcp.get('Defaults', 'parallelrun')
-    utilpath = os.path.join(os.path.dirname(config['bin']), 'corvutils')
+    utilpath = os.path.join(config['bin'], 'corvutils')
 # Modified by FDV
     config['parsnipConf'] = os.path.join(utilpath, 'parsnip.corvus.config')
     config['parsnipForm'] = os.path.join(utilpath, 'parsnip.corvus.formats')
@@ -175,7 +181,9 @@ def generateWorkflow(target, handlers, system, config, desc=''):
         print(("Handler %s not in list of available handlers:" % (handler_name)))
         for s in list(availableHandlers_map.keys()):
           print(("%s" % s))
-        sys.exit()
+        #sys.exit()
+        exitOneshot()
+        return
 
 # Debuf: FDV
 #   pp_debug.pprint(availableHandlers)
@@ -337,10 +345,22 @@ def checkFile(filename):
     else:
         return filename
 
+def exitOneshot():
+    if exitOneshot.sys_exit:
+        sys.exit()
+    else:
+        return
+
+exitOneshot.sys_exit = True
+
+def setExit(sys_exit=True):
+    exitOneshot.sys_exit=sys_exit
+
 def printAndExit(msg):
     sys.stderr.write(msg + '\n')
     sys.stderr.flush()
-    sys.exit()
+    exitOneshot()
+    return
 
 def generateAndRunWorkflow(config, system, targetList):
     import copy
@@ -354,7 +374,8 @@ def generateAndRunWorkflow(config, system, targetList):
       handlerList = system['usehandlers'][0]
     else:
       print('Provide the handler list to be used in this calculation')
-      sys.exit()
+      exitOneshot()
+      return
 
     autodesc = 'Calculate ' + ', '.join(targetList[0])
     workflow = generateWorkflow(targetList, handlerList, system, config, desc=autodesc)
@@ -385,9 +406,10 @@ def generateAndRunWorkflow(config, system, targetList):
         i += 1
 
 # Handles command line arguments and runs through workflow
-def oneshot(argv):
+def oneshot(argv,sys_exit=True):
     import getopt, pickle
 
+    setExit(sys_exit)
 # Debug:FDV
 # Test the writeDict function in abinit
 #   from abinit import writeDict
@@ -410,7 +432,8 @@ def oneshot(argv):
     except getopt.GetoptError as err:
         print((str(err)))
         usage()
-        sys.exit(2)
+        exitOneshot()
+        return
 
     ### Read user options ###
     resume = checkpoints = False
@@ -495,7 +518,8 @@ def oneshot(argv):
       targetList = system['target_list']
     else:
       print('Provide target properties or Workflow')
-      sys.exit()
+      exitOneshot()
+      return
 
 # Added by FDV
 # At this point we set the handler list to make the workflow generator work more
@@ -504,7 +528,8 @@ def oneshot(argv):
       handlerList = system['usehandlers'][0]
     else:
       print('Provide the handler list to be used in this calculation')
-      sys.exit()
+      exitOneshot()
+      return
 
 # Here we should probably add a check to see if the target list if empty, but
 # I don't think it can happen. Leaving for future

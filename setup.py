@@ -1,14 +1,22 @@
 import setuptools 
 #from os import walk
-from shutil import copyfile
+from shutil import copy
 import sys
+from pathlib import Path
 
 # Generate the examples data by scavenging the examples directory
 #Examples_Dir = 'examples'
 
 # J. Kas - copy corvus.conf to corvus/config for backward compatibility.
+# Make directory ~/.Corvus if it doesn't exist
+config_pth = Path.home() / ".Corvus"
+config_pth.mkdir(exist_ok=True)
+util_pth = config_pth / "corvutils" 
+util_pth.mkdir(exist_ok=True)
 try:
-    copyfile('corvus.conf','corvus/config')
+    # J. Kas - now going to copy all data files to ~/.Corvus
+    copy('corvus.conf',str(config_pth))
+    copy(str(Path('./corvutils/parsnip.corvus.config')),str(util_pth))
 except:
     print('')
     print('')
