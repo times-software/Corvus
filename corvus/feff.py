@@ -1008,6 +1008,8 @@ def runExecutable(execDir,workDir,executable, args,out,err):
     # Adding the / to make the config more generic
     # Modified by JJK to use os.path.join (even safer than above).
     execList = [os.path.join(execDir,executable[0])] + args
+    print("Working in directory:", workDir)
+    #p = subprocess.run(execList, cwd=workDir, capture_output=True, encoding='utf8')
     p = subprocess.Popen(execList, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf8')
     while True:
         output = p.stdout.readline()
