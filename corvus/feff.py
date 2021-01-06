@@ -2,13 +2,125 @@ from corvus.structures import Handler, Exchange, Loop, Update
 import corvutils.pyparsing as pp
 import os, sys, subprocess, shutil, resource
 import re
+import math
 import numpy as np
 from CifFile import ReadCif
 from cif2cell.uctools import *
 
+# Added by FDV
+import time
+#import threading as thrd
+import multiprocessing as mltp
+from pymatgen.io.cif import CifParser
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+import more_itertools as mit
+
 # Debug: FDV
 import pprint
 pp_debug = pprint.PrettyPrinter(indent=4)
+
+# Do a linear interpolation of the YY data for point ii in XX
+def Linear_Interp(ii,XX,YY):
+
+  x_ii = XX[ii]
+  if   ii==0:
+    x0 = XX[1]
+    x1 = XX[2]
+    y0 = YY[1]
+    y1 = YY[2]
+  elif ii==len(XX):
+    x0 = XX[-2]
+    x1 = XX[-3]
+    y0 = YY[-2]
+    y1 = YY[-3]
+  else:
+    x0 = XX[ii-1]
+    x1 = XX[ii+1]
+    y0 = YY[ii-1]
+    y1 = YY[ii+1]
+
+  y_ii = y0 + (x_ii-x0)*(y1-y0)/(x1-x0)
+
+  return y_ii
+
+# Do a linear interpolation of the YY data for point ii in XX, with information
+# about the points to use for reference
+def Linear_Interp_2(ii,iim,iip,XX,YY):
+
+  x_ii = XX[ii]
+  x0   = XX[iim]
+  x1   = XX[iip]
+  y0   = YY[iim]
+  y1   = YY[iip]
+
+  y_ii = y0 + (x_ii-x0)*(y1-y0)/(x1-x0)
+
+  return y_ii
+
+# Small routine to temporarily fix the NaN issues
+# A simpler routine assume the NaNs were isolated, but they can appear in pairs
+# This new implementation takes care of that too, hpefully.
+def Temp_Fix_NaN(k2,exafs,mu0):
+  nEne = len(k2)
+# Make a list of all points that have NaNs
+  iNaNs = [ ik for ik,(abs1,abs2) in enumerate(zip(exafs,mu0)) if math.isnan(abs1) or math.isnan(abs1) ]
+  if len(iNaNs) >0:
+# Make a fake iNaNs to testing
+# iNaNs = [ 0,1,2, 8,9, 20,21, nEne-2,nEne-1 ]
+# Debug
+    print('FDV iNaNs:',iNaNs)
+# Group them into consecutive sets to simplify fixing
+    iNaNs_Groups = [ list(grp) for grp in mit.consecutive_groups(iNaNs)]
+# Debug
+    print('FDV iNaNs_Groups:',iNaNs_Groups)
+# Make sure that the groups of NaNs are not too big, since that would indicate
+# bigger problems
+    mxGroup = max([ len(grp) for grp in iNaNs_Groups ])
+    if mxGroup > 3:
+      print('Found long group of NaNs while trying to fix.')
+      print('There is probably a bigger problem, stopping')
+      sys.exit()
+# Now we make a list of what points to use for the linear interpolation
+    iNaNs_Intp = []
+    for Grp in iNaNs_Groups:
+      ilw = min(Grp)-1
+      ihg = max(Grp)+1
+      if ilw < 0:
+        ilw = ihg
+        ihg = ihg+1
+      if ihg > nEne-1:
+        ihg = ilw
+        ilw = ilw-1
+      for Ind in Grp:
+        iNaNs_Intp.append([Ind,[ilw,ihg]])
+# Debug
+    print('FDV iNaNs_Intp:',iNaNs_Intp)
+# Old code, saving for reference
+# exafs_new = []
+# mu0_new = []
+# for ik,(abs1,abs2) in enumerate(zip(exafs,mu0)):
+#   if math.isnan(abs1) or math.isnan(abs1):
+#     print('Found NaN fixing:',ik)
+#     abs1_new = Linear_Interp(ik,k2,exafs)
+#     abs2_new = Linear_Interp(ik,k2,mu0)
+#     exafs_new.append(abs1_new)
+#     mu0_new.append(abs2_new)
+#   else:
+#     exafs_new.append(abs1)
+#     mu0_new.append(abs2)
+# Now we can interpolate in a smarter way, we only fix points that need fixing
+    for Intp in iNaNs_Intp:
+      ik = Intp[0]
+      ilw = Intp[1][0]
+      ihg = Intp[1][1]
+      exafs[ik] = Linear_Interp_2(ik,ilw,ihg,k2,exafs)
+      mu0[ik]   = Linear_Interp_2(ik,ilw,ihg,k2,mu0)
+
+  return (exafs, mu0)
+
+# Added by FDV
+# List of feff modules that should be run in parallel if requested
+Parallel_Exes = [ 'ldos', 'fms', 'pot' ]
 
 # Define dictionary of implemented calculations
 implemented = {}
@@ -187,15 +299,15 @@ class Feff(Handler):
             setInput(feffInput,'feff.debye',debyeOpts)
 
         # Set directory for this exchange
-        dir = config['xcDir']
+        exdir = config['xcDir']
 
         # Set input file
-        inpf = os.path.join(dir, 'feff.inp')
+        inpf = os.path.join(exdir, 'feff.inp')
         # Loop over targets in output. Not sure if there will ever be more than one output target here.
         for target in output:
             if (target == 'feffAtomicData'):
                 # Set output and error files
-                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                with open(os.path.join(exdir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(exdir, 'corvus.FEFF.stderr'), 'w') as err:
 
                     # Write input file for FEFF.
                     writeAtomicInput(feffInput,inpf)
@@ -212,16 +324,16 @@ class Feff(Handler):
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
 
-                        runExecutable('',dir,executable,args,out,err)
+                        runExecutable('',exdir,executable,args,out,err)
 
                 # For this case, I am only passing the directory for now so
                 # that other executables in FEFF can use the atomic data.
 
-                output[target] = dir
+                output[target] = exdir
 
             elif (target == 'feffSCFPotentials'):
                 # Set output and error files
-                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                with open(os.path.join(exdir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(exdir, 'corvus.FEFF.stderr'), 'w') as err:
 
                     # Write input file for FEFF.
                     writeSCFInput(feffInput,inpf)
@@ -240,15 +352,15 @@ class Feff(Handler):
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
 
-                        runExecutable('',dir,executable,args,out,err)
+                        runExecutable('',exdir,executable,args,out,err)
 
                 # For this case, I am only passing the directory for now so
                 # that other executables in FEFF can use the atomic data.
 
-                output[target] = dir
+                output[target] = exdir
             elif (target == 'feffCrossSectionsAndPhases'):
                 # Set output and error files
-                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                with open(os.path.join(exdir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(exdir, 'corvus.FEFF.stderr'), 'w') as err:
 
                     # Write input file for FEFF.
                     writeCrossSectionsInput(feffInput,inpf)
@@ -267,14 +379,14 @@ class Feff(Handler):
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
 
-                        runExecutable('',dir,executable,args,out,err)
-                output[target] = dir
+                        runExecutable('',exdir,executable,args,out,err)
+                output[target] = exdir
 
  
             elif (target == 'feffGreensFunction'):
 
                 # Set output and error files
-                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                with open(os.path.join(exdir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(exdir, 'corvus.FEFF.stderr'), 'w') as err:
 
 
                     # Write input file for FEFF.
@@ -293,17 +405,17 @@ class Feff(Handler):
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
 
-                        runExecutable('',dir,executable,args,out,err)
+                        runExecutable('',exdir,executable,args,out,err)
 
                 # For this case, I am only passing the directory for now so
                 # that other executables in FEFF can use the atomic data.
 
-                output[target] = dir
+                output[target] = exdir
 
 
             elif (target == 'feffPaths'):
                 # Set output and error files
-                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                with open(os.path.join(exdir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(exdir, 'corvus.FEFF.stderr'), 'w') as err:
 
                     # Write input file for FEFF.
                     writePathsInput(feffInput,inpf)
@@ -321,16 +433,16 @@ class Feff(Handler):
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
 
-                        runExecutable('',dir,executable,args,out,err)
+                        runExecutable('',exdir,executable,args,out,err)
 
                 # For this case, I am only passing the directory for now so
                 # that other executables in FEFF can use the atomic data.
 
-                output[target] = dir
+                output[target] = exdir
 
             elif (target == 'feffFMatrices'):
                 # Set output and error files
-                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                with open(os.path.join(exdir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(exdir, 'corvus.FEFF.stderr'), 'w') as err:
 
                     # Write input file for FEFF.
                     writeFMatricesInput(feffInput,inpf)
@@ -348,13 +460,13 @@ class Feff(Handler):
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
 
-                        runExecutable('',dir,executable,args,out,err)
+                        runExecutable('',exdir,executable,args,out,err)
                         
-                output[target] = dir
+                output[target] = exdir
 
             elif (target == 'feffXANES'):
                 # Set output and error files
-                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                with open(os.path.join(exdir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(exdir, 'corvus.FEFF.stderr'), 'w') as err:
 
                     # Write input file for FEFF.
                     writeXANESInput(feffInput,inpf)
@@ -363,25 +475,61 @@ class Feff(Handler):
                     # will more likely have only one executable. Here I am running 
                     # rdinp again since writeSCFInput may have different cards than
 
-                    execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+#                   execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                    execs = ['feff_timer','rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv','feff_timer']
                     for exe in execs:
                         if 'feff.MPI.CMD' in feffInput:
+# Modified by FDV
                             executable = feffInput.get('feff.MPI.CMD')[0]
-                            args = feffInput.get('feff.MPI.ARGS',[['']])[0] + [os.path.join(feffdir,exe)]
+                            npflag     = feffInput.get('feff.MPI.NPFLAG')[0]
+                            nnflag     = feffInput.get('feff.MPI.NNFLAG')[0]
+# Check the input we have here
+#                           print('XXX feffInput XXX')
+#                           pp_debug.pprint(feffInput)
+                            nproc      = feffInput.get('feff.MPI.NP')[0]
+                            print('feff.MPI.PPN',feffInput.get('feff.MPI.PPN')[0][0])
+                            PPN_Val = feffInput.get('feff.MPI.PPN')[0][0]
+                            nnodes = max(int(nproc[0]/PPN_Val),1)
+                            print('nnodes',nnodes)
+#                           sys.exit()
+# Adjust nproc to get best efficiency, only run certain modules in parallel
+                            if exe not in Parallel_Exes:
+# Testing for bug
+                              nproc = 1
+#                             nproc = nproc[0]
+                            else:
+                              nproc = nproc[0]
+                            otherflags = feffInput.get('feff.MPI.OTHER')[0]
+#                           print('executable',executable)
+                            print('nnflag',nnflag)
+                            print('nnodes',nnodes)
+                            print('npflag',npflag)
+                            print('nproc',nproc)
+                            print('otherflag',otherflags)
+                            print(os.path.join(feffdir,exe))
+# Create a different version of args
+                            args = nnflag + [str(nnodes)] + npflag + [str(nproc)] + otherflags + [os.path.join(feffdir,exe)]
+                            print('executable',executable)
+                            print('args',args)
+#                           executable = feffInput.get('feff.MPI.CMD')[0]
+#                           args = feffInput.get('feff.MPI.ARGS',[['']])[0] + [os.path.join(feffdir,exe)]
+#                           print('executable',executable)
+#                           print('args',args)
+#                           sys.exit()
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
 
-                        runExecutable('',dir,executable,args,out,err)
+                        runExecutable('',exdir,executable,args,out,err)
 
-                outFile=os.path.join(dir,'xmu.dat')
+                outFile=os.path.join(exdir,'xmu.dat')
                 output[target] = np.loadtxt(outFile,usecols = (0,3)).T.tolist()
                 #print output[target]
 
 
             elif (target == 'feffXES'):
                 # Set output and error files
-                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                with open(os.path.join(exdir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(exdir, 'corvus.FEFF.stderr'), 'w') as err:
 
                     # Write input file for FEFF.
                     writeXESInput(feffInput,inpf)
@@ -397,13 +545,13 @@ class Feff(Handler):
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
 
-                        runExecutable('',dir,executable,args,out,err)
+                        runExecutable('',exdir,executable,args,out,err)
 
 
                 # For this case, I am only passing the directory for now so
                 # that other executables in FEFF can use the data.
 
-                outFile=os.path.join(dir,'xmu.dat')
+                outFile=os.path.join(exdir,'xmu.dat')
                 output[target] = np.loadtxt(outFile,usecols = (0,3)).T.tolist()
 
             elif (target == 'feffRIXS'):
@@ -442,7 +590,7 @@ class Feff(Handler):
                     nEdge = nEdge + 1
 
                     # Make directory
-                    dirname = os.path.join(dir,edge)
+                    dirname = os.path.join(exdir,edge)
                     if not os.path.exists(dirname):
                         os.mkdir(dirname)
 
@@ -513,7 +661,7 @@ class Feff(Handler):
                         del feffInput['feff.egrid']
                         setInput(feffInput,'feff.egrid',[['e_grid', -40, 10, 0.1]])
                         setInput(feffInput,'feff.xes', [[-20, 10, 0.1]])
-                        xesdir = os.path.join(dir,'XES')
+                        xesdir = os.path.join(exdir,'XES')
                         if not os.path.exists(xesdir):
                             os.mkdir(xesdir)
 
@@ -579,13 +727,13 @@ class Feff(Handler):
 
 
                     # Now copy files from this edge to main directory
-                    shutil.copyfile(os.path.join(dirname,'wscrn.dat'), os.path.join(dir,'wscrn_' + str(nEdge) + '.dat'))
-                    shutil.copyfile(os.path.join(dirname,'phase.bin'), os.path.join(dir,'phase_' + str(nEdge) + '.bin'))
-                    shutil.copyfile(os.path.join(dirname,'gg.bin'), os.path.join(dir,'gg_' + str(nEdge) + '.bin'))
-                    shutil.copyfile(os.path.join(dirname,'xsect.dat'), os.path.join(dir,'xsect_' + str(nEdge) + '.dat'))
-                    shutil.copyfile(os.path.join(dirname,'xmu.dat'), os.path.join(dir,'xmu_' + str(nEdge) + '.dat'))
-                    shutil.copyfile(os.path.join(dirname,'rl.dat'), os.path.join(dir,'rl_' + str(nEdge) + '.dat'))
-                    shutil.copyfile(os.path.join(dirname,'.dimensions.dat'), os.path.join(dir,'.dimensions.dat'))
+                    shutil.copyfile(os.path.join(dirname,'wscrn.dat'), os.path.join(exdir,'wscrn_' + str(nEdge) + '.dat'))
+                    shutil.copyfile(os.path.join(dirname,'phase.bin'), os.path.join(exdir,'phase_' + str(nEdge) + '.bin'))
+                    shutil.copyfile(os.path.join(dirname,'gg.bin'), os.path.join(exdir,'gg_' + str(nEdge) + '.bin'))
+                    shutil.copyfile(os.path.join(dirname,'xsect.dat'), os.path.join(exdir,'xsect_' + str(nEdge) + '.dat'))
+                    shutil.copyfile(os.path.join(dirname,'xmu.dat'), os.path.join(exdir,'xmu_' + str(nEdge) + '.dat'))
+                    shutil.copyfile(os.path.join(dirname,'rl.dat'), os.path.join(exdir,'rl_' + str(nEdge) + '.dat'))
+                    shutil.copyfile(os.path.join(dirname,'.dimensions.dat'), os.path.join(exdir,'.dimensions.dat'))
                     # If this is the first edge, get the screened potential.
                     if nEdge == 1:
                         wscrnLines = []
@@ -602,12 +750,12 @@ class Feff(Handler):
                 feffInput = savedInput
                 setInput(feffInput,'feff.rixs', [[0.1, 0.1]])
                 
-                feffinp = os.path.join(dir, 'feff.inp')
+                feffinp = os.path.join(exdir, 'feff.inp')
                 # Write XANES input for this run
                 writeXANESInput(feffInput,feffinp)
 
                 # Set output and error files                
-                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                with open(os.path.join(exdir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(exdir, 'corvus.FEFF.stderr'), 'w') as err:
                     execs = ['rdinp','atomic','rixs']
                     for exe in execs:
                         if 'feff.MPI.CMD' in feffInput:
@@ -617,9 +765,9 @@ class Feff(Handler):
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
 
-                        runExecutable('',dir,executable,args,out,err)
+                        runExecutable('',exdir,executable,args,out,err)
 
-                outFile=os.path.join(dir,outFileName)
+                outFile=os.path.join(exdir,outFileName)
                 output[target] = np.loadtxt(outFile).T.tolist()
     
 ## OPCONS BEGIN
@@ -678,23 +826,92 @@ class Feff(Handler):
 # Build a list of absorbers for the system
 # I think this also build a fake cluster to go in the input
                 if 'cif_input' in input2:
-                    cifFile = ReadCif(os.path.abspath(input2['cif_input'][0][0]))
-                    cif_dict = cifFile[list(cifFile.keys())[0]]
-                    cell_data = CellData()
-                    cell_data.getFromCIF(cif_dict)
-                    cell_data.primitive()
-                    symmult = []
-                    cluster = []
+# Added by FDV
+# Trying to replicate the data reading with pymatgen. This is meant to ensure
+# consistency between the space group naming in the CIF input generation
+# and usage
+                    Sys_Str_Parser = CifParser(os.path.abspath(input2['cif_input'][0][0]))
+# There should only be 1 structure in the cif file
+                    if len(Sys_Str_Parser.get_structures()) > 1:
+                      print('More than one structure in CIF file. Check input')
+                      sys.exit()
+                    Sys_Str = Sys_Str_Parser.get_structures()[0]
+# There is no way to generate a sym structure from a read CIF in pymatgen as far
+# as I can tell. So we have to symmetrize again
+                    spgAna = SpacegroupAnalyzer(Sys_Str)
+                    Sys_Str_Sym = spgAna.get_symmetrized_structure()
+
+                    VTot_fdv = Sys_Str_Sym.volume
+# Debug
+#                   pp_debug.pprint(dir(Sys_Str_Sym))
+#                   pp_debug.pprint(Sys_Str_Sym.volume)
+#                   sys.exit()
+#                   pp_debug.pprint(Sys_Str_Sym)
+#                   pp_debug.pprint(Sys_Str_Sym.equivalent_sites)
+#                   print(Sys_Str.get_space_group_info())
+#                   print(Sys_Str.get_primitive_structure())
+#                   print(Sys_Str.equivalent_sites)
+
+# Now we should have the info to replicate the code below
+                    symmult_fdv = [ len(EqSite) for EqSite in Sys_Str_Sym.equivalent_sites ]
+
+# Debug
+#                   print(dir(Sys_Str_Sym.equivalent_sites[0][0]))
+#                   print(Sys_Str_Sym.equivalent_sites[0][0].specie)
+#                   print(Sys_Str_Sym.equivalent_sites[0][0].species_string)
+#                   sys.exit()
+
+                    elements_fdv = [ EqSite[0].species_string for EqSite in Sys_Str_Sym.equivalent_sites ]
+                    component_labels_fdv = [ Elem+str(iElem+1) for (iElem,Elem) in enumerate(elements_fdv) ]
+                    cluster_fdv = [ ['Cu', 0.0, 0.0, iSite*2.0 ] for iSite in range(len(Sys_Str_Sym.equivalent_sites)) ]
+
+                    if 'absorbing_atom' not in input:
+                      absorbers_fdv = list(range(1,len(Sys_Str_Sym.equivalent_sites)+1))
+
+# Debug
+                    print(symmult_fdv)
+                    print(cluster_fdv)
+                    print(elements_fdv)
+                    print(component_labels_fdv)
+                    print(absorbers_fdv)
+#                   sys.exit()
+
+#                   cifFile = ReadCif(os.path.abspath(input2['cif_input'][0][0]))
+#                   cif_dict = cifFile[list(cifFile.keys())[0]]
+#                   cell_data = CellData()
+#                   cell_data.getFromCIF(cif_dict)
+#                   print(cell_data.atomdata)
+#                   cell_data.primitive()
+#                   print(VTot_fdv/(bohr**3))
+#                   print(cell_data.volume()*(cell_data.lengthscale/bohr)**3)
+#                   sys.exit()
+#                   print(cell_data.atomdata)
+#                   symmult = []
+#                   cluster = []
                 
-                    i=1
-                    for ia,a in enumerate(cell_data.atomdata): # This loops over sites in the original cif
-                        symmult = symmult + [len(a)]
-                        element = list(a[0].species.keys())[0]
-                        component_labels = component_labels + [element + str(i)]
-                        if 'absorbing_atom' not in input:
-                            absorbers = absorbers + [ia+1]
-                        cluster = cluster + [['Cu', 0.0, 0.0, ia*2.0 ]]
-                        i += 1
+#                   for ia,a in enumerate(cell_data.atomdata): # This loops over sites in the original cif
+#                       symmult = symmult + [len(a)]
+#                       element = list(a[0].species.keys())[0]
+#                       component_labels = component_labels + [element + str(ia+1)]
+#                       if 'absorbing_atom' not in input:
+#                           absorbers = absorbers + [ia+1]
+#                       cluster = cluster + [['Cu', 0.0, 0.0, ia*2.0 ]]
+
+# Debug
+#                   pp_debug.pprint(symmult)
+#                   pp_debug.pprint(cluster)
+#                   pp_debug.pprint(component_labels)
+#                   pp_debug.pprint(absorbers)
+#                   sys.exit()
+
+# Replace the original cif2cell generated data with my own generated with
+# pymatgen
+                    symmult = symmult_fdv
+                    cluster = cluster_fdv
+                    elements = elements_fdv
+                    component_labels = component_labels_fdv
+                    absorbers = absorbers_fdv
+#                   print('element',element)
 
                     if 'cluster' not in input2:    
                         input2['cluster'] = cluster
@@ -708,8 +925,32 @@ class Feff(Handler):
 # Creating a list to collect the inputs for delayed execution
                 WF_Params_Dict = {}
 
+# Determine how many processors we can dedicate to each edge run
+                OC_NP_Tot = input2['feff.MPI.NPTOT'][0][0]
+                OC_Tot_Runs = 0
+#               for (element,absorber) in zip(elements,absorbers):
+                for (element,absorber) in zip(elements_fdv,absorbers):
+                  for edge in feff_edge_dict[only_alpha.sub('',element)]:
+                    OC_Tot_Runs = OC_Tot_Runs + 1
+
+# Debug
+                print(' FDV: OC_NP_Tot, OC_Tot_Runs')
+                print(OC_NP_Tot, OC_Tot_Runs)
+#               sys.exit()
+
+                NP_Base = OC_NP_Tot//OC_Tot_Runs
+                NP_Extra = OC_NP_Tot%OC_Tot_Runs
+                NP_Run_Partition = OC_Tot_Runs*[NP_Base]
+                for iRun in range(NP_Extra):
+                  NP_Run_Partition[iRun] += 1
+
+                print('NP_Run_Partition',NP_Run_Partition)
+#               sys.exit()
+
 # For each atom in absorbing_atoms run a full-spectrum calculation (all edges, XANES + EXAFS)
-                for absorber in absorbers:
+                iRun_Count = 0
+#               for absorber in absorbers:
+                for (element,absorber) in zip(elements,absorbers):
 
                     print('')
                     print("##########################################################")
@@ -723,7 +964,7 @@ class Feff(Handler):
 
                     if 'cif_input' in input2:
                         input2['feff.target'] = [[absorber]]
-                        element = list(cell_data.atomdata[absorber-1][0].species.keys())[0]
+#                       element = list(cell_data.atomdata[absorber-1][0].species.keys())[0]
                         if 'number_density' not in input:
                             NumberDensity = NumberDensity + [symmult[absorber - 1]]
 
@@ -757,7 +998,7 @@ class Feff(Handler):
                         input2['feff.edge'] = [[edge]]
 
 # Run XANES 
-                        input2['taget_list'] = [['feffXANES']]
+                        input2['target_list'] = [['feffXANES']]
 
 # Set energy grid for XANES.
                         input2['feff.egrid'] = [['e_grid', -10, 10, 0.1], ['k_grid','last',5,0.07]]
@@ -778,6 +1019,12 @@ class Feff(Handler):
 ### END INPUT GEN --------------------------------------------------------------------------------------------
 
 # Added by FDV
+                        print(' FDV: XANES INPUT')
+# Adjust the number of processors defined in the input so we only use those
+# assigned to this run
+                        input2['feff.MPI.NP'] = [[NP_Run_Partition[iRun_Count]]]
+                        print('XXX input2 XXX')
+                        pp_debug.pprint(input2)
                         Item_xanes = { 'config2':copy.deepcopy(config2),
                                        'input2':copy.deepcopy(input2),
                                        'targetList':copy.deepcopy(targetList) }
@@ -801,6 +1048,13 @@ class Feff(Handler):
 ### END INPUT GEN --------------------------------------------------------------------------------------------
 
 # Added by FDV
+                        print(' FDV: EXAFS INPUT')
+# Adjust the number of processors defined in the input so we only use those
+# assigned to this run
+# For the EXAFS part we force a single processor
+                        input2['feff.MPI.NP'] = [[1]]
+                        pp_debug.pprint(input2)
+                        iRun_Count += 1
                         Item_exafs = { 'config2':copy.deepcopy(config2),
                                        'input2':copy.deepcopy(input2),
                                        'targetList':copy.deepcopy(targetList) }
@@ -825,61 +1079,99 @@ class Feff(Handler):
 # OPCONS LOOP RUN BEGIN ---------------------------------------------------------------------------------------
 
 # For each atom in absorbing_atoms run a full-spectrum calculation (all edges, XANES + EXAFS)
+# Splitting the run loop into two, run all the XANES calcs first, then do the EXAFS. This might
+# simplify things a bit since the EXAFS runs wil only be done in 1 core.
+# XANES LOOP
+
+# Attempting to multithread the calls
+# For now we launch all threads to run with whatever number of cores are in the input and not try to do
+# anything smart. We will just put enough cores available in the overall run.
+                nTasks_Est = len(absorbers)*len(list(WF_Params_Dict[absorber].keys()))
+                nTasks = 0
+                Tasks = []
                 for absorber in absorbers:
+                  for edge in WF_Params_Dict[absorber].keys():
 
-                    print('')
-                    print("##########################################################")
-                    print("       Component: " + component_labels[absorber-1])
-                    print("##########################################################")
-                    print('')
+                    config2    = WF_Params_Dict[absorber][edge]['xanes']['config2']
+                    input2     = WF_Params_Dict[absorber][edge]['xanes']['input2']
+                    targetList = WF_Params_Dict[absorber][edge]['xanes']['targetList']
+                    if 'opcons.usesaved' not in input:
+#                     generateAndRunWorkflow(config2,input2,targetList)
+#                     thrd.Thread(target=generateAndRunWorkflow,args=(config2,input2,targetList)).start()
+                      Prcs = mltp.Process(target=generateAndRunWorkflow,args=(config2,input2,targetList))
+                      Tasks.append(Prcs)
+                      nTasks += 1
+                    else:
+                    # Run if xmu.dat doesn't exist.
+                      if not os.path.exists(os.path.join(config2['xcDir'],'xmu.dat')):
+#                       generateAndRunWorkflow(config2,input2,targetList)
+#                       thrd.Thread(target=generateAndRunWorkflow,args=(config2,input2,targetList)).start()
+                        Prcs = mltp.Process(target=generateAndRunWorkflow,args=(config2,input2,targetList))
+                        Tasks.append(Prcs)
+                        nTasks += 1
+                      else:
+                        print("\t\t\txmu.dat already calculated. Skipping.")
 
-                    print('--- FDV ---', 'absorber', absorber)
+# Launch all the tasks
+                for Tsk in Tasks:
+                    Tsk.start()
 
-                    for edge in WF_Params_Dict[absorber].keys():
+# Ensure all of the tasks have finished
+                for Tsk in Tasks:
+                    Tsk.join()
 
-                        print("\t" + edge)
-                        print("\t\t" + 'XANES')
+# Monitor the number of threads until they are all done..
+#               while thrd.active_count()>1:
+#                 print('Waiting on',thrd.active_count()-1,'thread(s) of',nThreads)
+#                 time.sleep(10)
 
-# Added by FDV
+# EXAFS LOOP
+                nTasks = 0
+                Tasks = []
+                for absorber in absorbers:
+                  for edge in WF_Params_Dict[absorber].keys():
+
+                    config2    = WF_Params_Dict[absorber][edge]['xanes']['config2']
+                    xanesDir = config2['xcDir']
+                    exafsDir = os.path.join(config2['cwd'],component_labels[absorber-1],edge,'EXAFS')
+                    if not os.path.exists(exafsDir):
+                      os.makedirs(exafsDir)
+                    shutil.copyfile(os.path.join(xanesDir,'apot.bin'), os.path.join(exafsDir,'apot.bin'))
+                    shutil.copyfile(os.path.join(xanesDir,'pot.bin'), os.path.join(exafsDir,'pot.bin'))
+
 # Modified by FDV
 # Commented out and moved to an independent loop
-                        print('--- FDV ---', 'edge', edge)
-                        config2    = WF_Params_Dict[absorber][edge]['xanes']['config2']
-                        input2     = WF_Params_Dict[absorber][edge]['xanes']['input2']
-                        targetList = WF_Params_Dict[absorber][edge]['xanes']['targetList']
-                        if 'opcons.usesaved' not in input:
-                            generateAndRunWorkflow(config2, input2,targetList)
-                        else:
-                            # Run if xmu.dat doesn't exist.
-                            if not os.path.exists(os.path.join(config2['xcDir'],'xmu.dat')):
-                                generateAndRunWorkflow(config2, input2,targetList)
-                            else:
-                                print("\t\t\txmu.dat already calculated. Skipping.")
+                    config2    = WF_Params_Dict[absorber][edge]['exafs']['config2']
+                    input2     = WF_Params_Dict[absorber][edge]['exafs']['input2']
+                    targetList = WF_Params_Dict[absorber][edge]['exafs']['targetList']
+                    if 'opcons.usesaved' not in input2:
+#                     generateAndRunWorkflow(config2,input2,targetList)
+#                     thrd.Thread(target=generateAndRunWorkflow,args=(config2,input2,targetList)).start()
+                      Prcs = mltp.Process(target=generateAndRunWorkflow,args=(config2,input2,targetList))
+                      Tasks.append(Prcs)
+                      nTasks += 1
+                    else:
+                      # Run if xmu.dat doesn't exist.
+                      if not os.path.exists(os.path.join(config2['xcDir'],'xmu.dat')):
+#                       generateAndRunWorkflow(config2,input2,targetList)
+#                       thrd.Thread(target=generateAndRunWorkflow,args=(config2,input2,targetList)).start()
+                        Prcs = mltp.Process(target=generateAndRunWorkflow,args=(config2,input2,targetList))
+                        Tasks.append(Prcs)
+                        nTasks += 1
 
-### BEGIN INPUT GEN --------------------------------------------------------------------------------------------
-                        print("\t\t" + 'EXAFS')
+# Launch all the tasks
+                for Tsk in Tasks:
+                    Tsk.start()
 
-                        xanesDir = config2['xcDir']
-                        exafsDir = os.path.join(config2['cwd'],component_labels[absorber-1],edge,'EXAFS')
-                        if not os.path.exists(exafsDir):
-                            os.makedirs(exafsDir)
-                        shutil.copyfile(os.path.join(xanesDir,'apot.bin'), os.path.join(exafsDir,'apot.bin'))
-                        shutil.copyfile(os.path.join(xanesDir,'pot.bin'), os.path.join(exafsDir,'pot.bin'))
+# Ensure all of the tasks have finished
+                for Tsk in Tasks:
+                    Tsk.join()
 
-# Modified by FDV
-# Commented out and moved to an independent loop
-                        config2    = WF_Params_Dict[absorber][edge]['exafs']['config2']
-                        input2     = WF_Params_Dict[absorber][edge]['exafs']['input2']
-                        targetList = WF_Params_Dict[absorber][edge]['exafs']['targetList']
-                        if 'opcons.usesaved' not in input2:
-                            generateAndRunWorkflow(config2, input2,targetList)
-                        else:
-                            # Run if xmu.dat doesn't exist.
-                            if not os.path.exists(os.path.join(config2['xcDir'],'xmu.dat')):
-                                generateAndRunWorkflow(config2, input2,targetList)
-                            
-                    print('')
-                print('')
+# Monitor the number of threads until they are all done..
+#               while thrd.active_count()>1:
+#                 print('Waiting on',thrd.active_count()-1,'thread(s) of',nThreads)
+#                 time.sleep(10)
+
 # OPCONS LOOP RUN END -----------------------------------------------------------------------------------------
 
 # OPCONS LOOP ANA BEGIN ---------------------------------------------------------------------------------------
@@ -906,7 +1198,8 @@ class Feff(Handler):
 ### BEGIN OUTPUT ANA --------------------------------------------------------------------------------------------
                         if 'cif_input' in input:
                             # Get total volume from cif in atomic units. 
-                            vtot = cell_data.volume()*(cell_data.lengthscale/bohr)**3
+#                           vtot = cell_data.volume()*(cell_data.lengthscale/bohr)**3
+                            vtot = VTot_fdv/(bohr**3)
                         else:
                             # Get norman radii from xmu.dat
                             with open(os.path.join(config2['xcDir'],'xmu.dat')) as f:
@@ -920,6 +1213,8 @@ class Feff(Handler):
 
                         outFile = os.path.join(config2['xcDir'],'xmu.dat')
                         e1,k1,xanes = np.loadtxt(outFile,usecols = (0,2,3)).T
+#                       print('k1',k1)
+#                       print('xanes fdv',xanes)
                         xanes = np.maximum(xanes,0.0)
 ### END OUTPUT ANA --------------------------------------------------------------------------------------------
 
@@ -930,6 +1225,14 @@ class Feff(Handler):
 ### BEGIN OUTPUT ANA --------------------------------------------------------------------------------------------
                         outFile = os.path.join(config2['xcDir'],'xmu.dat')
                         e2,k2,exafs,mu0 = np.loadtxt(outFile,usecols = (0,2,3,4)).T
+# Debug: FDV
+# Adding a little call to temporarily fix the NaN issues
+                        (exafs, mu0) = Temp_Fix_NaN(k2,exafs,mu0)
+                        print('fdv e2',e2)
+                        print('fdv k2',k2)
+                        print('xcDir',config2['xcDir'])
+                        print('fdv exafs',exafs)
+                        print('fdv mu0',mu0)
                         exafs = np.maximum(exafs,0.0)
                         mu0 = np.maximum(mu0,0.0)
                         e0 = e2[100] - (k2[100]*bohr)**2/2.0*hart
@@ -1033,7 +1336,7 @@ class Feff(Handler):
 
 
 # Set output and error files
-                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                with open(os.path.join(exdir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(exdir, 'corvus.FEFF.stderr'), 'w') as err:
 
 # Write input file for FEFF.
                   writeEXAFSDMDWInput(feffInput,inpf)
@@ -1041,7 +1344,7 @@ class Feff(Handler):
 # Before running, we need to write the dym file to be used in this run
                   dymFilename = 'corvus.dym'
                   from corvus.dmdw import writeDym
-                  writeDym(input['opt_dynmat'], os.path.join(dir, dymFilename))
+                  writeDym(input['opt_dynmat'], os.path.join(exdir, dymFilename))
 #                 sys.exit()
 
 # Loop over executable: This is specific to feff. Other codes
@@ -1057,9 +1360,9 @@ class Feff(Handler):
                     else:
                         executable = [os.path.join(feffdir,exe)]
                         args = ['']
-                    runExecutable('',dir,executable,args,out,err)
+                    runExecutable('',exdir,executable,args,out,err)
 
-                output[target] = dir
+                output[target] = exdir
 
     @staticmethod
     def cleanup(config):
@@ -1146,12 +1449,13 @@ def getICore(edge):
 def runExecutable(execDir,workDir,executable, args,out,err):
     # Runs executable located in execDir from working directory workDir.
     # Tees stdout to file out in real-time, and stderr to file err.
+    print('--- FDV ---',args)
     print((runExecutable.prefix + 'Running exectuable: ' + executable[0] + ' ' + ' '.join(args)))
     # Modified by FDV:
     # Adding the / to make the config more generic
     # Modified by JJK to use os.path.join (even safer than above).
     execList = [os.path.join(execDir,executable[0])] + args
-    p = subprocess.Popen(execList, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf8')
+    p = subprocess.Popen(execList, bufsize=0, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf8')
     while True:
         output = p.stdout.readline()
         error = p.stderr.readline()
