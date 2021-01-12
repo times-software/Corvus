@@ -120,7 +120,7 @@ def Temp_Fix_NaN(k2,exafs,mu0):
 
 # Added by FDV
 # List of feff modules that should be run in parallel if requested
-Parallel_Exes = [ 'ldos', 'fms', 'pot' ]
+Parallel_Exes = [ 'feff_timer', 'ldos', 'fms', 'pot' ]
 
 # Define dictionary of implemented calculations
 implemented = {}
