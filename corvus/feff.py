@@ -121,7 +121,7 @@ def Temp_Fix_NaN(k2,exafs,mu0):
 
 # Added by FDV
 # List of feff modules that should be run in parallel if requested
-Parallel_Exes = [ 'ldos', 'fms', 'pot' ]
+Parallel_Exes = [ 'feff_timer', 'ldos', 'fms', 'pot' ]
 
 # Define dictionary of implemented calculations
 implemented = {}
@@ -2071,7 +2071,6 @@ def legacy_dym2feffinp(dym, center=1, feffinp='feff.inp', feffdym='feff.dym', sp
     writeDym(dym, feffdym)
 
 
-
 feff_edge_dict={
  'H':
 ['K'],
@@ -2350,7 +2349,6 @@ feff_edge_dict={
  'Uto':
 ['K', 'L1', 'L2', 'L3', 'M1', 'M2', 'M3', 'M4', 'M5', 'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O7', 'P1', 'P2', 'P3', 'P4', 'P5', 'R1', 'R2', 'R3', 'S1', 'S2', 'P6', 'O8', 'O9'],
  }
-
 
 
 def kk_transform(w,eps2):
