@@ -11,9 +11,13 @@ implemented = {}
 strlistkey = lambda L:','.join(sorted(L))
 
 implemented['siestaCoreResponse'] = {'type':'Exchange','out':['siestaCoreResponse'],'cost':3,
-                        'req':['siesta.TD.NumberOfTimeSteps'],'desc':'Calculate XPS using siesta.'}
+                        'req':['supercell'],'desc':'Calculate XPS using siesta.'}
 
 
+implemented['siestaBetaofOmega'] = {'type':'Exchange','out':['siestaBetaofOmega'],'cost':1,
+			'req':['siestaFourierTransform'],'desc':'Calculate Beta of Omega'}
+implemented['siestaDOS'] = {'type':'Exchange','out':['siestaDOS'],'cost':1,
+            'req':['siestaCoreResponse'],'desc':'Calculated Desity of States'}
 
 class Siesta(Handler):
     def __str__(self):
@@ -89,7 +93,6 @@ class Siesta(Handler):
     @staticmethod
     def run(config, input, output):
         
-        # set atoms and potentials
 
         # Set directory to siesta executables.
         # Debug: FDV
@@ -101,6 +104,33 @@ class Siesta(Handler):
         # Copy siesta related input to siestaInput here. Later we will be overriding some settings,
         # so we want to keep the original input intact.
         siestaInput = {key:input[key] for key in input if key.startswith('siesta.')}
+       
+        siestaInput['siesta.TD.NumberOfTimeSteps'] = input.get('siesta.TD.NumberOfTimeSteps',[[500]])
+        siestaInput['siesta.TD.TimeStep'] = input.get('siesta.TD.TimeStep',[[0.5]])
+        siestaInput['siesta.TD.ShapeOfEField'] = input.get('siesta.TD.ShapeOfField',[['core']])
+        siestaInput['siesta.TD.CorePerturbationCharge'] = input.get('siesta.TD.CorePerturbationCharge',[[0.02]])
+        siestaInput['siesta.TD.mxPC'] = input.get('siesta.TD.mxPC',[[2]])
+        siestaInput['siesta.SolutionMethod'] = [[ 'diagon' ]]
+        # Now get siesta inputs from general input.
+        if 'absorbing_atom' in input:
+            siestaInput['siesta.TD.CoreExcitedAtom'] = input['absorbing_atom']
+        if 'siesta.Block.AtomicCoordinatesAndAtomicSpecies' not in input:
+            siestaInput['siesta.AtomicCoordinatesFormat'] = [['Fractional']]
+            siestaInput['siesta.NumberOfAtoms'] = input['number_of_atoms']
+            siestaInput['siesta.NumberOfSpecies'] = input['number_of_species']
+            species_label = []
+            sites = []
+            for i,s in enumerate(input['species']):
+                species_label = species_label + [[i+1, s[0], s[1]]]
+                for j,site in enumerate(input['cell_struc_xyz_red']):
+                    if site[0] == s[1]:
+                        sites = sites + [[site[1],site[2],site[3],i+1]]
+
+            siestaInput['siesta.Block.ChemicalSpeciesLabel'] = species_label
+            siestaInput['siesta.LatticeConstant'] = [[1.0, 'Ang']]
+            siestaInput['siesta.Block.ATomicCoordinatesAndAtomicSpecies'] = sites
+            siestaInput['siesta.Block.LatticeParameters'] = [input['cell_scaling_abc'][0] + input['cell_angles_abg'][0]]
+            
 
         # Generate any data that is needed from generic input and populate siestaInput with
         # global data (needed for all feff runs.)
@@ -111,14 +141,187 @@ class Siesta(Handler):
         
         # Set input file
         inpf = os.path.join(dir, 'input.fdf')
+        # Define EIG file
+        EIG = os.path.join(dir, 'siesta.EIG')
 
         # Loop over targets in output. Not sure if there will ever be more than one output target here.
         for target in output:
-            if (target == 'siestaCoreResponse'):               
+            if (target == 'siestaFourierTransform'):
+                print("Calculating siestaFourierTransform")
+                
+                # Remove contribution from zero frequency	
+                tmp_avg = np.average(input['siestaCoreResponse'][1])
+                CoreResponse = np.asarray([input['siestaCoreResponse'][0],input['siestaCoreResponse'][1]])
+                CoreResponse[1] = np.subtract(input['siestaCoreResponse'][1], tmp_avg)	
+                
+                # Broadening the coreresponse, default 0.5
+                broadfactor = input['siesta.Coreresponse.Broadening'][0][0]
+                CoreResponse[1] = CoreResponse[1]*np.exp(-(broadfactor/27.21/0.0241*CoreResponse[0])**2)
+                
+                # Remove contribution from zero frequency again	
+                tmp_avg = np.average(CoreResponse[1])
+                CoreResponse[1] = np.subtract(CoreResponse[1], tmp_avg)	
+                
+                # Switch to Atomic Units
+                CoreResponse[1] = CoreResponse[1]/27.21 
+
+                # Calculate frequency array
+                timestep = (CoreResponse[0][1]-CoreResponse[0][0])
+                print(timestep)
+                timestep = timestep/(0.02418884326505) #Switching from fs to au
+                freq = np.fft.fftfreq(len(CoreResponse[1]), timestep)
+                holder = []
+                for i in freq:
+                    if (i>=0):
+                        holder.append(i) 
+                freq = np.array(holder)
+                #print(freq)
+
+                # Implementing trapezoidal fourier transform
+                f_w = np.zeros(len(freq))
+                timegrid = np.asarray(CoreResponse[0])/(0.02418884326505)
+                
+                def Trapz_Int(function,dx):
+                    return 0.5*dx*(2*np.sum(function)-function[0]-function[-1])
+
+                for i in range(len(freq)):
+                    Func = np.exp(2*np.pi*1j*freq[i]*timegrid)*CoreResponse[1]
+                    f_w[i] = Trapz_Int(Func,(timegrid[1]-timegrid[0]))
+                
+                # Switching from Hartree Atomic Units to eV, multiply by 2pi for angular
+                fourierTrapOutput = [np.multiply(freq,27.21*2*np.pi).tolist(),(f_w/(2*np.pi)).tolist()]
+                
+                # For graphing: Charles
+                # np.savetxt("fourierTrapOutput.dat", np.array(fourierTrapOutput).T)
+
+                outFile=os.path.join(dir,'siestaFourierTransformResult')
+                #temp = np.array(fourierTrapOutput)
+                #for i in range(len(temp[0])):
+                #    temp[1][i] = temp[0][i]*temp[1][i]
+                #np.savetxt("BetaRaw", temp.T)
+                output[target] = fourierTrapOutput 
+
+            elif (target == 'siestaBetaofOmega'):
+                print("Calculating BetaofOmega")
+                
+                def writeBETA():
+                    # Define Beta
+                    Beta = np.array(input['siestaFourierTransform'])
+
+                    # multiply by omega for Beta(omega)
+                    for i in range(len(Beta[0])):
+                        Beta[1][i] = Beta[0][i]*Beta[1][i]
+                    
+                    #Leave all broadening in time domian in Core Response
+                    '''
+                    def Broadening(arr, broad):
+                        temp = []
+                        stepsize = arr[0][1]-arr[0][0]
+                        for i in arr[0]:
+                            kernel = broad/(np.pi) * 1/((arr[0]-i)**2 + broad**2)
+                            temp.append(sum(kernel*arr[1]) * stepsize)
+                        arr[1] = np.array(temp)
+                        return arr
+
+                    Beta = Broadening(Beta, input['siesta.Beta.Broadening'][0][0])
+                    #print(Beta[0][1]-Beta[0][0])
+                    # For graphing: Charles
+                    # np.savetxt("Beta_before.dat", np.array(Beta).T)
+                    '''
+
+                    # Flip across y-axis
+                    Beta[0,:] = Beta[0,:]*(-1)
+                    
+                    # Pad with zeros
+                    # Right now it just pads with 50 zeros on each side, should be updated to pad 20 eV
+                    timestep = Beta[0][1]-Beta[0][0]
+                    print("Beta Timestep = " + str(abs(timestep)))
+                    back_hold = (Beta.min(1))[0]
+                    front_temp = [[],[]]
+                    back_temp = [[],[]]
+                    x = 0
+                    y = 0
+                    z = 0
+                    while(x<100):
+                        front_temp[0].append(y-timestep)
+                        y = y - timestep
+                        front_temp[1].append(0)
+                        
+                        back_temp[0].append(back_hold+z+timestep)
+                        z = z + timestep
+                        back_temp[1].append(0)
+                        
+                        x = x+1
+                    
+                    front_temp = np.array(front_temp)
+                    back_temp = np.array(back_temp)
+                    
+                    Beta = np.concatenate((Beta, front_temp), axis=1)
+                    Beta = np.concatenate((back_temp, Beta), axis=1)
+                    
+                    # Sort Beta
+                    Beta = Beta.T
+                    Beta = Beta[np.argsort(Beta[:,0])]
+                    
+                    temp = Beta.T
+                    for i in range(len(temp[0])):
+                        if temp[1][i] < 0.0:
+                            temp[1][i] = 0.0
+                    
+                    output[target]= temp.tolist()
+
+                writeBETA()		
+            
+            elif (target == 'siestaDOS'):
+                print("hi")
+                '''
+                print("Calculating Density of States")
+               
+                fermiE = 0
+                def readEIG(filename):
+                    doc = open(filename, "r")
+                    holder = []
+                    for i in doc:
+                        for j in i.split():
+                            holder.append(float(j))
+                    fermiE = holder[0]
+                    return np.asarray(holder[5:])-fermiE
+
+                def makedos(arr, spacer):
+                    roundnum = len(str(spacer))-2
+                    arr = (np.asarray(np.round(arr,roundnum))).tolist()
+                    temp = [[],[]]
+                    temp[0].append(arr[0])
+                    temp[1].append(1)
+                    for i in range(len(arr)-1):
+                        if(arr[i+1] == arr[i]):
+                            temp[1][-1] = temp[1][-1]+1
+                        else:
+                            temp[0].append(arr[i+1])
+                            temp[1].append(1)
+                    
+                    print(temp)
+                    data = np.arange(-30,140,spacer)
+                    data = np.asarray([data,np.zeros(np.shape(data))])
+                    for i in range(len(temp[0])):
+                        x = np.arange(-30,140,spacer)
+                        arr = np.asarray([x,gaussian(x,temp[0][i],temp[1][i],0.5)])
+                        data[1] = data[1] + arr[1]
+                    
+                    return data
+                
+                EIG = readEIG(EIG)
+                EIG = makedos(EIG, spacer=0.01)
+                EIG[1] = EIG[1]/(sum(EIG[1])*np.abs(EIG[0][0]-EIG[0][1])
+
+                #output[target] = EIG.tolist()
+                '''
+
+            elif (target == 'siestaCoreResponse'):               
                 # Set output and error files
                 with open(os.path.join(dir, 'corvus.SIESTA.stdout'), 'wb') as out, open(os.path.join(dir, 'corvus.SIESTA.stderr'), 'wb') as err:
                     # Get pseudopotentials
-                     
+                    
                     # Write input file for FEFF.
                     writeXPSInput(siestaInput,inpf)
                     
@@ -129,10 +332,11 @@ class Siesta(Handler):
 
                     # Loop over executables: This is specific to feff. Other codes
                     # will more likely have only one executable.
-                    executables = siestaInput.get('siesta.MPI.CMD',[['siesta']])[0][0]
-                    args = siestaInput.get('siesta.MPI.ARGS')[0] + [os.path.join(siestadir,'siesta')]
+                    executables = siestaInput.get('siesta.MPI.CMD',[['mpirun']])[0]
+                    args = siestaInput.get('siesta.MPI.ARGS',[['-n 4']])[0] + [os.path.join(siestadir,'siesta')]
                     iExec = 0
                     for executable in executables:
+
                         runExecutable('',dir,executable,args,out,err)
 
                 
@@ -178,18 +382,18 @@ def getInpLines(input,token):
     if key.startswith('Block.'):
         block=True
         key = key[len('Block.'):]
+        lines = lines + ['%block ' + key.upper()]
+        endblock = '%endblock ' + key.upper()
 
     if token in input:
         # If the first element is not a boolean, this contains values
         # to be stored after keyword.
         for element in input[token]: # Takes care of single and multi-line input.
             lines.append(' '.join([str(value) for value in element])) 
+
+        if not block:
+            lines = [key.upper() + ' ' + lines[0]]
           	
-        if isinstance(element,list):
-            lines.insert(0,'%block ' + key.upper())
-            endblock = '%endblock ' + key.upper()
-        else:                                     # Most have arguments on the same line as keyword.
-            lines[0] = key.upper() + ' ' + lines[0]
  
 
     # Add a blank line after each line
@@ -202,18 +406,6 @@ def writeList(lines, filename):
     with open(filename, 'w') as f:
         f.write('\n'.join(lines))
 
-def getICore(edge):
-    iCore = {'K':1, 'L1':2, 'L2':3, 'L3':4, 'M1':5, 'M2':6, 'M3':7, 'M4':8, 'M5':9}
-    if edge in iCore:
-        return iCore[edge]
-    else:
-        print("###########################################")
-        print("###########################################")
-        print("Error: Unknown edge name.")
-        print("###########################################")
-        print("###########################################")
-        sys.exit()
-
         
 def runExecutable(execDir,workDir,executable, args,out,err):
     # Runs executable located in execDir from working directory workDir.
@@ -225,7 +417,7 @@ def runExecutable(execDir,workDir,executable, args,out,err):
     execList = [os.path.join(execDir,executable)] + args
     inFile = open(os.path.join(workDir,'input.fdf'))
     #print execList
-    p = subprocess.Popen(execList, bufsize=0, cwd=workDir, stdin=inFile, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(execList, bufsize=0, cwd=workDir, stdin=inFile, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf8')
 
     while True:
         output = p.stdout.readline()
@@ -312,159 +504,6 @@ for i in range(nElem):
     mass = atomicMasses[i]
     ptable[num] = {'mass':mass, 'symbol':sym, 'number':num}
     ptable[sym] = {'mass':mass, 'symbol':sym, 'number':num}
-
-def getFeffAtomsFromCluster(input):
-    # Find absorbing atom.
-    absorber = input['absorbing_atom'][0][0] - 1
-    atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
-    uniqueAtoms = list(set([ x[0] for x in atoms]))
-    #print absorber
-    #print input['absorbing_atom']
-    #print uniqueAtoms
-    #print ''.join(''.join([str(e),' ']) for e in input['cluster'][absorber][1:]) + ' 0'
-    #print input
-    feffAtoms = []
-    feffAtoms.append([0.0, 0.0, 0.0, 0])
-    for line in atoms: 
-        feffAtom = [ e - input['cluster'][absorber][i+1] for i,e in enumerate(line[1:4]) ]
-        feffAtom.append(uniqueAtoms.index(line[0])+1)
-        #print feffAtom
-        #print ''.join(''.join([str(e),' ']) for e in line[1:]) + str(uniqueAtoms.index(line[0])+1)
-        #print ptable[x[0]]['number']
-        feffAtoms.append(feffAtom)
-
-    return feffAtoms
-
-def getFeffPotentialsFromCluster(input):
-    absorber = input['absorbing_atom'][0][0] - 1
-    atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
-    uniqueAtoms = list(set([ x[0] for x in atoms]))
-    feffPots = [[]]
-    feffPots[0] = [0, ptable[input['cluster'][absorber][0]]['number'], input['cluster'][absorber][0], -1, -1, 1.0 ]
-    for i,atm in enumerate(uniqueAtoms):
-       xnat = [ x[0] for x in input['cluster'] ].count(atm)
-       feffPots.append([i+1, int(ptable[atm]['number']), atm, -1, -1, xnat ])
-
-    return feffPots
-
-def cell2atoms(cellatoms, acell, rprim=None, angdeg=None, cutoff=None, nmax=1000):
-    # cellatom = dict with 'coord', 'symbol'
-    from math import sqrt
-    from decimal import Decimal, ROUND_UP
-    for at in cellatoms:
-        assert ('symbol' in at) and ('coord' in at)
-        at['coord'] = [scale * reduced for scale, reduced in zip(acell, at['coord'])]
-    atoms = []
-    nord = 3 
-    iRange = list(range(-nord, nord+1))
-    grid = ((i,j,k) for i in iRange for j in iRange for k in iRange)
-    for ijk in grid:
-        dx = [a*sum(i*c for i,c in zip(ijk,row)) for row, a in zip(rprim,acell)]
-        for at in cellatoms:
-            copyAt = {k:v for k,v in list(at.items())}
-            copyAt['coord'] = list(map(sum, list(zip(at['coord'], dx))))
-            copyAt['dist'] = sqrt(sum(x*x for x in copyAt['coord']))
-            atoms.append(copyAt) 
-    ru8 = lambda x: Decimal(x).quantize(Decimal('0.12345678'),rounding=ROUND_UP)
-    atoms.sort(key=lambda at:(ru8(at['dist']), at['symbol']))
-    if len(atoms) > nmax:
-        return atoms[:nmax]
-    else:
-        return atoms
-
-def abcell2atoms(input):
-    from .abinit import expandedList
-    from .conversions import bohr2angstrom
-    for key in ['acell','znucl','xred','rprim','natom']:
-        assert key in input
-        # Expecting input parsed to strings for now
-        assert isinstance(input[key], str) 
-    # Parsing grammar 
-    vector = pp.Group(pp.Word(pp.nums + ".+-E") * 3)
-    listVectors = pp.Group(pp.OneOrMore(vector))
-    # Translate strings into useable lists/numbers
-    acell = bohr2angstrom(list(map(float, expandedList(input['acell']))))
-    atnums = list(map(int, expandedList(input['znucl'], length=input['natom'])))
-    coords = input['xred']
-    rprim = input['rprim']
-    try:
-        coords = listVectors.parseString(coords).asList()[0]
-        coords = [list(map(float, v)) for v in coords]
-        rprim = listVectors.parseString(rprim).asList()[0]
-        rprim = [list(map(float, v)) for v in rprim]
-    except pp.ParseException as pe:
-        print(("Parsing Error using pyparsing: invalid input:", pe))
-    # Specify a single lmax for each atomic species
-    if 'lmax' in input:
-        lmax = list(map(int, expandedList(input['lmax'], length=input['natom'])))
-    else:
-        lmax = list(map(int, expandedList('*-1', length=input['natom'])))
-    lmax_by_atnum = {}
-    for i,num in enumerate(atnums):
-        if num in lmax_by_atnum:
-            lmax_by_atnum[num] = max(lmax_by_atnum[num], lmax[i])
-        else:
-            lmax_by_atnum[num] = lmax[i]
-    # Prepare list of cluster atoms, core hole on first atom, as starting point
-    # Start with creating cellatoms object to duplicate
-    cellatoms = []
-    atnumSet = set()
-    shift = lambda x: list(map(lambda a,b: a-b, list(zip(x, coords[0]))))
-    for i, num in enumerate(atnums):
-        at = {'atnum':num, 'symbol':ptable[num]['symbol'], 'coord':shift(coords[i])}
-        atnumSet.add(at['atnum'])
-        cellatoms.append(at)
-    # Core hole atom denoted by atomic symbol, remaining atoms denoted by atomic number
-    #   (keys for 'ptable' lookup below)
-    atTypeKeys = [cellatoms[0]['symbol']] + sorted(atnumSet)
-    # Build list of potentials
-    potList = []
-    for ipot, key in enumerate(atTypeKeys):
-        pot = {'ipot':ipot, 'atnum':ptable[key]['number'], 'tag':ptable[key]['symbol']}
-        pot['lmax'] = lmax_by_atnum[pot['atnum']]
-        potList.append(pot)
-    # Build list of atoms
-    atomList = cell2atoms(cellatoms, acell, rprim)
-    for at in atomList:
-        at['ipot'] = atTypeKeys.index(at['atnum'])
-    atomList[0]['ipot'] = 0
-    return (potList, atomList)
-
-def dym2atoms(input, center=1):
-    from operator import itemgetter
-    from math import sqrt
-    from .conversions import bohr2angstrom
-    assert 'dynmat' in input
-    dym = input['dynmat']
-    # Check that we have a valid center atom number
-    nAt = dym['nAt']
-    if center > nAt or center < 1:
-        raise ValueError('Index for central atom is invalid')
-    iCenter = center - 1 
-    # Recenter and order by distance
-    shift = lambda x: list(map(lambda a,b: a-b, list(zip(x,dym['atCoords'][iCenter]))))
-    swapcoords = [[i,bohr2angstrom(shift(dym['atCoords'][i]))] for i in range(nAt)]
-    for a in swapcoords:
-        a.append(sqrt(sum(x*x for x in a[1])))
-    swapcoords.sort(key=itemgetter(2))
-    dym['printOrder'] = [swapcoords[iAt][0] for iAt in range(nAt)]
-    # Core hole atom denoted by atomic symbol, remaining atoms denoted by atomic number
-    #   (keys for 'ptable' lookup below)
-    atTypeKeys = [ptable[dym['atNums'][iCenter]]['symbol']] + sorted(set(dym['atNums']))
-    # Build list of potentials
-    potList = []
-    for ipot, key in enumerate(atTypeKeys):
-        pot = {'ipot':ipot, 'atnum':ptable[key]['number'], 'tag':ptable[key]['symbol']}
-        potList.append(pot)
-    # Build list of atoms
-    atomList = []
-    for iAt in dym['printOrder']:
-        at = {'coord':swapcoords[iAt][1], 'dist':swapcoords[iAt][2]}
-        at['symbol'] = ptable[dym['atNums'][iAt]]['symbol']
-        at['ipot'] = atTypeKeys.index(dym['atNums'][iAt])
-        atomList.append(at)
-    atomList[0]['ipot'] = 0
-    return (potList, atomList)
 
 def headerLines(input, lines):
     if 'title' in input:

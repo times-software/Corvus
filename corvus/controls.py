@@ -39,6 +39,9 @@ def availableHandlers():
     if config['siesta']:
         from corvus.siesta import Siesta
         handlers = handlers + [Siesta]
+    if config['phsf']:
+        from phsf import phsf
+        handlers = handlers + [phsf]
     if config['cif2cell']:
         from corvus.Cif2Cell import Cif2Cell
         handlers = handlers + [Cif2Cell]
@@ -120,6 +123,7 @@ def configure(config):
                    'vasp'  :['vasp_gam','vasp_std'],
                    'nwchem':['nwchem'], 
                    'siesta':['siesta'],
+                   'phsf'  :['phsf'],
                    'ocean' :['ocean.pl'],
                    'cif2cell':['cif2cell']}
 
@@ -144,6 +148,8 @@ def configure(config):
     config['siesta'] = path2siesta
     config['cif2cell'] = path2siesta
     config['ocean'] = path2ocean
+    path2phsf = rcp.get('Executables', 'phsf')
+    config['phsf'] = path2phsf
 # Initialize system with user input
 def initializeSystem(config, system):
     import corvutils.parsnip
