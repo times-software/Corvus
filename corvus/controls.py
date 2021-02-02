@@ -42,6 +42,12 @@ def availableHandlers():
     if config['cif2cell']:
         from corvus.Cif2Cell import Cif2Cell
         handlers = handlers + [Cif2Cell]
+
+    from corvus.mbconv import mbconv
+    handlers = handlers + [mbconv]
+    from corvus.filereader import filereader
+    handlers = handlers + [filereader]
+    # The following are pure python handlers. Use only if module import throws no error
     # import only if module lmfit exists (fit dependency). Should probably
     # do this with numpy and scipy as well. 
     try:
@@ -51,6 +57,15 @@ def availableHandlers():
     except ImportError:
         print("Warning: lmfit not found. fit handler will be disabled.")
         pass
+    
+    try:
+        import pymatgen
+        from corvus.PyMatGen import PyMatGen
+        handlers = handlers + [PyMatGen]
+    except ImportError:
+        print("Warning: pymatgen not found. PyMatGen handler will be disabled.")
+        pass
+
 
 
     return handlers

@@ -156,12 +156,13 @@ class Feff(Handler):
 
         # Generate any data that is needed from generic input and populate feffInput with
         # global data (needed for all feff runs.)
-        if 'cif_input' in input: # Prefer using cif for input, but still use REAL space
-            # Replace path with absolute path
-            feffInput['feff.cif'] = [[os.path.abspath(input['cif_input'][0][0])]]
+        if 'feff.target' in input or 'cluster' not in input: 
+            if 'cif_input' in input: # Prefer using cif for input, but still use REAL space
+                # Replace path with absolute path
+                feffInput['feff.cif'] = [[os.path.abspath(input['cif_input'][0][0])]]
                 
-            if 'feff.reciprocal' not in input:
-                feffInput['feff.real'] = [[True]]
+                if 'feff.reciprocal' not in input:
+                    feffInput['feff.real'] = [[True]]
 
         if 'cluster' in input:
             atoms = getFeffAtomsFromCluster(input)
@@ -884,6 +885,7 @@ class Feff(Handler):
 
 # OPCONS LOOP ANA BEGIN ---------------------------------------------------------------------------------------
 # For each atom in absorbing_atoms run a full-spectrum calculation (all edges, XANES + EXAFS)
+                emin = 100000.0
                 for absorber in absorbers:
 
                     print('')
@@ -933,6 +935,7 @@ class Feff(Handler):
                         exafs = np.maximum(exafs,0.0)
                         mu0 = np.maximum(mu0,0.0)
                         e0 = e2[100] - (k2[100]*bohr)**2/2.0*hart
+                        emin = min(e0/2.0/hart,emin)
                         
                         # Interpolate onto a union of the two energy-grids and smoothly go from one to the other between  
                         e_tot = np.unique(np.append(e1,e2))
@@ -954,7 +957,6 @@ class Feff(Handler):
                     print('')
                 print('')
 # OPCONS LOOP ANA END -----------------------------------------------------------------------------------------
-
 # POST LOOP ANALYSYS: If everything is correct we should not have to change anything below
                 # Interpolate onto common grid from 0 to 500000 eV
                 # Make common grid as union of all grids.
@@ -973,11 +975,11 @@ class Feff(Handler):
                 # transform to eps2. xas_tot*-4pi/apha/\omega*bohr**2
                 energy_grid = energy_grid/hart
                 eps2 = xas_tot*4*np.pi*alpinv*bohr**2/energy_grid
-                eps2 = eps2[np.where(energy_grid > 0)]
+                eps2 = eps2[np.where(energy_grid > emin)]
                 eps2_bg = xas0_tot*4*np.pi*alpinv*bohr**2/energy_grid
-                eps2_bg = eps2_bg[np.where(energy_grid > 0)]
+                eps2_bg = eps2_bg[np.where(energy_grid > emin)]
  
-                energy_grid = energy_grid[np.where(energy_grid > 0)]
+                energy_grid = energy_grid[np.where(energy_grid > emin)]
                 #plt.plot(energy_grid,eps2)
                 #plt.show()
 
