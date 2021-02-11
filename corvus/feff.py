@@ -1177,7 +1177,7 @@ class Feff(Handler):
 
 # OPCONS LOOP ANA BEGIN ---------------------------------------------------------------------------------------
 # For each atom in absorbing_atoms run a full-spectrum calculation (all edges, XANES + EXAFS)
-                for absorber in absorbers:
+                for iabs,absorber in enumerate(absorbers):
 
                     print('')
                     print("##########################################################")
@@ -1245,10 +1245,10 @@ class Feff(Handler):
                         kfin = 4.0
                         weight1 = np.cos((np.minimum(np.maximum(k_tot,kstart),kfin)-kstart)/(kfin-kstart)*np.pi/2)**2
                         weight2 = 1.0 - weight1
-                        xas_element = NumberDensity[-1]*(np.interp(e_tot,e1,xanes)*weight1 + np.interp(e_tot,e2,exafs)*weight2)
-                        xas0_element = NumberDensity[-1]*np.interp(e_tot,e2,mu0)
+                        xas_element = NumberDensity[iabs]*(np.interp(e_tot,e1,xanes)*weight1 + np.interp(e_tot,e2,exafs)*weight2)
+                        xas0_element = NumberDensity[iabs]*np.interp(e_tot,e2,mu0)
 
-                        xas_element[np.where(e_tot < e1[0])] = NumberDensity[-1]*np.interp(e_tot[np.where(e_tot < e1[0])],e2,mu0)
+                        xas_element[np.where(e_tot < e1[0])] = NumberDensity[iabs]*np.interp(e_tot[np.where(e_tot < e1[0])],e2,mu0)
                         xas_arr = xas_arr + [xas_element]
                         xas0_arr = xas0_arr + [xas0_element]
                         en_arr = en_arr + [e_tot]
@@ -1315,6 +1315,7 @@ class Feff(Handler):
                 Total_NumberDensity = np.sum(np.array(NumberDensity))/vtot
                 n_eff = 1.0/Total_NumberDensity*scipy.integrate.cumtrapz(w*eps2,w,initial=0)
                 n_eff = n_eff/(2.0*np.pi**2)
+                print("Number Density: ",Total_NumberDensity)
                 
                 w = w*hart
                 np.savetxt('epsilon.dat',np.array([w,eps1,eps2,eps1_bg,eps2_bg]).transpose())
