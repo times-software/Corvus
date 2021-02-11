@@ -1,0 +1,422 @@
+#!/usr/bin/env python3
+
+# Import pymatgen and other important stuff
+# Importing the whole pymatgen is slow, will only load the stuff we need
+#import pymatgen as mg
+#from pymatgen.ext.matproj import MPRester
+
+# Import and set some auxiliary stuff
+import sys
+import os
+import shutil
+#import json
+from monty.serialization import dumpfn, loadfn
+import pprint
+from argparse import ArgumentParser
+import numpy as np
+import time
+from subprocess import Popen
+from math import ceil
+
+pp_nice = pprint.PrettyPrinter(indent=4)
+
+# NOTE: HARDWIRING FOR NOW!!!
+# This should be set up during the installation process
+# Using python3 version of Corvus
+#CORVUS_EXE = '~/.local/cori/2.7-anaconda-2019.07/bin/run-corvus'
+CORVUS_EXE = '~/.local/cori/3.7-anaconda-2019.10/bin/run-corvus'
+MPICOMM = 'srun'
+MPIOPT_NP = '-n'
+MPIOPT_NN = '-N'
+MPIOPT_Other = '-c 1 --exclusive -C haswell --cpu_bind=cores'
+
+# Optimal partition of processors
+def Proc_Part(NT,NP):
+
+  NP_T_Base  = NP//NT
+  NP_T_Extra = NP%NT
+  Part1 = NP_T_Base*np.ones(NT,dtype=np.int)
+  Part2 = np.zeros(NT,dtype=np.int)
+  Part2[np.where(np.arange(NT)<NP_T_Extra)] = 1
+  Part = Part1 + Part2
+# Part = [ NP_T_Base+1 if i < NP_T_Extra else NP_T_Base for i in range(NT) ]
+
+  return Part
+
+def Partition_Load(nRuns,NP_Tot,PPN,Ser_Frac):
+
+# Trying to be smarter with this
+  Part_List = []
+  for iln in range(1,nRuns+1):
+
+# 1) Given a number of runs, generate all possible serial indexings
+    Ser_Ind = np.repeat(np.arange(nRuns),iln)[0:nRuns]
+
+# 2) Now we generate the best possible proc. part. for this serial indexing
+    NP_T = np.zeros(nRuns,dtype=np.int)
+    T_Tot = 0.0
+    for ii in range(min(Ser_Ind),max(Ser_Ind)+1):
+      Ind = np.where(Ser_Ind == ii)
+      iSim = len(Ind[0])
+      NP_T[Ind] = Proc_Part(iSim,NP_Tot)
+      if all(NP_T[Ind]>0):
+        T_Tot = T_Tot + max(Ser_Frac+(1.0-Ser_Frac)/NP_T[Ind])
+
+# Debug
+#   print(Ser_Ind)
+#   print(NP_T)
+
+# 3) Make sure that this partition makes sense (no 0 proc for any run) and save
+    if not any([ val == 0 for val in NP_T ]):
+      Part_List.append([T_Tot,Ser_Ind,NP_T])
+
+# 4) Find the partition with the lowest estimates execution time and return
+  T_Min = Part_List[0][0]
+  Best_Partition = Part_List[0]
+  for Part in Part_List:
+    if Part[0] < T_Min:
+      Best_Partition = Part
+
+# Debug
+# print('Part_List',Part_List)
+
+  return Best_Partition
+
+# Partition the processors according to cost
+def Partition_Load_Cost(Sys_Cost,NP_Tot,PPN,Ser_Frac):
+
+# Initialize partition to reduced cost
+  NP_Dist = [ round(Cost/min(Sys_Cost)) for Cost in Sys_Cost ]
+
+# Normalize to NP_Tot
+  NP_Dist = [ ceil(Cost/sum(NP_Dist)*NP_Tot) for Cost in NP_Dist ]
+
+# Adjust normalization if needed by removing from task with most processors
+  if sum(NP_Dist) != NP_Tot:
+    iMax = [i[0] for i in sorted(enumerate(NP_Dist), key=lambda x:x[1])][-1]
+    NP_Dist[iMax] = NP_Dist[iMax] - ( sum(NP_Dist) - NP_Tot )
+
+# Debug
+# print(NP_Dist)
+# sys.exit()
+
+  Times_Est = []
+  for (Cost,NP) in zip(Sys_Cost,NP_Dist):
+    Best_Partition = Partition_Load(Cost,NP,PPN,Ser_Frac)
+    Times_Est.append(Best_Partition[0])
+
+  Best_Partition_Load = [ NP_Dist, Times_Est ]
+
+  return Best_Partition_Load
+
+# Hardwire the possible properties for now
+Tgt_Prop_List = [ 'feff_xanes', 'corvus_oc' ]
+
+# Set up the MPRester with my MP API key
+#mp = MPRester("S1i2B6RLAcEH5w0G")
+
+# Define the help text separately for more clarity
+Help = {'Desc':'Go over each system in a set and run the required property.',
+        'ppn':'Number of processors per node.',
+        'np':'Total number of processors to be used in this run.',
+        'nn':'Number of nodes with PPN proc. to be used in this run.',
+        'sf':'Fraction of serial code to estimate parallel runtimes.',
+        'dr':'Dry run: Do everything but actually run.',
+        'q':'Run in quiet mode.',
+        't':'Estimate total runtime up to np processors.',
+        'v':'Verbose mode. Print some extra information.',
+        's':'Use serial executable for single processors runs.',
+        'v':'Generate more verbose output.',
+        'Set_Name':'Name of the structure set we are running.'
+}
+
+# Set up the CL options to make life easier
+parser = ArgumentParser(description=Help['Desc'])
+
+# Get the set name
+parser.add_argument('Set_Name',help=Help['Set_Name'])
+
+# Get verbose mode flag
+parser.add_argument("--v",dest="Verbose",action='store_true',help=Help['v'])
+
+# Get dry run flag
+parser.add_argument("--dr",dest="Dry_Run",action='store_true',help=Help['dr'])
+
+# Get the serial flag
+parser.add_argument("--s",dest="Serial",action='store_true',help=Help['s'])
+
+# Get the processor checking flag
+parser.add_argument("--t",dest="Test_NP",action='store_true',help=Help['t'])
+
+# Number of processors per node
+# NOTE: At some point in the future, we should set the default based on
+# analysis from the installer
+parser.add_argument("--ppn",dest="PPN",type=int,default=64,help=Help['ppn'])
+
+# Number of processors to use
+parser.add_argument("--np",dest="NP_Tot",type=int,default=1,help=Help['np'])
+
+# Number of nodes to use
+parser.add_argument("--nn",dest="NNodes",type=int,default=0,help=Help['nn'])
+
+# Fraction of serial code, to estimate parallel times
+parser.add_argument("--sf",dest="Ser_Frac",type=float,default=0.05,help=Help['sf'])
+
+# Parse the arguments
+args = parser.parse_args()
+
+# Update the local variables to include all the variables associated with the
+# input arguments
+locals().update(vars(args))
+
+# Here we should include some check on the input, but will leave for later
+
+# Read the set information
+Set_FileName = Set_Name+'.mson'
+Set_Data = loadfn(Set_FileName)
+
+# Set the number of processors based on the NP_Tot and NNodes inputs
+NP_Tot = max(NP_Tot,NNodes*PPN)
+
+#print(NP_Tot)
+#sys.exit()
+
+# Debug
+#pp_nice.pprint(Set_Data)
+#sys.exit()
+
+nSys = len(Set_Data)
+
+# Print some debugging information
+print('Found {:d} systems in set'.format(nSys))
+
+# Check that all the directories are present and have the appropriate files
+# for this type of run
+for Sys in list(Set_Data.keys()):
+  Tgt_Prop = Set_Data[Sys]['prop']
+  Sys_Dir = os.path.join(Set_Name,Set_Data[Sys]['formula'],Sys,Tgt_Prop)
+# Debug
+# print(Sys_Dir)
+  try:
+    os.stat(Sys_Dir)
+  except:
+    print('Directory for system '+Sys+' and property '+Tgt_Prop+' not found.')
+    print('Eliminating system from run')
+    del Set_Data[Sys]
+
+  if Tgt_Prop == 'feff_xanes':
+    Chk_Files = ['feff.inp']
+  if Tgt_Prop == 'corvus_oc':
+    Chk_Files = ['opcons.in.tmplt','CIF_symm.cif']
+  for File in Chk_Files:
+    try:
+      os.stat(Sys_Dir+'/'+File)
+    except:
+      print('File '+File+' for system '+Sys+' and property '+Tgt_Prop+' not found.')
+      print('Eliminating system from run')
+      del Set_Data[Sys]
+
+# If we get here and there are still sets in the dataset, we keep going
+nSys = len(Set_Data)
+
+# If we eliminated everything, just exit
+if nSys == 0:
+  print('No systems left in the set after checks, stopping.'.format(nSys))
+  sys.exit()
+
+# Print some debugging information
+print('{:d} systems left in the set after checks'.format(nSys))
+
+# Set nRuns to reuse the Siesta utils code
+nRuns = nSys
+
+# Collect the number of edges from the data to form an estimate the cost of each
+# run
+Sys_Cost = []
+Sys_Cost_Tot = 0
+for Sys in list(Set_Data.keys()):
+  Sys_Cost.append(Set_Data[Sys]['nedges'])
+  Sys_Cost_Tot += Set_Data[Sys]['nedges']
+
+# Debug
+#print(Sys_Cost)
+#print(Sys_Cost_Tot)
+#print(32*Sys_Cost_Tot)
+
+# Print out a table for each number of processors up to NP_Tot, listing the
+# estimated time, efficiency and total cost of the run.
+if Test_NP:
+  print("Estimated total wall time, efficiency and total cost.")
+  print("Using a serial fraction of {:6.2f}".format(Ser_Frac))
+  print("Searching up to {:d} processors.".format(NP_Tot))
+# Make a list of the number of proc we want to check, by PPN to target large
+# machines
+  NP_List = [ nSys ]+ [ N for N in range(PPN,NP_Tot+1,PPN) if N > nSys ]
+  nNP = len(NP_List)
+  Times = [0]*nNP
+  Eff   = [0]*nNP
+  Cost  = [0]*nNP
+  for (Ind,iNP) in enumerate(NP_List):
+    Best_Partition_Load = Partition_Load_Cost(Sys_Cost,iNP,PPN,Ser_Frac)
+    Time_Mx = max(Best_Partition_Load[1])
+    Times[Ind] = Time_Mx
+    Eff[Ind] = Times[0]/Times[Ind]/iNP
+    Cost[Ind] = Times[Ind]*iNP
+#   print(Best_Partition)
+#   print('')
+  Min_Time = min(Times)
+  iMin_Time = Times.index(Min_Time)
+  print(' {:8s}    {:s}   {:s}   {:s}'.format('# Nodes/Proc.','Tot. Time','   %Eff','Cost'))
+  for (Ind,iNP) in enumerate(NP_List):
+    print(' {:3d} {:6d}        {:7.2f}   {:7.0f}  {:7.2f}'.format(iNP//PPN,iNP,Times[Ind],100*Eff[Ind],Cost[Ind]))
+  sys.exit()
+
+# At this point we should be ready to run
+# Setup an estimated relative runtime load, make them all equal for now
+#Best_Partition = Partition_Load(Sys_Cost,NP_Tot,PPN,Ser_Frac)
+
+# Debug
+#print(Sys_Cost)
+#print(NP_Tot)
+#print(PPN)
+#sys.exit()
+
+Best_Partition_Load = Partition_Load_Cost(Sys_Cost,NP_Tot,PPN,Ser_Frac)
+
+# Debug
+#print(Best_Partition_Load)
+
+# Since we are not serializing the runs over systems, we have to gen a fake
+# list of serial indices for the rest of the code below. Later we might want
+# to generalize this
+
+iSer = np.array([0]*nSys)
+iNP = Best_Partition_Load[0]
+Est_Time_Cost = max(Best_Partition_Load[1])
+
+# NOTE FDV: shortcircuting here to implement a simpler partitioning scheme to
+iNP = [ Cost*PPN for Cost in Sys_Cost ]
+
+# Debug
+#print(Best_Partition_Load)
+#sys.exit()
+
+# Debug
+#sys.exit()
+
+# Debug
+#Best_Partition = Partition_Load(40,NP_Tot,PPN,Ser_Frac)
+#iSer = Best_Partition[1]
+#iNP  = Best_Partition[2]
+
+# Debug
+#print(iSer)
+#print(iNP)
+#sys.exit()
+
+# Debug
+#print(Best_Partition)
+
+# Print out partition info if we are in verbose mode
+if Verbose:
+  print("{:s}".format('-'*60))
+  print("Estimated time cost: {:7.3f}".format(Est_Time_Cost))
+  print("Runs partitioning:")
+  print('{:s}               {:s}   {:s}'.format('Run','Ser','NP'))
+# for iRun in range(nRuns):
+  for iRun,Sys in enumerate(Set_Data.keys()):
+    print("{:12s} {:6d} {:6d}".format(Sys,iSer[iRun],iNP[iRun]))
+  print("{:s}".format('-'*60))
+
+# Create all the scripts we will need to run in each of the run directories
+Run_Path    = ['']*nRuns
+Script_Name = ['']*nRuns
+for iRun,Sys in enumerate(list(Set_Data.keys())):
+  Tgt_Prop = Set_Data[Sys]['prop']
+  Sys_Dir = os.path.join(Set_Name,Set_Data[Sys]['formula'],Sys,Tgt_Prop)
+# iRun_Dir = Sys_Dir
+  Run_Path[iRun] = Sys_Dir
+  PENDING_FLAG = open(Run_Path[iRun]+'/CTRL_PENDING','w')
+  PENDING_FLAG.write('\n')
+  PENDING_FLAG.close()
+  Script_Name[iRun] = 'run_' + Sys + '.csh'
+  Script_FullPath = Run_Path[iRun]+'/'+Script_Name[iRun]
+# Debug
+# print(Script_FullPath)
+  SCRIPT = open(Script_FullPath,'w')
+  SCRIPT.write('#!/bin/csh\n')
+  SCRIPT.write('\n')
+  SCRIPT.write('# Remove the pending flag\n')
+  SCRIPT.write('rm CTRL_PENDING\n')
+  SCRIPT.write('\n')
+  SCRIPT.write('# Set a flag so crv_mp_stat knows this is running\n')
+  SCRIPT.write('touch CTRL_RUNNING\n')
+  SCRIPT.write('\n')
+# NOTE FDV: This should not be necessary enymore since we are using the python3
+# version of Corvus
+# SCRIPT.write('# Swap the modules to make Coruvs work properly\n')
+# SCRIPT.write('module swap python/3.7-anaconda-2019.10 python/2.7-anaconda-2019.07\n')
+  SCRIPT.write('\n')
+  SCRIPT.write('# Set the Corvus location\n')
+  SCRIPT.write('setenv CORVUS_EXE '+CORVUS_EXE+'\n')
+  SCRIPT.write('\n')
+  SCRIPT.write('# Run Corvus\n')
+  SCRIPT.write('$CORVUS_EXE -i opcons.in\n')
+  SCRIPT.write('\n')
+# SCRIPT.write('# Clean up\n')
+# SCRIPT.write('\n')
+  SCRIPT.write('# Remove the running flag\n')
+  SCRIPT.write('rm CTRL_RUNNING\n')
+  SCRIPT.write('\n')
+  SCRIPT.write('# Set a flag indicating the calculation is done\n')
+  SCRIPT.write('touch CTRL_COMPLETED\n')
+  SCRIPT.write('\n')
+  SCRIPT.close()
+  os.chmod(Script_FullPath,0o755)
+
+# Now we have to add the parallel directives in the Corvus input file by copying
+# the template that we already generated and adding them there
+  shutil.copyfile(Run_Path[iRun]+'/opcons.in.tmplt',Run_Path[iRun]+'/opcons.in')
+  OCINFILE = open(Run_Path[iRun]+'/opcons.in','a+')
+  OCINFILE.write('feff.MPI.CMD{'+MPICOMM+'}\n')
+  OCINFILE.write('feff.MPI.NNFLAG{'+' '+MPIOPT_NN+'}\n')
+  OCINFILE.write('feff.MPI.PPN{{ {:d} }}\n'.format(PPN))
+  OCINFILE.write('feff.MPI.NPFLAG{'+' '+MPIOPT_NP+'}\n')
+  OCINFILE.write('feff.MPI.NPTOT{{ {:d} }}\n'.format(iNP[iRun]))
+  OCINFILE.write('feff.MPI.OTHER{'+MPIOPT_Other+' }\n')
+  OCINFILE.close()
+
+# Loop over the serial index
+Tot_Time = 0.0
+for ii in range(min(iSer),max(iSer)+1):
+# Find all the runs in this serial step
+  Inds = np.where(iSer == ii)[0]
+  Comms = []
+  Dirs  = []
+  Sout  = []
+  Serr  = []
+  for Ind in Inds:
+    Comms.append(Script_Name[Ind])
+    Dirs.append(Run_Path[Ind])
+    if not Dry_Run:
+      Sout.append(open(os.path.join(Run_Path[Ind],'opcons.sout'), 'w'))
+      Serr.append(open(os.path.join(Run_Path[Ind],'opcons.serr'), 'w'))
+  print('Serial step: {:4d}    of {:4d}'.format(ii+1,max(iSer)+1))
+  for iRun in Inds:
+    print('   Run: {:18s}   #Proc: {:5d}'.format(Run_Path[iRun],iNP[iRun]))
+  T0 = time.time()
+  if not Dry_Run:
+    Procs = [ Popen(Comm,cwd=Dir,stdout=Out,stderr=Err) for (Comm,Dir,Out,Err) in zip(Comms,Dirs,Sout,Serr) ]
+    for Proc in Procs:
+      Proc.wait()
+  T1 = time.time()
+  Tot_Time = Tot_Time + T1-T0
+  print('   Completed in {:12.1f} sec.'.format(T1-T0))
+  if not Dry_Run:
+    for (o,e) in zip(Sout,Serr):
+      o.close()
+      e.close()
+  print('')
+
+print('Total execution time (sec): {:8.1f}'.format(Tot_Time))
+

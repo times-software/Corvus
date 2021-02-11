@@ -1,0 +1,774 @@
+#!/usr/bin/env python3
+
+# Import pymatgen and other important stuff
+# Importing the whole pymatgen is slow, will only load the stuff we need
+#import pymatgen as mg
+from pymatgen.ext.matproj import MPRester
+
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+from pymatgen.io.cif import CifParser, CifWriter
+from pymatgen.io.feff.sets import MPXANESSet
+from pymatgen.core.periodic_table import Element
+from pymatgen import Composition, Element
+from pymatgen.symmetry.groups import sg_symbol_from_int_number
+from pymatgen.io.feff import Atoms
+from math import sqrt
+import numpy as np
+import jenkspy
+
+# Import and set some auxiliary stuff
+import feff_edges
+import sys
+import os
+import glob
+import shutil
+#import json
+from monty.serialization import dumpfn, loadfn
+import pprint
+from argparse import ArgumentParser
+
+import urllib.parse
+import requests
+
+###############################################################################
+def goodness_of_variance_fit(array, classes):
+  # get the break points
+  classes = jenkspy.jenks_breaks(array,nb_class=classes)
+
+  # do the actual classification
+  classified = np.array([classify(i, classes) for i in array])
+
+  # max value of zones
+  maxz = max(classified)
+
+  # rnested list of zone indices
+  zone_indices = [[idx for idx, val in enumerate(classified) if zone + 1 == val] for zone in range(maxz)]
+
+  # sum of squared deviations from array mean
+  sdam = np.sum((array - array.mean()) ** 2)
+
+  # sorted polygon stats
+  array_sort = [np.array([array[index] for index in zone]) for zone in zone_indices]
+
+  # sum of squared deviations of class means
+  sdcm = sum([np.sum((classified - classified.mean()) ** 2) for classified in array_sort])
+
+  # goodness of variance fit
+  gvf = (sdam - sdcm) / sdam
+
+  return gvf
+
+def classify(value, breaks):
+  for i in range(1, len(breaks)):
+#     if value < breaks[i]:
+      if value <= breaks[i]:
+          return i
+  return len(breaks) - 1
+###############################################################################
+
+pp_nice = pprint.PrettyPrinter(indent=4)
+
+PT_MP_Material_IDs = {
+       'Li':'mp-135',
+       'Be':'mp-87',
+       'B' :'mp-160',
+       'C' :'mp-48',
+       'Na':'mp-127',
+       'Mg':'mp-153',
+       'Al':'mp-134',
+       'Si':'mp-149',
+       'P' :'mp-157',
+       'S' :'mp-77',
+       'K' :'mp-58',
+       'Ca':'mp-45',
+       'Sc':'mp-67',
+       'Ti':'mp-46',
+       'V' :'mp-146',
+       'Cr':'mp-90',
+       'Mn':'mp-35',
+       'Fe':'mp-13',
+       'Co':'mp-54',
+       'Ni':'mp-23',
+       'Cu':'mp-30',
+       'Zn':'mp-79',
+       'Ga':'mp-142',
+       'Ge':'mp-32',
+       'As':'mp-11',
+       'Se':'mp-14',
+       'Rb':'mp-70',
+       'Sr':'mp-76',
+       'Y' :'mp-112',
+       'Zr':'mp-131',
+       'Nb':'mp-75',
+       'Mo':'mp-129',
+       'Tc':'mp-113',
+       'Ru':'mp-33',
+       'Rh':'mp-74',
+       'Pd':'mp-2',
+       'Ag':'mp-124',
+       'Cd':'mp-94',
+# Changing to choose the earlier mp id
+#      'In':'mp-1055994',
+       'In':'mp-85',
+       'Sn':'mp-84',
+       'Sb':'mp-104',
+       'Te':'mp-19',
+       'I' :'mp-23153',
+       'Cs':'mp-1',
+       'Ba':'mp-122',
+       'La':'mp-26',
+       'Ce':'mp-28',
+       'Pr':'mp-38',
+       'Nd':'mp-123',
+       'Pm':'mp-867200',
+       'Sm':'mp-86',
+       'Eu':'mp-20071',
+       'Gd':'mp-155',
+       'Tb':'mp-18',
+       'Dy':'mp-88',
+       'Ho':'mp-144',
+       'Er':'mp-99',
+       'Tm':'mp-143',
+       'Yb':'mp-162',
+       'Lu':'mp-145',
+       'Hf':'mp-103',
+       'Ta':'mp-50',
+       'W' :'mp-91',
+       'Re':'mp-8',
+       'Os':'mp-49',
+       'Ir':'mp-101',
+       'Pt':'mp-126',
+       'Au':'mp-81',
+       'Tl':'mp-82',
+       'Pb':'mp-20483',
+       'Bi':'mp-23152',
+       'Ac':'mp-10018',
+       'Th':'mp-37',
+       'Pa':'mp-62',
+       'U' :'mp-44',
+       'Np':'mp-11534',
+       'Pu':'mp-613989'
+}
+
+# Define the name of the directory to collect all systems
+Sys_DirName = 'Systems'
+
+# Hardwire the possible properties for now
+Tgt_Prop_List = [ 'feff_xanes', 'corvus_oc' ]
+
+# Define the help text separately for more clarity
+Help = {'Desc':'Gather structural information from the Materials Project to do a particular type of run on each system in the set.',
+        'k':'MP API key.',
+        'f':'Formula to define systems in the set.',
+        'p':'Property to compute.',
+        'd':'Delete old set directory if present.',
+        'dr':'Dry run of gethering without any file creation.',
+        'dw':'Include DW factors with estiamted Debye temperature.',
+        'temp':'Temperature to use in calcualtions.',
+        'pt':'Create a set with the most stable structures for each element in the periodic table.',
+        'mxpt':'Maximum atomic number to use while creating PT.',
+        'ptel':'List of elements to compute.',
+        'v':'Generate more verbose output.',
+        'enpct':'Keep only EN_PCT%% of lowest energy structures.',
+        'symprec':'Symmetry precision used by symmetrizer.',
+        'nedg':'Keep only structures with fewer than MXNEdges edges in total.',
+        'nSCF':'Number of shells to use in SCF',
+        'nFMS':'Number of shells to use in FMS',
+        'Set_Name':'Name of the structure set we are creating.'
+}
+
+# Set up the CL options to make life easier
+parser = ArgumentParser(description=Help['Desc'])
+
+# Get the set name
+parser.add_argument('Set_Name',help=Help['Set_Name'])
+
+# Get the API key from the CL
+parser.add_argument("--k",dest="APIKEY",default=None,help=Help['k'])
+
+# Get the string formula to define the set
+parser.add_argument("--f",dest="Formula",default=None,help=Help['f'])
+
+# Get the property to prepare
+parser.add_argument("--p",dest="Tgt_Prop",default='corvus_oc',help=Help['p'])
+
+# Get verbose mode flag
+parser.add_argument("--v",dest="Verbose",action='store_true',help=Help['v'])
+
+# Flag for adding Debye thermal broadening
+parser.add_argument("--dw",dest="AddDW",action='store_true',help=Help['dw'])
+
+# Temperature to use in calculations
+parser.add_argument("--temp",dest="Temperature",type=float,default=298.0,help=Help['temp'])
+
+# Get dry run mode flag
+parser.add_argument("--dr",dest="Dry_Run",action='store_true',help=Help['dr'])
+
+# Get PT control flags
+parser.add_argument("--pt",dest="MkPT",action='store_true',help=Help['pt'])
+parser.add_argument("--mxpt",dest="mxNAPT",type=int,default=99,help=Help['mxpt'])
+parser.add_argument("--ptel",dest="PT_Elems",default=None,help=Help['ptel'])
+
+# Keep the En_Pct% lowest energy structures 
+parser.add_argument("--enpct",dest="En_Pct",type=float,default=100.0,help=Help['enpct'])
+
+# Maximum number of edges allowed in a given material
+parser.add_argument("--nedg",dest="mxnEdges",type=int,default=250,help=Help['nedg'])
+
+# Number of shells to use in SCF
+parser.add_argument("--nSCF",dest="nSCF",type=int,default=1,help=Help['nSCF'])
+
+# Number of shells to use in FMS
+parser.add_argument("--nFMS",dest="nFMS",type=int,default=2,help=Help['nFMS'])
+
+parser.add_argument("--symprec",dest="Sym_Prec",type=float,default=0.01,help=Help['symprec'])
+
+# Flag to delete existing files
+parser.add_argument("--d",dest="DelOld",action='store_true',help=Help['d'])
+
+# Parse the arguments
+args = parser.parse_args()
+
+# Update the local variables to include all the variables associated with the
+# input arguments
+locals().update(vars(args))
+
+if En_Pct < 0.0 or En_Pct > 100.0:
+  print('Wrong % of structures to keep: Must be 0 < % < 100')
+  sys.exit()
+
+if Sym_Prec > 0.2:
+  print('Warning: A symmetry precision so loose might causes differnces in results')
+
+# Make sure that if we have a list of elements, we activate the PT option
+# and also check the list is OK
+if PT_Elems:
+  MkPT = True
+  Elem_List = PT_Elems.split(',')
+  Elem_List_Test = set([ Elem.lower() for Elem in Elem_List ])
+  Ref_List_Test = set([ Elem.lower() for Elem in PT_MP_Material_IDs.keys() ])
+  Not_Found_List = Elem_List_Test-(Elem_List_Test&Ref_List_Test)
+  for Not_Found in Not_Found_List:
+    print('Element not available:',Not_Found.capitalize())
+  if Not_Found_List:
+    sys.exit()
+
+# Debug
+# print(Elem_List)
+
+# Now that we have a clean element list we can create a reduced version of the
+# PT MPI_ID dict
+
+  PT_MP_Material_IDs = { key.capitalize():PT_MP_Material_IDs[key.capitalize()] for key in Elem_List }
+
+# Debug
+# pp_nice.pprint(PT_MP_Material_IDs)
+# sys.exit()
+
+# Set up the API key
+# Default to the one in the CLI input, else try to read from a config file,
+# else fail
+if not APIKEY:
+
+# Here we should have code to read from a config file
+# for now just defaulting to an error message
+  APIConfig = False
+  if not APIConfig:
+    print('Error: API key not found.')
+    sys.exit()
+
+# Set up the MPRester with my MP API key
+# Doing it after the options are read to make option processing faster
+mp = MPRester(APIKEY,notify_db_version=False)
+
+# Here we should include some check on the input, but will leave for later
+
+# Hardwire the data_type we want to query, should make option later
+#Data_Type = "vasp"
+
+# Some examples for future reference
+#data = mp.get_data("NaCl",data_type="vasp",prop="cif")
+#data = mp.query({"elements":{"$in":["Li","Na","K"],"$all":["O"]},"nelements":2},['pretty_formula','cif'])
+#data = mp.query({"elements":{"$all":["Fe","O"]},"nelements":2},['pretty_formula','cif'])
+#data = mp.query({"elements":{"$all":["Fe","O"]},"nelements":2},['pretty_formula',"material_id","cif"])
+#Set_Data_Raw = mp.query(Formula,['pretty_formula',"material_id","cif"])
+
+# Try to generate a data set for the whole periodic table
+if MkPT:
+
+  Set_Data_Raw = []
+  for Elem in PT_MP_Material_IDs.keys():
+
+    MP_ID = PT_MP_Material_IDs[Elem]
+#   if Verbose:
+#     print('Querying element: {:s}'.format(Elem))
+    Elem_Data = mp.query(MP_ID,['pretty_formula','material_id','structure','formation_energy_per_atom','density','elasticity'])
+
+    if len(Elem_Data) > 1:
+      print('More than one material found for MP ID:',MP_IDi,'(',Elem,')')
+      sys.exit()
+
+    Set_Data_Raw.append(Elem_Data[0])
+
+else:
+
+  try:
+#   print(Formula)
+    Set_Data_Raw = mp.query(Formula,['pretty_formula','material_id','structure','formation_energy_per_atom','density','elasticity'])
+  except:
+    print('Error retrieving MP data: Check your formula?')
+    sys.exit()
+
+# Debug
+#pp_nice.pprint(Set_Data_Raw[0]['material_id'])
+#pp_nice.pprint(Set_Data_Raw[0]['density'])
+#pp_nice.pprint(Set_Data_Raw[0]['elasticity'])
+#pp_nice.pprint(Set_Data_Raw[0]['elasticity']['G_VRH'])
+#pp_nice.pprint(Set_Data_Raw[0]['elasticity']['K_VRH'])
+#print(dir(Set_Data_Raw[0]['structure']))
+#pp_nice.pprint(Set_Data_Raw[0]['structure'])
+#pp_nice.pprint(Set_Data_Raw[0]['structure'].num_sites)
+#sys.exit()
+
+# Debug
+#pp_nice.pprint(Set_Data_Raw)
+#sys.exit()
+
+# Number of systems in this query
+nSys = len(Set_Data_Raw)
+
+# Print some debugging information
+print('Query found {:d} systems'.format(nSys))
+
+# Debug
+#pp_nice.pprint(Set_Data_Raw)
+
+# Now we generate reduced sets according to the option settings
+
+# Energy screening
+Energies = [ System['formation_energy_per_atom'] for System in Set_Data_Raw ]
+Inds = [i[0] for i in sorted(enumerate(Energies), key=lambda x:x[1])]
+nSys_Ene = round(nSys*En_Pct/100.0)
+#print(nSys_Ene)
+#print(Inds)
+Inds = Inds[0:nSys_Ene]
+Set_Data_Raw = [ Set_Data_Raw[Ind] for Ind in Inds ]
+nSys = nSys_Ene
+
+# Print some debugging information
+print('Keeping {:d} systems after energy screening'.format(nSys))
+
+# Debug
+#print(Energies)
+#print(Inds)
+#Energies = [ System['formation_energy_per_atom'] for System in Set_Data_Raw_Sorted ]
+#print(Energies)
+#sys.exit()
+
+if Verbose:
+  print('Found systems:')
+
+# Total number of edges in this set
+nEdges_Set = 0
+
+# Define the minimum bond distance to consider (anything lower and we raise
+# an error). Choosing based on shortest distance I know of besides H-H
+Min_Bond_Dist = 0.9
+
+# Define the maximum radius used in searching for coordination shells. This
+# should cover the vast majority of FEFF cases
+Max_Cluster_Radius = 12.0
+
+# Define the starting bin size to look for shells. This might be too small but
+# will test and see
+Bin_Size = 0.01
+
+# Minimum GVF to ensure we ensure the distances are split into reasonable shells
+gvf_min = 0.995
+
+# Convert the raw data into a better format dict with all the info we will need
+Set_Data = {}
+for Sys in Set_Data_Raw:
+  Item = {}
+
+# Save the pretty formula
+  Item['formula'] = Sys['pretty_formula']
+
+# Save the property we are targeting for this material
+  Item['prop'] = Tgt_Prop
+
+# Save the structure as an MP Structure object
+  Item['str'] = Sys['structure']
+
+# Debug
+# if not Sys['elasticity']:
+#   print(Sys['pretty_formula'])
+#   print(Sys['elasticity'])
+
+# Compute an estimate of the Debye Temperature, if we have the elasticity data
+# otherwise query again to get estimates
+  if AddDW:
+    Rho = Sys['density']
+    Vol = Sys['structure'].volume
+    N_Cell = Sys['structure'].num_sites
+   
+    Prob_Flag = False
+    if Sys['elasticity']:
+      K_VRH  = Sys['elasticity']['K_VRH']
+      G_VRH  = Sys['elasticity']['G_VRH']
+      if K_VRH > 0.1 and G_VRH > 0.1:
+        v_l = np.sqrt((K_VRH+4.0/3.0*G_VRH)/Rho);
+        v_t = np.sqrt(G_VRH/Rho);
+        v_m = ( (1.0/3.0) * ( 2.0/v_t**3 + 1.0/(v_l**3) ) )**(-1.0/3.0)
+        Item['Theta_D'] = 479.90874194249*(3.0/4.0/np.pi*N_Cell/Vol)**(1.0/3.0)*v_m
+        Item['Theta_D Type'] = 'calc'
+      else:
+        Prob_Flag = True
+
+# Here we tackle the problem cases
+    if not Sys['elasticity'] or Prob_Flag:
+
+# Do a get_data operation to access estimated elasticity parameters
+      Elast_Data = mp.get_data(Sys['material_id'], data_type="pred", prop="elastic_moduli")
+
+# Debug
+#   pp_nice.pprint(Elast_Data[0]['elastic_moduli'])
+
+      K_VRH  = Elast_Data[0]['elastic_moduli']['K']
+      G_VRH  = Elast_Data[0]['elastic_moduli']['G']
+      if K_VRH > 0.1 and G_VRH > 0.1:
+        v_l = np.sqrt((K_VRH+4.0/3.0*G_VRH)/Rho);
+        v_t = np.sqrt(G_VRH/Rho);
+        v_m = ( (1.0/3.0) * ( 2.0/v_t**3 + 1.0/(v_l**3) ) )**(-1.0/3.0)
+        Item['Theta_D'] = 479.90874194249*(3.0/4.0/np.pi*N_Cell/Vol)**(1.0/3.0)*v_m
+        Item['Theta_D Type'] = 'pred'
+      else:
+        Item['Theta_D'] = -1.0
+        Item['Theta_D Type'] = None
+
+# Debug
+# print(Rho)
+# print(K_VRH)
+# print(G_VRH)
+# print(N_Cell)
+# print(Vol)
+# print(Theta_D)
+
+# Create a symmetrizer for this structure
+  Sys_spgana = SpacegroupAnalyzer(Sys['structure'],symprec=0.50)
+  Item['strsym'] = Sys_spgana.get_symmetrized_structure()
+
+# Check distances to neigbors to determine radii
+# EQV = Item['strsym'].equivalent_sites
+# print(EQV[0])
+# sys.exit()
+# print(dir(Atoms(Item['strsym'],0,6.0)))
+# print(dir(Atoms(Item['strsym'],0,6.0).cluster))
+# sys.exit()
+
+# Make a list of the representative site coords
+  Rpr_Sites = [ Site[0] for Site in Item['strsym'].equivalent_sites ]
+
+# For each representative site create the shell distribution and select the
+# SCF and FMS radii
+  Rpr_Radii = []
+  for Rpr_Site in Rpr_Sites:
+    Rpr_Site_NN = Item['strsym'].get_neighbors(Rpr_Site,Max_Cluster_Radius)
+    NN_Dist = []
+    for NN in Rpr_Site_NN:
+      NN_Dist.append(sqrt(sum((NN.coords-Rpr_Site.coords)**2)))
+    if min(NN_Dist) < Min_Bond_Dist:
+      print('Error: Found NN distance shorter than',Min_Bond_Dist)
+      print('Material ID:',Sys['material_id'])
+      sys.exit()
+    NN_Dist.sort()
+# Debug
+#   for Dist in NN_Dist:
+#     print('{:10.6f}'.format(Dist))
+#   print('')
+    gvf = 0.0
+    nclasses = 2
+    while gvf < gvf_min:
+      gvf = goodness_of_variance_fit(np.asarray(NN_Dist), nclasses)
+# Debug
+#     print(nclasses,gvf)
+      nclasses += 1
+    Shells = jenkspy.jenks_breaks(NN_Dist,nb_class=nclasses)
+# Make sure that this generated enough shells to use according to input
+    if len(Shells) < nSCF:
+      print('Error: Not enough shells available for SCF',len(Shells))
+      print('Material ID:',Sys['material_id'])
+      sys.exit()
+    if len(Shells) < nFMS:
+      print('Error: Not enough shells available for FMS',len(Shells))
+      print('Material ID:',Sys['material_id'])
+      sys.exit()
+
+# Find the radii by picking distances between shells
+# To get more accurate results across different sites, I put the radii 5% above
+# the shell cutoff.
+    NN_Dist_classified = np.array([classify(i, Shells) for i in NN_Dist])
+    iSCF = 0
+    iFMS = 0
+    for iR,iNN_Dist_classified in enumerate(NN_Dist_classified):
+      if iNN_Dist_classified <= nSCF:
+        iSCF = iR
+      if iNN_Dist_classified <= nFMS:
+        iFMS = iR
+    RSCF = 0.95*NN_Dist[iSCF]+(1.0-0.95)*NN_Dist[iSCF+1]
+    RFMS = 0.95*NN_Dist[iFMS]+(1.0-0.95)*NN_Dist[iFMS+1]
+# Add the radii to the list
+    Rpr_Radii.append((RSCF,RFMS))
+# Debug
+#   print(RSCF,RFMS)
+#   pp_nice.pprint(list(zip(NN_Dist,NN_Dist_classified)))
+#   sys.exit()
+
+# Debug
+#   for Shell in Shells:
+#     print('{:10.6f}'.format(Shell))
+#   print(NN_Dist[34],classify(NN_Dist[34],Shells))
+#   print(NN_Dist[35],classify(NN_Dist[35],Shells))
+#   NN_Dist_classified = np.array([classify(i, Shells) for i in NN_Dist])
+#   pp_nice.pprint(list(zip(NN_Dist,NN_Dist_classified)))
+
+#   for nclasses in range(2,21):
+#     Shells = jenkspy.jenks_breaks(NN_Dist,nb_class=nclasses)
+#     for Shell in Shells:
+#       print('{:10.6f}'.format(Shell))
+#     print('')
+#   sys.exit()
+
+# Create the bins for the histogram
+#   nBins = int((Max_Cluster_Radius-Min_Bond_Dist)/Bin_Size)+1
+#   Bins = np.linspace(Min_Bond_Dist,Min_Bond_Dist+(nBins-1)*Bin_Size,nBins)
+#   Hist = np.histogram(NN_Dist,Bins)
+#   for iBin in range(len(Hist[1])-1):
+#     print('{:10.6f}{:4d}'.format(0.5*(Hist[1][iBin]+Hist[1][iBin+1]),Hist[0][iBin]))
+#   print(Hist)
+#   sys.exit()
+# sys.exit()
+
+# Find the best common radii for all representative sites
+# RSCF_Max = [ RSCF for (RSCF,RFMS) in Rpr_Radii ]
+# RFMS_Max = [ RFMS for (RSCF,RFMS) in Rpr_Radii ]
+  RSCF_Max = max([ RSCF for (RSCF,RFMS) in Rpr_Radii ])
+  RFMS_Max = max([ RFMS for (RSCF,RFMS) in Rpr_Radii ])
+# Debug
+# print(RSCF_Max)
+# print(RFMS_Max)
+# sys.exit()
+
+# Add to the data
+  Item['RSCF'] = RSCF_Max
+  Item['RFMS'] = RFMS_Max
+
+# This is very cumbersome, and there are probably better ways of handling it
+# using pymatgen functions, but for now it is what I know how to do:
+# Create a dictionary with the unique site composition and also compute the
+# total number of edges in this run
+  StrSym = Item['strsym']
+  Unique_Z = [ list(Site[0].species)[0].Z for Site in StrSym.equivalent_sites ]
+  Unique_Sy = [ Element.from_Z(Z).symbol for Z in Unique_Z ]
+  nUnique = len(Unique_Z)
+  Unique_Composition = {}
+  for Sy_Ref in StrSym.symbol_set:
+    Count = sum([ 1 if Sy==Sy_Ref else 0 for Sy in Unique_Sy ])
+    Unique_Composition[Sy_Ref] = Count
+  nEdges = []
+  for Sy in Unique_Sy:
+    nEdges.append(len(feff_edges.by_elem(Sy)))
+  nEdges_Tot = sum(nEdges)
+
+  if nEdges_Tot > mxnEdges:
+# Check if we have the correct number of edges
+# NOTE: Have to find a better way to add this warnining, now it gets lost among
+# the rest of the printout
+#   print('Warning: Skipping system, too many edges',Sys['material_id'])
+    continue
+
+  Item['unique'] = Unique_Composition
+  Item['nedges'] = nEdges_Tot
+
+# print(Unique_Z)
+# print(Unique_Sy)
+# pp_nice.pprint(Item['str'].species)
+# pp_nice.pprint(Item['strsym'].equivalent_sites[0].species)
+
+  if Verbose:
+    print('#',32*'-','#')
+    print('System:              {:s}'.format(Sys['material_id']))
+    print('Reduced Form.:       {:s}'.format(StrSym.composition.reduced_formula))
+    print('Cell Comp.:          {:s}'.format(StrSym.composition.formula))
+    print('Sym. Unique Comp.:   {:s}'.format(Composition(Unique_Composition).formula))
+    print('Total num. of edges:  {:d}'.format(nEdges_Tot))
+    if MkPT:
+      print('Element Name:        {:s}'.format(Element(StrSym.composition.reduced_formula).long_name))
+    if AddDW:
+      if Item['Theta_D Type']:
+        if Item['Theta_D Type'] == 'calc':
+          print('Estimated Debye T:  {:8.2f} (Calc.)'.format(Item['Theta_D']))
+        if Item['Theta_D Type'] == 'pred':
+          print('Estimated Debye T:  {:8.2f} (Pred.)'.format(Item['Theta_D']))
+
+# Save everything for this material
+  Set_Data[Sys['material_id']] = Item
+  nEdges_Set += nEdges_Tot
+
+# Reset nSys
+nSys = len(Set_Data)
+
+if Verbose:
+  print('#',32*'-','#')
+  print('')
+  print('Keeping {:d} systems after symmetry and edge screening'.format(nSys))
+  print('')
+  print('Total number of edges to compute in set:',nEdges_Set)
+
+# Debug
+#pp_nice.pprint(Set_Data)
+#spc = Set_Data[list(Set_Data.keys())[0]]['str'].species
+#print(max([ el.Z for el in spc ]))
+#sys.exit()
+
+# If this is a dry run, then just exit here
+if Dry_Run:
+  print('Dry run: exiting.')
+  sys.exit()
+
+# Here we start writing all the directories associated with each individual
+# system
+
+# If set directory exist save or delete depending on settings
+if os.path.exists(Set_Name):
+  if DelOld:
+    if Verbose:
+      print('Removing old set directory:',Set_Name)
+    shutil.rmtree(Set_Name)
+  else:
+    SavedDirList = glob.glob(Set_Name+'.save.???')
+    if not SavedDirList:
+      SaveDir = Set_Name+'.save.000'
+      shutil.move(Set_Name,SaveDir)
+    else:
+      SavedDirList.sort()
+      NewSaveInd = int(SavedDirList[-1].split('.')[-1]) + 1
+      SaveDir = Set_Name+'.save.'+str(NewSaveInd).zfill(3)
+      shutil.move(Set_Name,SaveDir)
+    if Verbose:
+      print('Saving old set directory:',Set_Name,'to',SaveDir)
+
+# Create the set directory
+os.makedirs(Set_Name)
+
+# Loop over all elements of this set, check if they already exist in the
+# property dir, if not, create and make the files needed for that prop
+for mp_id in Set_Data.keys():
+
+# Debug
+# print(mp_id)
+
+# mp_id_Dir = Tgt_Prop+'/'+mp_id
+  mp_id_Dir = os.path.join(Set_Name,Set_Data[mp_id]['formula'],mp_id,Tgt_Prop)
+  try:
+    os.stat(mp_id_Dir)
+  except:
+    os.makedirs(mp_id_Dir)
+
+# Create some informative and reference files
+  FORMULA_FLAG = open(mp_id_Dir+'/'+'Sys_'+Set_Data[mp_id]['formula'],'w')
+  FORMULA_FLAG.write('This is just the formula\n')
+  FORMULA_FLAG.close()
+  FORMULA_FILE = open(mp_id_Dir+'/'+'Formula','w')
+  FORMULA_FILE.write(Set_Data[mp_id]['formula']+'\n')
+  FORMULA_FILE.close()
+  CifWriter(Set_Data[mp_id]['str']).write_file(mp_id_Dir+'/CIF.cif')
+  CifWriter(Set_Data[mp_id]['str'],symprec=0.001).write_file(mp_id_Dir+'/CIF_symm.cif')
+
+# Create the files for the actual run (this is a temporary ugly hack)
+  if Tgt_Prop == 'feff_xanes':
+
+# For now simply choose the heaviest atom in the formula as absorber
+    mxInd = max([ el.Z for el in Set_Data[mp_id]['str'].species ])
+    Tgt_core = Element.from_Z(mxInd).symbol
+# Debug
+#   print(Tgt_core)
+    MPXANESSet(Tgt_core,Set_Data[mp_id]['str'],radius=10.0).write_input(output_dir=mp_id_Dir)
+
+  if Tgt_Prop == 'corvus_oc':
+
+#This is what it should look like (removed all comments):
+#target_list { opcons }
+#usehandlers { Feff }
+#opcons.usesaved{ True }
+#cif_input{Diamond.cif}
+#feff.fms{ 2.0 0 0 0.0 0.0 40.0 }
+#feff.scf{ 2.0 0 30 0.1 0 }
+#feff.MPI.CMD { mpirun }
+#feff.MPI.ARGS { -n 6 }
+
+# Write an incomplete file. The last two lines above will be added at runtime
+# depending on how we decide to partition the run
+    OCINFILE = open(mp_id_Dir+'/opcons.in.tmplt','w')
+    OCINFILE.write('target_list { opcons }\n')
+    OCINFILE.write('usehandlers { Feff }\n')
+    OCINFILE.write('opcons.usesaved{ True }\n')
+    OCINFILE.write('cif_input{CIF_symm.cif}\n')
+    OCINFILE.write('feff.scf{ ' + str(Set_Data[mp_id]['RSCF']) + ' 0 30 0.1 0 }\n')
+    OCINFILE.write('feff.fms{ ' + str(Set_Data[mp_id]['RFMS']) + ' 0 0 0.0 0.0 40.0 }\n')
+    if AddDW:
+      OCINFILE.write('feff.debye{ ' + str(Temperature) + ' ' + str(Set_Data[mp_id]['Theta_D']) + ' 0 }\n')
+    OCINFILE.write('\n')
+    OCINFILE.write('# The lines below should set the parallel settings\n')
+    OCINFILE.close()
+
+# Debug
+#sys.exit()
+
+# Save the set information for future reference
+Set_FileName = Set_Name+'.mson'
+dumpfn(Set_Data,Set_FileName)
+
+# Test reading
+#xx = loadfn(Set_FileName)
+#print(xx)
+
+#with open(Set_FileName,'w') as f:
+#  json.dump(Set_Data,f)
+
+#with open(SetFileName,'r') as f:
+#  Set_Data_Raw_Read = json.load(f)
+#
+## Debug
+#pp_nice.pprint(Set_Data_Raw_Read)
+
+# Output the structures to CIF files in different ways
+#CifWriter(Sys_Str).write_file("Sys_Str.nosymm.cif")
+#CifWriter(Sys_Str,symprec=0.001).write_file("Sys_Str.symm.cif")
+#CifWriter(Sys_Str_Sym).write_file("Sys_Str_Sym.nosymm.cif")
+#CifWriter(Sys_Str_Sym,symprec=0.001).write_file("Sys_Str_Sym.symm.cif")
+
+# Look at some of the sites
+#print(Sys_Str[0])
+#print(Sys_Str[0].species)
+#print(Sys_Str[0].coords)
+#print(Sys_Str_Sym[0])
+#print(Sys_Str_Sym[0].species)
+#print(Sys_Str_Sym[0].coords)
+
+# Look at just the equivalent sites
+#print(Sys_Str_Sym.equivalent_sites)
+#print(Sys_Str_Sym.equivalent_sites[0][0].species)
+#print(Sys_Str_Sym.equivalent_sites[0][0].species.num_atoms)
+#print(Sys_Str_Sym.equivalent_sites[0][0].species.reduced_formula)
+#print(Sys_Str_Sym.equivalent_sites[0][0].species.formula)
+
+# Test some feff related stuff
+#print(Atoms(Sys_Str,0,5.0))
+#print(Potential(Sys_Str,0))
+
+# Create a supercell of the original structure
+#Sys_Str_333 = Sys_Str.copy()
+#Sys_Str_333.make_supercell([3,3,3])
+#print(Sys_Str_333)
+
