@@ -40,9 +40,8 @@ implemented['feffPaths'] = {'type':'Exchange','out':['feffPaths'],'cost':1,
 implemented['feffFMatrices'] = {'type':'Exchange','out':['feffFMatrices'],'cost':1,
                         'req':['cluster','absorbing_atom','feffPaths'],'desc':'Calculate scattering matrices using FEFF.'}
 
-implemented['feffXANES'] = {'type':'Exchange','out':['feffXANES'],'cost':1,
+implemented['xanes'] = {'type':'Exchange','out':['xanes'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
-
 
 implemented['feffXES'] = {'type':'Exchange','out':['feffXES'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
@@ -153,7 +152,7 @@ class Feff(Handler):
         # Copy feff related input to feffinput here. Later we will be overriding some settings,
         # so we want to keep the original input intact.
         feffInput = {key:input[key] for key in input if key.startswith('feff.')}
-
+        
         # Generate any data that is needed from generic input and populate feffInput with
         # global data (needed for all feff runs.)
         if 'feff.target' in input or 'cluster' not in input: 
@@ -189,7 +188,7 @@ class Feff(Handler):
 
         # Set directory for this exchange
         dir = config['xcDir']
-
+        
         # Set input file
         inpf = os.path.join(dir, 'feff.inp')
         # Loop over targets in output. Not sure if there will ever be more than one output target here.
@@ -353,15 +352,15 @@ class Feff(Handler):
                         
                 output[target] = dir
 
-            elif (target == 'feffXANES'):
+            elif (target == 'xanes'):
                 # Set output and error files
                 with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
-
+                    
                     # Write input file for FEFF.
                     writeXANESInput(feffInput,inpf)
 
                     # Loop over executable: This is specific to feff. Other codes
-                    # will more likely have only one executable. Here I am running 
+                    # will more likely have only one executable. Here I am running
                     # rdinp again since writeSCFInput may have different cards than
 
                     execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
@@ -729,7 +728,7 @@ class Feff(Handler):
                             NumberDensity = NumberDensity + [symmult[absorber - 1]]
 
                     else:
-# This only works if all elements are treates as the same for our calculation
+# This only works if all elements are treated as the same for our calculation
                         element = input['cluster'][absorber-1][0]
                         if 'number_density' not in input:
                             n_element = 0
@@ -758,14 +757,14 @@ class Feff(Handler):
                         input2['feff.edge'] = [[edge]]
 
 # Run XANES 
-                        input2['taget_list'] = [['feffXANES']]
+                        input2['taget_list'] = [['xanes']]
 
 # Set energy grid for XANES.
                         input2['feff.egrid'] = [['e_grid', -10, 10, 0.1], ['k_grid','last',5,0.07]]
                         input2['feff.control'] = [[1,1,1,1,1,1]]
 
                         config2['xcDir'] = os.path.join(config2['cwd'],component_labels[absorber-1],edge,'XANES')
-                        targetList = [['feffXANES']]
+                        targetList = [['xanes']]
                         if 'feff.scf' in input:
                             input2['feff.scf'] = input['feff.scf']
                         else:
@@ -886,7 +885,7 @@ class Feff(Handler):
 # OPCONS LOOP ANA BEGIN ---------------------------------------------------------------------------------------
 # For each atom in absorbing_atoms run a full-spectrum calculation (all edges, XANES + EXAFS)
                 emin = 100000.0
-                for absorber in absorbers:
+                for iabs,absorber in enumerate(absorbers):
 
                     print('')
                     print("##########################################################")
@@ -920,6 +919,7 @@ class Feff(Handler):
                                   
                             f.close()
 
+
                         outFile = os.path.join(config2['xcDir'],'xmu.dat')
                         e1,k1,xanes = np.loadtxt(outFile,usecols = (0,2,3)).T
                         xanes = np.maximum(xanes,0.0)
@@ -944,10 +944,12 @@ class Feff(Handler):
                         kfin = 4.0
                         weight1 = np.cos((np.minimum(np.maximum(k_tot,kstart),kfin)-kstart)/(kfin-kstart)*np.pi/2)**2
                         weight2 = 1.0 - weight1
-                        xas_element = NumberDensity[-1]*(np.interp(e_tot,e1,xanes)*weight1 + np.interp(e_tot,e2,exafs)*weight2)
-                        xas0_element = NumberDensity[-1]*np.interp(e_tot,e2,mu0)
+                        #NumberDensity[iabs] = NumberDensity[iabs]/2.0
+                        print('Number density', NumberDensity[iabs], vtot, NumberDensity[iabs]/vtot)
+                        xas_element = NumberDensity[iabs]*(np.interp(e_tot,e1,xanes)*weight1 + np.interp(e_tot,e2,exafs)*weight2)
+                        xas0_element = NumberDensity[iabs]*np.interp(e_tot,e2,mu0)
 
-                        xas_element[np.where(e_tot < e1[0])] = NumberDensity[-1]*np.interp(e_tot[np.where(e_tot < e1[0])],e2,mu0)
+                        xas_element[np.where(e_tot < e1[0])] = NumberDensity[iabs]*np.interp(e_tot[np.where(e_tot < e1[0])],e2,mu0)
                         xas_arr = xas_arr + [xas_element]
                         xas0_arr = xas0_arr + [xas0_element]
                         en_arr = en_arr + [e_tot]
@@ -1266,38 +1268,59 @@ for i in range(nElem):
     ptable[sym] = {'mass':mass, 'symbol':sym, 'number':num}
 
 def getFeffAtomsFromCluster(input):
-    # Find absorbing atom.
-    absorber = input['absorbing_atom'][0][0] - 1
-    atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
-    uniqueAtoms = list(set([ x[0] for x in atoms]))
-    #print absorber
-    #print input['absorbing_atom']
-    #print uniqueAtoms
-    #print ''.join(''.join([str(e),' ']) for e in input['cluster'][absorber][1:]) + ' 0'
-    #print input
-    feffAtoms = []
-    feffAtoms.append([0.0, 0.0, 0.0, 0])
-    for line in atoms: 
-        feffAtom = [ e - input['cluster'][absorber][i+1] for i,e in enumerate(line[1:4]) ]
-        feffAtom.append(uniqueAtoms.index(line[0])+1)
-        #print feffAtom
-        #print ''.join(''.join([str(e),' ']) for e in line[1:]) + str(uniqueAtoms.index(line[0])+1)
-        #print ptable[x[0]]['number']
-        feffAtoms.append(feffAtom)
+    if 'absorbing_atom' in input:
+        print(input['absorbing_atom'][0][0])
+        absorber = input['absorbing_atom'][0][0] - 1
+        atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
+        if len(atoms[0]) >= 5:
+            # Use itype from user
+            feffAtoms = []
+            feffAtoms.append([0.0, 0.0, 0.0, 0])
+            for atm in atoms:
+                feffAtom = atm[1:3]
+                feffAtom = [ e - float(input['cluster'][absorber][i+1]) for i,e in enumerate(atm[1:4]) ]
+                feffAtom.append(atm[4])
+                feffAtoms.append(feffAtom)
 
+        else:
+            uniqueAtoms = list(set([ x[0] for x in atoms]))
+            #print absorber
+            #print input['absorbing_atom']
+            #print uniqueAtoms
+            #print ''.join(''.join([str(e),' ']) for e in input['cluster'][absorber][1:]) + ' 0'
+            #print input
+            feffAtoms = []
+            feffAtoms.append([0.0, 0.0, 0.0, 0])
+            for line in atoms: 
+                feffAtom = [ e - input['cluster'][absorber][i+1] for i,e in enumerate(line[1:4]) ]
+                feffAtom.append(uniqueAtoms.index(line[0])+1)
+                #print feffAtom
+                #print ''.join(''.join([str(e),' ']) for e in line[1:]) + str(uniqueAtoms.index(line[0])+1)
+                #print ptable[x[0]]['number']
+                feffAtoms.append(feffAtom)
     return feffAtoms
 
 def getFeffPotentialsFromCluster(input):
     absorber = input['absorbing_atom'][0][0] - 1
     atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
-    uniqueAtoms = list(set([ x[0] for x in atoms]))
+
     lfms1 = input.get('feff.lfms1')[0][0]
     lfms2 = input.get('feff.lfms2')[0][0]
-    feffPots = [[]]
-    feffPots[0] = [0, ptable[input['cluster'][absorber][0]]['number'], input['cluster'][absorber][0], lfms1, lfms2, 1.0 ]
-    for i,atm in enumerate(uniqueAtoms):
-       xnat = [ x[0] for x in input['cluster'] ].count(atm)
-       feffPots.append([i+1, int(ptable[atm]['number']), atm, lfms1, lfms2, xnat ])
+
+    if len(atoms[0]) >= 5:
+        uniqueAtoms = sorted(list(set([ (x[0],x[4]) for x in atoms ])),key=lambda x: x[1])
+        feffPots = [[]]
+        feffPots[0] = [0, ptable[input['cluster'][absorber][0]]['number'], input['cluster'][absorber][0], lfms1, lfms2, 1.0 ]
+        for i,atm in enumerate(uniqueAtoms):
+            xnat = [ x[4] for x in input['cluster'] ].count(atm[1])
+            feffPots.append([atm[1], int(ptable[atm[0]]['number']), atm[0], lfms1, lfms2, xnat ])
+    else:       
+        uniqueAtoms = list(set([ x[0] for x in atoms]))
+        feffPots = [[]]
+        feffPots[0] = [0, ptable[input['cluster'][absorber][0]]['number'], input['cluster'][absorber][0], lfms1, lfms2, 1.0 ]
+        for i,atm in enumerate(uniqueAtoms):
+            xnat = [ x[0] for x in input['cluster'] ].count(atm)
+            feffPots.append([i+1, int(ptable[atm]['number']), atm, lfms1, lfms2, xnat ])
 
     return feffPots
 

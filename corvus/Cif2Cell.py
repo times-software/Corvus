@@ -123,7 +123,7 @@ class Cif2Cell(Handler):
         #inpf = os.path.join(dir, 'cif2cell.in')
 
         # Loop over targets in output. Not sure if there will ever be more than one output target here.
-        if set(output.keys()).issubset(set(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc','number_density'])):
+        if set(output.keys()).issubset(set(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc','number_density','supercell'])):
             # Set output and error files
             with open(os.path.join(dir, 'corvus.CIF2CELL.stdout'), 'wb') as out, open(os.path.join(dir, 'corvus.CIF2CELL.stderr'), 'wb') as err:
                 # Copy necessary files to dir

@@ -40,7 +40,7 @@ def availableHandlers():
         from corvus.siesta import Siesta
         handlers = handlers + [Siesta]
     if config['phsf']:
-        from phsf import phsf
+        from corvus.phsf import phsf
         handlers = handlers + [phsf]
     if config['cif2cell']:
         from corvus.Cif2Cell import Cif2Cell
@@ -50,6 +50,8 @@ def availableHandlers():
     handlers = handlers + [mbconv]
     from corvus.filereader import filereader
     handlers = handlers + [filereader]
+    from corvus.helper import helper
+    handlers = handlers + [helper]
     # The following are pure python handlers. Use only if module import throws no error
     # import only if module lmfit exists (fit dependency). Should probably
     # do this with numpy and scipy as well. 
@@ -143,10 +145,10 @@ def configure(config):
     config['feff'] = path2feff
 
     path2siesta = rcp.get('Executables', 'siesta') 
-    path2siesta = rcp.get('Executables', 'cif2cell') 
+    path2cif2cell = rcp.get('Executables', 'cif2cell') 
     path2ocean = rcp.get('Executables', 'ocean') 
     config['siesta'] = path2siesta
-    config['cif2cell'] = path2siesta
+    config['cif2cell'] = path2cif2cell
     config['ocean'] = path2ocean
     path2phsf = rcp.get('Executables', 'phsf')
     config['phsf'] = path2phsf
@@ -266,7 +268,7 @@ def generateWorkflow(target, handlers, system, config, desc=''):
 
 
 
-           for h in availHandlers:
+           for h in useHandlers: #availHandlers: JK - this should be useHandlers to restrict to handlers specified by user.
                # In the below line we will want to check if target is a list, and if so, check
                # if h can produce any elements of target. Optionally, we can check 
                htargets = [target for target in targets if h.canProduce(target)]
@@ -606,6 +608,7 @@ def oneshot(argv,sys_exit=True):
     # Run Workflow
     i = max(0, workflowStart)
     #print workflow.sequence
+    print('Length of sequence', len(workflow.sequence))
     while i < len(workflow.sequence):
         if config['checkpoints']:
             saveState['system'] = system

@@ -1,6 +1,7 @@
 from corvus.structures import Handler, Exchange, Loop, Update
 import corvutils.pyparsing as pp
 import os, sys, subprocess, shutil, resource
+import numpy as np
 import re
 # Debug: FDV
 import pprint
@@ -13,7 +14,8 @@ strlistkey = lambda L:','.join(sorted(L))
 implemented['siestaCoreResponse'] = {'type':'Exchange','out':['siestaCoreResponse'],'cost':3,
                         'req':['supercell'],'desc':'Calculate XPS using siesta.'}
 
-
+implemented['siestaFourierTransform'] = {'type':'Exchange','out':['siestaFourierTransform'],'cost':1,
+            'req':['siestaCoreResponse'],'desc':'Calculated Desity of States'}
 implemented['siestaBetaofOmega'] = {'type':'Exchange','out':['siestaBetaofOmega'],'cost':1,
 			'req':['siestaFourierTransform'],'desc':'Calculate Beta of Omega'}
 implemented['siestaDOS'] = {'type':'Exchange','out':['siestaDOS'],'cost':1,
@@ -150,13 +152,15 @@ class Siesta(Handler):
                 print("Calculating siestaFourierTransform")
                 
                 # Remove contribution from zero frequency	
-                tmp_avg = np.average(input['siestaCoreResponse'][1])
                 CoreResponse = np.asarray([input['siestaCoreResponse'][0],input['siestaCoreResponse'][1]])
-                CoreResponse[1] = np.subtract(input['siestaCoreResponse'][1], tmp_avg)	
+                print(CoreResponse[1])
+                tmp_avg = np.average(CoreResponse[1])
+                CoreResponse[1] = np.subtract(CoreResponse[1], tmp_avg)	
                 
                 # Broadening the coreresponse, default 0.5
                 broadfactor = input['siesta.Coreresponse.Broadening'][0][0]
-                CoreResponse[1] = CoreResponse[1]*np.exp(-(broadfactor/27.21/0.0241*CoreResponse[0])**2)
+                print('broadfactor=',broadfactor)
+                CoreResponse[1] = CoreResponse[1]*np.exp(-(broadfactor/27.21*CoreResponse[0]/0.02418884326505)**2)
                 
                 # Remove contribution from zero frequency again	
                 tmp_avg = np.average(CoreResponse[1])
@@ -319,7 +323,7 @@ class Siesta(Handler):
 
             elif (target == 'siestaCoreResponse'):               
                 # Set output and error files
-                with open(os.path.join(dir, 'corvus.SIESTA.stdout'), 'wb') as out, open(os.path.join(dir, 'corvus.SIESTA.stderr'), 'wb') as err:
+                with open(os.path.join(dir, 'corvus.SIESTA.stdout'), 'w+') as out, open(os.path.join(dir, 'corvus.SIESTA.stderr'), 'w+') as err:
                     # Get pseudopotentials
                     
                     # Write input file for FEFF.
@@ -342,7 +346,8 @@ class Siesta(Handler):
                 
                 # For now, I am only passing the directory.
                 print('Setting output')
-                output[target] = dir
+                outFile=os.path.join(dir,'coreresponse.vs.time')
+                output[target] = np.loadtxt(outFile).T.tolist()
 
 
 
@@ -417,22 +422,25 @@ def runExecutable(execDir,workDir,executable, args,out,err):
     execList = [os.path.join(execDir,executable)] + args
     inFile = open(os.path.join(workDir,'input.fdf'))
     #print execList
-    p = subprocess.Popen(execList, bufsize=0, cwd=workDir, stdin=inFile, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf8')
-
+    p = subprocess.Popen(execList, bufsize=0, cwd=workDir, stdin=inFile, stdout=out, stderr=err, encoding='utf8')
+    out_r = open(out.name,'r')
+    err_r = open(err.name,'r')
     while True:
-        output = p.stdout.readline()
-        error = p.stderr.readline()
+        try:
+            output = out_r.readline()
+            error = err_r.readline()
+        except:
+            pass
         if output == '' and p.poll() is not None:
             break
         if output:
-            print(output.strip())
-            out.write(output.strip() + os.linesep)
+            print("\t" + output.strip())
         if error:
-            print(error.strip())
-            err.write(error.strip() + os.linesep)
-    rc = p.poll() 
-    out.close()
-    err.close()
+            print("\t" + error.strip())
+    p.wait()
+    #rc = p.poll() 
+    #out.close()
+    #err.close()
     
 def readColumns(filename, columns=[1,2]):
     # Read file and clear out comments

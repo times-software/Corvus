@@ -4,6 +4,7 @@ import os, sys, subprocess, shutil, resource
 import re
 from scipy.interpolate import CubicSpline
 from scipy.integrate import quad
+from scipy.signal import convolve
 import numpy as np
 # Debug: FDV
 import pprint
@@ -23,7 +24,7 @@ subs = lambda L:[{L[j] for j in range(len(L)) if 1<<j&k} for k in range(1,1<<len
 #                        'desc':autodesc,'cost':cost}
 
 implemented['mbxanes'] = {'type':'Exchange','out':['mbxanes'],'cost':0,
-                        'req':['xanes'],'desc':'Calculate many-body xanes from xanes and spectral function.'}
+                        'req':['xanes_cfavg','spectralFunction'],'desc':'Calculate many-body xanes from xanes and spectral function.'}
 #'req':['xanes','spectal_function'],'desc':'Calculate supercell from cif input.'}
 
 
@@ -89,7 +90,7 @@ class mbconv(Handler):
 
     @staticmethod
     def prep(config):
-        subdir = config['pathprefix'] + str(config['xcIndex']) + '_CIF2CELL'
+        subdir = config['pathprefix'] + str(config['xcIndex']) + '_MBXANES'
         xcDir = os.path.join(config['cwd'], subdir)
         # Make new output directory if if doesn't exist
         if not os.path.exists(xcDir):
@@ -108,10 +109,10 @@ class mbconv(Handler):
         # Loop over targets in output.
         if 'mbxanes' in output:
             # In future use file_reader handler to read in XANES and spectral function if already calculated.
-            w  = np.array(input.get('xanes')[0])
-            mu0= np.array(input.get('xanes')[1])
-            wsf= np.array(input.get('spectral_function')[0])
-            sf = np.array(input.get('spectral_function')[1])
+            w  = np.array(input.get('xanes_cfavg')[0])
+            mu0= np.array(input.get('xanes_cfavg')[1])
+            wsf= np.flip(-1.0*np.array(input.get('spectralFunction')[0]))
+            sf = np.flip(np.array(input.get('spectralFunction')[1]))
             # Interpolate both XANES and spectral function onto an even grid
             #w, mu0 = np.loadtxt('xanes.dat',usecols = (0,1)).T
             #wsf,sf = np.loadtxt('spfcn.dat',usecols = (0,1)).T
@@ -120,25 +121,26 @@ class mbconv(Handler):
         
             mu0_cs = CubicSpline(w,mu0)
             spfcn_cs = CubicSpline(wsf,sf)
+            # Use larger of two ranges to specify range
             w_terp = np.arange(w[0],w[-1],min_diff)
             wsf_terp = np.arange(wsf[0],wsf[-1],min_diff)
             mu0_terp = mu0_cs(w_terp)
             spfcn_terp = spfcn_cs(wsf_terp)
-                        
-            mu_mb = np.convolve(mu0_terp,spfcn_terp,mode='same')*min_diff
+ 
+            mu_mb = convolve(mu0_terp,spfcn_terp,mode='full')*min_diff
 
             # If extra broadening is requested, perform a convolution of that as well.
             if 'mbconv.extra_broadening' in input:
                 gam = input['mbconv.extra_broadening'][0][0]
                 A_br = gam/np.pi*1.0/(wsf_terp**2 + gam**2)
                 mu_mb = np.convolve(mu_mb,A_br,mode='same')*min_diff
-                
-            output['mbxanes'] = [w,mu_mb]
-            if w_terp.size > wsf_terp.size:
-                w_out = w_terp
-            else:
-                w_out = wsf_terp
-            np.savetxt('mbxanes.dat',np.array([w_out, mu_mb]).transpose())
+              
+            scale=w_terp[-1] - w_terp[0] + wsf_terp[-1] - wsf_terp[0]
+            first = w_terp[0] + wsf_terp[0]
+            w_terp = np.linspace(0.0,scale,mu_mb.size) 
+            w_terp = w_terp + first
+            output['mbxanes'] = [w_terp,mu_mb]
+            np.savetxt('mbxanes.dat',np.array([w_terp, mu_mb]).transpose())
 
 
 
