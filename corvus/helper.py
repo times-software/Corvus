@@ -14,7 +14,6 @@ implemented['xanes_cfavg'] = {'type':'Exchange','out':['xanes_cfavg'],'cost':1,'
 'desc':'Average over an array of clusters and absorbing atoms.'}
 
 
-
 class helper(Handler):
     def __str__(self):
         return 'helper Handler'

@@ -111,7 +111,7 @@ class PyMatGen(Handler):
         
 
         # Loop over targets in output.
-        print("Inside PyMatGen")
+        #print("Inside PyMatGen")
         if 'cluster_array' in output:
             parser = CifParser(input.get("cif_input")[0][0])
             structure = parser.get_structures()[0]
@@ -149,31 +149,67 @@ class PyMatGen(Handler):
         elif 'supercell' in output:
             parser = CifParser(input.get("cif_input")[0][0])
             structure = parser.get_structures()[0]
-            if "absorbing_atom" in input:
-                absorber=input["absorbing_atom"][0][0]
+            sg_anal = SpacegroupAnalyzer(structure) 
+            structure = sg_anal.get_symmetrized_structure()
+            if "absorbing_atom_type" in input: # Will set up calculation of all unique absorbers in unit cell.
+                absorber_types=[input["absorbing_atom_type"][0][0]]
             else:
-                absorber=1
+                # Use all elements in crystal
+                absorber_types=structure.symbol_set
+
+            # Add a type label to the properties that is different for each unique site in the crystal.
+            absorbers = []
+            itype = 0
+            itypes = []
+            for inds in structure.equivalent_indices:
+                for ind in inds:
+                    structure.sites[ind].properties["type"] = itype
+
+                itypes = itypes + [itype]
+                itype += 1
 
             scaling_vector=input['supercell.dimensions'][0]
             structure.make_supercell(scaling_vector)
-            # Recalculate absorber: pymatgen seems to calculate images of each site in the original list
-            ncells=scaling_vector[0]*scaling_vector[1]*scaling_vector[2]
-            absorber = (absorber-1)*ncells + absorber
-            output['absorbing_atom']=[[absorber]]
+
+            # Get equivalent indices of the supercell.
+            eq_inds = []
+            for itype in itypes:
+                inds = []
+                for i,s in enumerate(structure.sites):
+                    if s.properties['type'] == itype:
+                        inds = inds + [i]
+
+                eq_inds = eq_inds + [inds]
+                        
+            #print(structure.sites)
+            #print(eq_inds)
+            #print(itypes)
+            for abs_symbol in absorber_types:
+                for inds in eq_inds:
+                    if structure.sites[inds[0]].species.elements[0].value == abs_symbol:
+                        absorbers = absorbers + [inds[0]+1]
+            #print(absorbers)
+            #exit()
+            output['absorbing_atom']=[absorbers]
             output['cell_scaling_abc'] = [structure.lattice.lengths]
             output['cell_angles_abg'] = [structure.lattice.angles]
             output['number_of_atoms'] = [[structure.num_sites]]
             output['number_of_species'] = [[structure.ntypesp]]
-            spcs=list(set(structure.species))
+
+            spcs=list(set([comp.elements[0] for comp in structure.species_and_occu]))
             species=[]
             for s in spcs:
                 species = species + [[s.number,s.value]]
             output['species'] = species
 
             red_coords = []
+            ind = 0
             for s in structure.sites:
-                red_coords = red_coords + [[s.specie.value] + list(s.frac_coords)]
+                # For now take only the first element if there is disorder. We should augment this later.
+                red_coords = red_coords + [[s.species.elements[0].value] + list(s.frac_coords)]
                 #red_coords = red_coords + [[s.species] + s.frac_coords]
+
+            print(red_coords[0])
             output['cell_struc_xyz_red'] = red_coords
             output['supercell']=[scaling_vector]
 
