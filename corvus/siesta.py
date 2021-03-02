@@ -121,10 +121,13 @@ class Siesta(Handler):
             siestaInput['siesta.NumberOfAtoms'] = input['number_of_atoms']
             siestaInput['siesta.NumberOfSpecies'] = input['number_of_species']
             species_label = []
-            sites = []
             for i,s in enumerate(input['species']):
                 species_label = species_label + [[i+1, s[0], s[1]]]
-                for j,site in enumerate(input['cell_struc_xyz_red']):
+
+
+            sites = []
+            for j,site in enumerate(input['cell_struc_xyz_red']):
+                for i,s in enumerate(input['species']):
                     if site[0] == s[1]:
                         sites = sites + [[site[1],site[2],site[3],i+1]]
 
