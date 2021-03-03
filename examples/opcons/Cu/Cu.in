@@ -1,0 +1,21 @@
+# Set tartget for corvus
+target_list { opcons }
+
+# Make corvus use feff for calculation
+usehandlers { Feff }
+
+# Re-use old calculations if they exist.
+opcons.usesaved{ True }
+
+# Set cif file to use for this calculation.
+cif_input{Cu.cif}
+
+# Set FMS and SCF to small radii for faster calculation
+feff.fms{ 2.5 0 0 0.0 0.0 40.0 }
+feff.scf{ 2.5 0 30 0.1 0 }
+feff.MPI.CMD{mpirun}
+feff.MPI.NNFLAG{ -N}
+feff.MPI.PPN{ 1 }
+feff.MPI.NPFLAG{ -n}
+feff.MPI.NPTOT{ 1 }
+feff.MPI.OTHER{ -n 1 }

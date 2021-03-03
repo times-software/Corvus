@@ -5,8 +5,10 @@ import re
 import math
 import numpy as np
 import scipy.integrate
-from CifFile import ReadCif
-from cif2cell.uctools import *
+import glob
+from scipy.signal import argrelextrema
+#from CifFile import ReadCif
+#from cif2cell.uctools import *
 
 # Added by FDV
 import time
@@ -305,6 +307,7 @@ class Feff(Handler):
         # Set input file
         inpf = os.path.join(exdir, 'feff.inp')
         # Loop over targets in output. Not sure if there will ever be more than one output target here.
+
         for target in output:
             if (target == 'feffAtomicData'):
                 # Set output and error files
@@ -477,7 +480,7 @@ class Feff(Handler):
                     # rdinp again since writeSCFInput may have different cards than
 
 #                   execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
-                    execs = ['feff_timer','rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv','feff_timer']
+                    execs = ['feff_timer','rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv','feff_timer']
                     for exe in execs:
                         if 'feff.MPI.CMD' in feffInput:
 # Modified by FDV
@@ -537,7 +540,7 @@ class Feff(Handler):
 
                     # Loop over executable: This is specific to feff. Other codes
                     # will more likely have only one executable. 
-                    execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                    execs = ['rdinp','atomic','pot','ldos','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                     for exe in execs:
                         if 'feff.MPI.CMD' in feffInput:
                             executable = feffInput.get('feff.MPI.CMD')[0]
@@ -773,13 +776,13 @@ class Feff(Handler):
     
 ## OPCONS BEGIN
             elif (target == 'opcons'):
-
+        
 # Opcons imports
                 import copy
-                #import matplotlib.pyplot as plt
+
                 from corvus.controls import generateAndRunWorkflow
                 # Define some constants
-                    
+
                 hart = 2*13.605698
                 alpinv = 137.03598956
                 bohr = 0.529177249
@@ -814,7 +817,9 @@ class Feff(Handler):
                 NumberDensity = []
                 vtot = 0.0
                 xas_arr = []
+                xas_conv_arr = []
                 xas0_arr = []
+                xas0_conv_arr = []
                 en_arr = []
                 component_labels = []
 
@@ -841,6 +846,7 @@ class Feff(Handler):
 # as I can tell. So we have to symmetrize again
                     spgAna = SpacegroupAnalyzer(Sys_Str)
                     Sys_Str_Sym = spgAna.get_symmetrized_structure()
+                    formula = Sys_Str_Sym.formula
 
                     VTot_fdv = Sys_Str_Sym.volume
 # Debug
@@ -970,7 +976,7 @@ class Feff(Handler):
                             NumberDensity = NumberDensity + [symmult[absorber - 1]]
 
                     else:
-# This only works if all elements are treates as the same for our calculation
+# This only works if all elements are treated as the same for our calculation
                         element = input['cluster'][absorber-1][0]
                         if 'number_density' not in input:
                             n_element = 0
@@ -989,7 +995,7 @@ class Feff(Handler):
 # Commented out by FDV, unused, simplifying
 #                   FirstEdge = True
                     Item_Absorber = {}
-                    for edge in feff_edge_dict[only_alpha.sub('',element)]:
+                    for iedge,edge in enumerate(feff_edge_dict[only_alpha.sub('',element)]):
 
                         Item_Edge = {}
                         print("\t" + edge)
@@ -997,7 +1003,7 @@ class Feff(Handler):
 
 ### BEGIN INPUT GEN --------------------------------------------------------------------------------------------
                         input2['feff.edge'] = [[edge]]
-
+                        
 # Run XANES 
                         input2['target_list'] = [['feffXANES']]
 
@@ -1006,6 +1012,13 @@ class Feff(Handler):
                         input2['feff.control'] = [[1,1,1,1,1,1]]
 
                         config2['xcDir'] = os.path.join(config2['cwd'],component_labels[absorber-1],edge,'XANES')
+
+                        # NOTE: This will unbalance the load. Need to figure out best way to do this.
+                        if iedge == 0 and element == elements[0]:
+                          # Run LDOS only for first edge of first absorber. Others will be copied.
+                          input2['feff.ldos'] = [[-40.0, 0.0, 0.5,160]]
+                          dos_dir = config2['xcDir']
+                            
                         targetList = [['feffXANES']]
                         if 'feff.scf' in input:
                             input2['feff.scf'] = input['feff.scf']
@@ -1039,6 +1052,11 @@ class Feff(Handler):
                         xanesDir = config2['xcDir']
                         exafsDir = os.path.join(config2['cwd'],component_labels[absorber-1],edge,'EXAFS')
                         config2['xcDir'] = exafsDir
+                        
+                        # Delete ldos card if it exists.
+                        if 'feff.ldos' in input2:
+                          del input2['feff.ldos']
+                        
                         input2['feff.control'] = [[0, 1, 1, 1, 1, 1]]
                         input2['feff.egrid'] = [['k_grid', -20, -2, 1], ['k_grid',-2,0,0.07], ['k_grid', 0, 40, 0.07],['exp_grid', 'last', 500000.0, 10.0]]
                         if 'feff.fms' in input:
@@ -1187,11 +1205,12 @@ class Feff(Handler):
 
 # Commented out by FDV, unused, simplifying
 #                   FirstEdge = True
-                    for edge in WF_Params_Dict[absorber].keys():
+                    for iedge,edge in enumerate(WF_Params_Dict[absorber].keys()):
 
                         print("\t" + edge)
                         print("\t\t" + 'XANES')
 
+                        
 # Added by FDV
                         config2    = WF_Params_Dict[absorber][edge]['xanes']['config2']
                         input2     = WF_Params_Dict[absorber][edge]['xanes']['input2']
@@ -1225,7 +1244,7 @@ class Feff(Handler):
                         targetList = WF_Params_Dict[absorber][edge]['exafs']['targetList']
 ### BEGIN OUTPUT ANA --------------------------------------------------------------------------------------------
                         outFile = os.path.join(config2['xcDir'],'xmu.dat')
-                        e2,k2,exafs,mu0 = np.loadtxt(outFile,usecols = (0,2,3,4)).T
+                        e2,ep,k2,exafs,mu0 = np.loadtxt(outFile,usecols = (0,1,2,3,4)).T
 # Debug: FDV
 # Adding a little call to temporarily fix the NaN issues
                         (exafs, mu0) = Temp_Fix_NaN(k2,exafs,mu0)
@@ -1246,11 +1265,74 @@ class Feff(Handler):
                         weight1 = np.cos((np.minimum(np.maximum(k_tot,kstart),kfin)-kstart)/(kfin-kstart)*np.pi/2)**2
                         weight2 = 1.0 - weight1
                         xas_element = NumberDensity[iabs]*(np.interp(e_tot,e1,xanes)*weight1 + np.interp(e_tot,e2,exafs)*weight2)
+                        # Zero out portions below 1/5th of the edge energy.
+                        xas_element[np.where(e_tot < 0.2*e0)] = 0.0
                         xas0_element = NumberDensity[iabs]*np.interp(e_tot,e2,mu0)
+                        xas0_element[np.where(e_tot < 0.2*e0)] = 0.0
+                        
+                        # Find EFermi:
+                        # Find mu, where k = 0
+                        ind_Fermi = np.argmin(k2**2)
+                        EFermi = ep[ind_Fermi]
+                        
+                        
+                        # Load pot.inp and read to get info on ldos files 
+                        infl = open(os.path.join(config2['xcDir'],'pot.inp'), 'r')
+                        Lines = infl.readlines()
+                        infl.close()
 
-                        xas_element[np.where(e_tot < e1[0])] = NumberDensity[iabs]*np.interp(e_tot[np.where(e_tot < e1[0])],e2,mu0)
+                        # second field of second line is the number of unique potentials. 
+                        second = Lines[1].split()
+                        npot = int(second[1])
+
+                        # Which dos to use?  Will take this from ihole in pot.inp.
+                        ihole = int(second[3])
+
+                        # We also need the target of this particular run, since the ldos will not necessarily have come
+                        # from this run. NOTE: This can only really be used by opcons at present. 
+                        infl = open(os.path.join(config2['xcDir'],'feff.inp'), 'r')
+                        feffInpLines = infl.readlines()
+                        infl.close()
+                        for line in feffInpLines:
+                          if 'target' in line.lower():
+                            target_atom = int(line.split()[1])
+
+                        # If this is the edge and absorber with the LDOS in it, load LDOS.
+                        if iedge == 0 and iabs == 0:
+                          ipot = 0
+                          ldos_files = []
+                          dos_array = []
+                          # Get the ldos.
+                          while ipot <= npot:
+                            ldos_files = ldos_files + ['ldos' + '{:02}'.format(ipot) + '.dat']
+                            dos_array = dos_array + [np.loadtxt(os.path.join(dos_dir,ldos_files[ipot])).T]
+                            ipot += 1
+
+                        # Use the dos from this target absorber, and ldos corresponding to the correct symmetry of the core-level.
+                        idos = getHoleSymm(ihole-1)+1
+                        w = dos_array[target_atom][0]
+                        dos = dos_array[target_atom][idos]
+                        print('Edge and absorber:', edge, absorber)
+                        print('LDOS file:', ldos_files[target_atom])
+                        print('Angular momentum', idos - 1)
+                        # Below the first point of the XANES grid, use the background of the EXAFS calculation.
+                        xas_element[np.where(e_tot < e1[0])] = xas0_element[np.where(e_tot < e1[0])] 
+
+
+                        e_cv = 50.0 # This should be adjustable in general.
+                        # If edge energy is less than e_cv, run LDOS convolution on xas_element and xas0_element
+                        if e0 < e_cv:
+                          xas_conv_element = dos_conv(e_tot, EFermi, e0, k_tot, xas_element, w, dos)
+                          xas0_conv_element = dos_conv(e_tot, EFermi, e0, k_tot, xas0_element, w, dos)
+                        else:
+                          xas_conv_element = xas_element
+                          xas0_conv_element = xas0_element
+
+                        np.savetxt(os.path.join(config2['xcDir'],'xmu_conv.dat'),np.array([e_tot,xas_conv_element]).T)
                         xas_arr = xas_arr + [xas_element]
+                        xas_conv_arr = xas_conv_arr + [xas_conv_element]
                         xas0_arr = xas0_arr + [xas0_element]
+                        xas0_conv_arr = xas0_conv_arr + [xas0_conv_element]
                         en_arr = en_arr + [e_tot]
                         #plt.plot(e_tot, xas_element)
                         #plt.show()
@@ -1266,20 +1348,30 @@ class Feff(Handler):
 
                 # Now loop through all elements and add xas from each element
                 xas_tot = np.zeros_like(energy_grid)
+                xas_conv_tot = np.zeros_like(energy_grid)
                 xas0_tot = np.zeros_like(energy_grid)
+                xas0_conv_tot = np.zeros_like(energy_grid)
                 for i,en in enumerate(en_arr):
                     xas_tot = xas_tot + np.interp(energy_grid,en,xas_arr[i],left=0.0,right=0.0)
+                    xas_conv_tot = xas_conv_tot + np.interp(energy_grid,en,xas_conv_arr[i],left=0.0,right=0.0)
                     xas0_tot = xas0_tot + np.interp(energy_grid,en,xas0_arr[i],left=0.0,right=0.0)
-
+                    xas0_conv_tot = xas0_conv_tot + np.interp(energy_grid,en,xas0_conv_arr[i],left=0.0,right=0.0)
+                    
                 xas_tot = xas_tot/vtot
+                xas_conv_tot = xas_conv_tot/vtot
                 xas0_tot = xas0_tot/vtot
+                xas0_conv_tot = xas0_conv_tot/vtot
 
                 # transform to eps2. xas_tot*-4pi/apha/\omega*bohr**2
                 energy_grid = energy_grid/hart
                 eps2 = xas_tot*4*np.pi*alpinv*bohr**2/energy_grid
                 eps2 = eps2[np.where(energy_grid > 0)]
+                eps2_conv = xas_conv_tot*4*np.pi*alpinv*bohr**2/energy_grid
+                eps2_conv = eps2_conv[np.where(energy_grid > 0)]
                 eps2_bg = xas0_tot*4*np.pi*alpinv*bohr**2/energy_grid
                 eps2_bg = eps2_bg[np.where(energy_grid > 0)]
+                eps2_conv_bg = xas0_conv_tot*4*np.pi*alpinv*bohr**2/energy_grid
+                eps2_conv_bg = eps2_conv_bg[np.where(energy_grid > 0)]
  
                 energy_grid = energy_grid[np.where(energy_grid > 0)]
                 #plt.plot(energy_grid,eps2)
@@ -1292,14 +1384,31 @@ class Feff(Handler):
                 # Perform KK-transform
                 print('Performaing KK-transform of eps2:')
                 print('')
+                # Background
                 w,eps1_bg = kk_transform(energy_grid, eps2_bg)
-                w,eps1 = kk_transform(energy_grid, eps2)
-                eps2 = np.interp(w,energy_grid,eps2)
-                eps1 = eps1 + 1.0
                 eps2_bg = np.interp(w,energy_grid,eps2_bg)
                 eps1_bg = eps1_bg + 1.0
                 eps_bg = eps1_bg + 1j*eps2_bg
+
+                # Background with LDOS convolution.
+                w,eps1_conv_bg = kk_transform(energy_grid, eps2_conv_bg)
+                eps2_conv_bg = np.interp(w,energy_grid,eps2_conv_bg)
+                eps1_conv_bg = eps1_conv_bg + 1.0
+                eps_conv_bg = eps1_conv_bg + 1j*eps2_conv_bg
+
+                # With fine-structure
+                w,eps1 = kk_transform(energy_grid, eps2)
+                eps2 = np.interp(w,energy_grid,eps2)
+                eps1 = eps1 + 1.0
                 eps = eps1 + 1j*eps2
+
+                # With fine-structure and LDOS convolution.
+                w,eps1_conv = kk_transform(energy_grid, eps2_conv)
+                eps2_conv = np.interp(w,energy_grid,eps2_conv)
+                eps1_conv = eps1_conv + 1.0
+                eps_conv = eps1_conv + 1j*eps2_conv
+
+                
                 # Transform to optical constants
                 index_of_refraction = np.sqrt(eps)
                 index_of_refraction_bg = np.sqrt(eps_bg)
@@ -1310,13 +1419,45 @@ class Feff(Handler):
                 energy_loss = -1.0*np.imag(1.0/eps)
                 energy_loss_bg = -1.0*np.imag(eps_bg**(-1))
 
+                # With LDOS convolution
+                index_of_refraction_conv = np.sqrt(eps_conv)
+                index_of_refraction_conv_bg = np.sqrt(eps_conv_bg)
+                reflectance_conv = np.abs((index_of_refraction-1)/(index_of_refraction+1))**2
+                reflectance_conv_bg = np.abs((index_of_refraction_conv_bg-1)/(index_of_refraction_conv_bg+1))**2
+                absorption_conv = 2*w*1.0/alpinv*np.imag(index_of_refraction_conv)/bohr*1000
+                absorption_conv_bg = 2*w*1.0/alpinv*np.imag(index_of_refraction_conv_bg)/bohr*1000
+                energy_loss_conv = -1.0*np.imag(1.0/eps_conv)
+                energy_loss_conv_bg = -1.0*np.imag(eps_conv_bg**(-1))
+
                 # Calculate sumrules
                 # eps2 sumrule: V/(2pi^2 N) * \int_0^{\omega} d\omega' \omega' eps2(\omega')
-                Total_NumberDensity = np.sum(np.array(NumberDensity))/vtot
-                n_eff = 1.0/Total_NumberDensity*scipy.integrate.cumtrapz(w*eps2,w,initial=0)
-                n_eff = n_eff/(2.0*np.pi**2)
-                print("Number Density: ",Total_NumberDensity)
+                # Find the number of chemical units
+                iUnit = 2
+                Number_Of_Units = 1
+                while iUnit <= min(NumberDensity):
+                    formula = np.array(NumberDensity)/float(iUnit)
+                    print('formula', formula)
+                    print(np.all(np.mod(formula,1) == 0))
+                    if int(min(NumberDensity)/iUnit) == 0:
+                        print('break')
+                        break
+                    elif np.all(np.mod(formula,1) == 0):
+                        Number_Of_Units = iUnit
+                    iUnit += iUnit
+
+                print("Number of Chemical Formula Units in Unit Cell: ", Number_Of_Units)
+                print("Number Densities:", NumberDensity, np.sum(np.array(NumberDensity)))
+                #Total_NumberDensity = np.sum(np.array(NumberDensity))/vtot
+                Total_NumberDensity = Number_Of_Units/vtot
+                n_eff = 1.0/Total_NumberDensity*scipy.integrate.cumulative_trapezoid(w*eps2, x=w, initial=0.0)
+                n_eff_conv = 1.0/Total_NumberDensity*scipy.integrate.cumulative_trapezoid(w*eps2_conv, x=w, initial=0.0)
                 
+                print('Sumrule gives: ',1.0/Total_NumberDensity*np.trapz(w*eps2,w)/(2.0*np.pi**2))
+                print('Sumrule with convolution gives: ', 1.0/Total_NumberDensity*np.trapz(w*eps2_conv,w)/(2.0*np.pi**2))
+                n_eff = n_eff/(2.0*np.pi**2)
+                n_eff_conv = n_eff_conv/(2.0*np.pi**2)
+                print("Number Density: ",Total_NumberDensity)
+
                 w = w*hart
                 np.savetxt('epsilon.dat',np.array([w,eps1,eps2,eps1_bg,eps2_bg]).transpose())
                 np.savetxt('index.dat',np.array([w,np.real(index_of_refraction),np.imag(index_of_refraction),np.real(index_of_refraction_bg),np.imag(index_of_refraction_bg)]).transpose())
@@ -1324,7 +1465,15 @@ class Feff(Handler):
                 np.savetxt('absorption.dat',np.array([w,absorption,absorption_bg]).transpose())
                 np.savetxt('loss.dat', np.array([w,energy_loss,energy_loss_bg]).transpose())
                 np.savetxt('sumrules.dat', np.array([w,n_eff]).transpose())
+                np.savetxt('epsilon_conv.dat',np.array([w,eps1_conv,eps2_conv,eps1_conv_bg,eps2_conv_bg]).transpose())
+                np.savetxt('index_conv.dat',np.array([w,np.real(index_of_refraction_conv),np.imag(index_of_refraction_conv),np.real(index_of_refraction_conv_bg),np.imag(index_of_refraction_conv_bg)]).transpose())
+                np.savetxt('reflectance_conv.dat',np.array([w,reflectance_conv,reflectance_conv_bg]).transpose())
+                np.savetxt('absorption_conv.dat',np.array([w,absorption_conv,absorption_conv_bg]).transpose())
+                np.savetxt('loss_conv.dat', np.array([w,energy_loss_conv,energy_loss_conv_bg]).transpose())
+                np.savetxt('sumrules_conv.dat', np.array([w,n_eff_conv]).transpose())
+
                 output[target] = (w,eps)
+
                 print('Finished with calculation of optical constants.')
 ## OPCONS END
 
@@ -2353,7 +2502,7 @@ feff_edge_dict={
 
 
 def kk_transform(w,eps2):
-    
+  
     """ Performs kk-transform on imaginary part of spectrum from 0 to infty
     input:
         w  - energy grid, does not need to be even
@@ -2392,3 +2541,78 @@ def kk_transform(w,eps2):
         eps1[iw] = np.sum(a*delta + a*w0/2.0*g1 + b/2.0*g2)
     return wnew,eps1*2/np.pi
 
+def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in):
+    ''' Convolve xmu.dat with appropriate LDOS to get low frequency optical spectrum. '''
+
+    w = w_in[:]
+    dos = dos_in[:]
+    # Get all maxima in the dos
+    ind_max = argrelextrema(dos,np.greater)[0]
+
+    Etop = EFermi
+    EGap = 0.0
+    itop = -1
+    # Now find maxima that are closest to Fermi level
+    for i,ind in enumerate(ind_max[:-1]):
+      if w[ind] < EFermi < w[ind_max[i+1]]:
+        # Now run backward to find first point where dos < half max
+        iw = ind_max[i+1]
+        while iw > ind:
+          if dos[iw] < dos[ind_max[i+1]]/2.0:
+            Etop = w[iw]
+            itop = iw
+            break
+          iw -= 1
+
+        if itop < 0:
+          break
+        # Now run forward to find same from bottom of gap
+        iw = ind
+        while iw < ind_max[i+1]:
+          if dos[iw] < dos[ind]/2.0:
+            EGap = Etop - w[iw]
+            ibottom = iw
+            break
+          iw += 1
+
+        break
+      
+    print('Gap energy:', EGap)
+    print('EFermi:', EFermi)
+    print('ETop:', Etop)
+    #import matplotlib.pyplot as plt
+    #plt.plot(w-EFermi,dos)
+    #plt.show()
+    
+    # Redefine DOS as occupied DOS.
+    dos = dos[w<EFermi]
+    w = w[w<EFermi]
+    dos = dos/np.trapz(dos,w)
+
+    # Make grids for dos (-100 to 100)
+    e_step = 0.1
+    e_grid = np.arange(0.1,100,0.1) 
+    e_grid2 = np.flip(-e_grid)
+    dos_terp = np.interp(e_grid2,w,dos,left=0.0,right=0.0)
+    dos_terp = dos_terp/np.trapz(dos_terp)/0.1
+    for i,en in enumerate(e_grid2):
+      if en > EFermi:
+        dos_terp[i] = 0.0
+      mu_terp = np.interp(e1+E0-(Etop-en),e1,xanes*e1,left=0.0,right=xanes[-1])
+      # Trapezoidal rule integration for mu. 
+      if i == 0:
+        mu = mu_terp*dos_terp[i]/e1
+      else:
+        mu = mu + mu_terp*dos_terp[i]*2.0/e1
+
+    mu = mu*e_step/2.0
+
+    # Cut mu off below EGap.
+    mu[np.where(e1<EGap)] = 0.0
+    return mu
+
+def getHoleSymm(ihole):
+    # K, L1, L2, L3, M1, M2, M3, M4, M5
+    #['K', 'L1', 'L2', 'L3', 'M1', 'M2', 'M3', 'M4', 'M5', 'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O7', 'P1', 'P2', 'P3', 'P4', 'P5', 'R1', 'R2', 'R3', 'S1', 'S2', 'P6', 'O8', 'O9'],
+    holeSymm = [0,     0,    1,    1,    0,    1,    1,    2,    2,    0,    1,    1,    2,    2,    3,    3,    0,    1,    1,    2,    2,    3,    3,    0,    1,    1,    2,    2,    0,    1,    1,    0,    1,    0,    4,    4]
+    return holeSymm[ihole]
