@@ -1,6 +1,6 @@
 from corvus.structures import Handler, Exchange, Loop, Update
 import corvutils.pyparsing as pp
-import os, sys, subprocess, shutil, resource
+import os, sys, subprocess, shutil #, resource
 import re
 import math
 import numpy as np
@@ -1384,28 +1384,38 @@ class Feff(Handler):
                 # Perform KK-transform
                 print('Performaing KK-transform of eps2:')
                 print('')
+
                 # Background
                 w,eps1_bg = kk_transform(energy_grid, eps2_bg)
-                eps2_bg = np.interp(w,energy_grid,eps2_bg)
-                eps1_bg = eps1_bg + 1.0
+                # Add Drude term if requested
+                if 'opcons.drude' in input:
+                    wp = input['opcons.drude'][0][0]/hart
+                    Gamma = input['opcons.drude'][0][1]/hart
+                    print('wp,gamma',wp, Gamma)
+                    eps_drude = - wp**2/(w**2 + 1j*Gamma*w)
+                    eps1_drude = np.real(eps_drude)
+                    eps2_drude = np.imag(eps_drude)
+
+                eps2_bg = np.interp(w,energy_grid,eps2_bg) + eps2_drude
+                eps1_bg = eps1_bg + 1.0 + eps1_drude
                 eps_bg = eps1_bg + 1j*eps2_bg
 
                 # Background with LDOS convolution.
                 w,eps1_conv_bg = kk_transform(energy_grid, eps2_conv_bg)
-                eps2_conv_bg = np.interp(w,energy_grid,eps2_conv_bg)
-                eps1_conv_bg = eps1_conv_bg + 1.0
+                eps2_conv_bg = np.interp(w,energy_grid,eps2_conv_bg) + eps2_drude
+                eps1_conv_bg = eps1_conv_bg + 1.0 + eps1_drude
                 eps_conv_bg = eps1_conv_bg + 1j*eps2_conv_bg
 
                 # With fine-structure
                 w,eps1 = kk_transform(energy_grid, eps2)
-                eps2 = np.interp(w,energy_grid,eps2)
-                eps1 = eps1 + 1.0
+                eps2 = np.interp(w,energy_grid,eps2) + eps2_drude
+                eps1 = eps1 + 1.0 + eps1_drude
                 eps = eps1 + 1j*eps2
 
                 # With fine-structure and LDOS convolution.
                 w,eps1_conv = kk_transform(energy_grid, eps2_conv)
-                eps2_conv = np.interp(w,energy_grid,eps2_conv)
-                eps1_conv = eps1_conv + 1.0
+                eps2_conv = np.interp(w,energy_grid,eps2_conv) + eps2_drude
+                eps1_conv = eps1_conv + 1.0 + eps1_drude
                 eps_conv = eps1_conv + 1j*eps2_conv
 
                 
@@ -1460,6 +1470,7 @@ class Feff(Handler):
 
                 w = w*hart
                 np.savetxt('epsilon.dat',np.array([w,eps1,eps2,eps1_bg,eps2_bg]).transpose())
+                np.savetxt('epsilon_drude.dat',np.array([w,eps1_drude,eps2_drude]).transpose())
                 np.savetxt('index.dat',np.array([w,np.real(index_of_refraction),np.imag(index_of_refraction),np.real(index_of_refraction_bg),np.imag(index_of_refraction_bg)]).transpose())
                 np.savetxt('reflectance.dat',np.array([w,reflectance,reflectance_bg]).transpose())
                 np.savetxt('absorption.dat',np.array([w,absorption,absorption_bg]).transpose())
