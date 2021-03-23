@@ -1388,6 +1388,9 @@ class Feff(Handler):
                 # Background
                 w,eps1_bg = kk_transform(energy_grid, eps2_bg)
                 # Add Drude term if requested
+                eps_drude = np.zeros_like(w)
+                eps1_drude = np.zeros_like(w)
+                eps2_drude = np.zeros_like(w)
                 if 'opcons.drude' in input:
                     wp = input['opcons.drude'][0][0]/hart
                     Gamma = input['opcons.drude'][0][1]/hart
