@@ -1,6 +1,6 @@
 from corvus.structures import Handler, Exchange, Loop, Update
 import corvutils.pyparsing as pp
-import os, sys, subprocess, shutil, resource
+import os, sys, subprocess, shutil #, resource
 import re
 import math
 import numpy as np
@@ -1271,8 +1271,11 @@ class Feff(Handler):
                         mu0 = np.maximum(mu0,0.0)
                         e0 = e2[100] - (k2[100]*bohr)**2/2.0*hart
                         
-                        # Interpolate onto a union of the two energy-grids and smoothly go from one to the other between  
-                        e_tot = np.unique(np.append(e1,e2))
+                        # Interpolate onto a union of the two energy-grids and smoothly go from one to the other between.
+                        # Also add a fine grid between 0.1 and 40 eV.
+                        e_tot = np.append(np.append(e1,e2),np.arange(0.1,40.0,0.1))
+                        e_tot = np.unique(e_tot)
+                        
                         k_tot = np.where(e_tot > e0, np.sqrt(2.0*np.abs(e_tot-e0)/hart), -np.sqrt(2.0*np.abs(e0 - e_tot)/hart))/bohr
                         kstart = 3.0
                         kfin = 4.0
@@ -1398,28 +1401,41 @@ class Feff(Handler):
                 # Perform KK-transform
                 print('Performaing KK-transform of eps2:')
                 print('')
+
                 # Background
                 w,eps1_bg = kk_transform(energy_grid, eps2_bg)
-                eps2_bg = np.interp(w,energy_grid,eps2_bg)
-                eps1_bg = eps1_bg + 1.0
+                # Add Drude term if requested
+                eps_drude = np.zeros_like(w)
+                eps1_drude = np.zeros_like(w)
+                eps2_drude = np.zeros_like(w)
+                if 'opcons.drude' in input:
+                    wp = input['opcons.drude'][0][0]/hart
+                    Gamma = input['opcons.drude'][0][1]/hart
+                    print('wp,gamma',wp, Gamma)
+                    eps_drude = - wp**2/(w**2 + 1j*Gamma*w)
+                    eps1_drude = np.real(eps_drude)
+                    eps2_drude = np.imag(eps_drude)
+
+                eps2_bg = np.interp(w,energy_grid,eps2_bg) + eps2_drude
+                eps1_bg = eps1_bg + 1.0 + eps1_drude
                 eps_bg = eps1_bg + 1j*eps2_bg
 
                 # Background with LDOS convolution.
                 w,eps1_conv_bg = kk_transform(energy_grid, eps2_conv_bg)
-                eps2_conv_bg = np.interp(w,energy_grid,eps2_conv_bg)
-                eps1_conv_bg = eps1_conv_bg + 1.0
+                eps2_conv_bg = np.interp(w,energy_grid,eps2_conv_bg) + eps2_drude
+                eps1_conv_bg = eps1_conv_bg + 1.0 + eps1_drude
                 eps_conv_bg = eps1_conv_bg + 1j*eps2_conv_bg
 
                 # With fine-structure
                 w,eps1 = kk_transform(energy_grid, eps2)
-                eps2 = np.interp(w,energy_grid,eps2)
-                eps1 = eps1 + 1.0
+                eps2 = np.interp(w,energy_grid,eps2) + eps2_drude
+                eps1 = eps1 + 1.0 + eps1_drude
                 eps = eps1 + 1j*eps2
 
                 # With fine-structure and LDOS convolution.
                 w,eps1_conv = kk_transform(energy_grid, eps2_conv)
-                eps2_conv = np.interp(w,energy_grid,eps2_conv)
-                eps1_conv = eps1_conv + 1.0
+                eps2_conv = np.interp(w,energy_grid,eps2_conv) + eps2_drude
+                eps1_conv = eps1_conv + 1.0 + eps1_drude
                 eps_conv = eps1_conv + 1j*eps2_conv
 
                 
@@ -1476,6 +1492,7 @@ class Feff(Handler):
 
                 w = w*hart
                 np.savetxt('epsilon.dat',np.array([w,eps1,eps2,eps1_bg,eps2_bg]).transpose())
+                np.savetxt('epsilon_drude.dat',np.array([w,eps1_drude,eps2_drude]).transpose())
                 np.savetxt('index.dat',np.array([w,np.real(index_of_refraction),np.imag(index_of_refraction),np.real(index_of_refraction_bg),np.imag(index_of_refraction_bg)]).transpose())
                 np.savetxt('reflectance.dat',np.array([w,reflectance,reflectance_bg]).transpose())
                 np.savetxt('absorption.dat',np.array([w,absorption,absorption_bg]).transpose())
@@ -2596,7 +2613,6 @@ def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in):
     print('Gap energy:', EGap)
     print('EFermi:', EFermi)
     print('ETop:', Etop)
-    #import matplotlib.pyplot as plt
     #plt.plot(w-EFermi,dos)
     #plt.show()
     
@@ -2612,7 +2628,7 @@ def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in):
     dos_terp = np.interp(e_grid2,w,dos,left=0.0,right=0.0)
     dos_terp = dos_terp/np.trapz(dos_terp)/0.1
     for i,en in enumerate(e_grid2):
-      if en > EFermi:
+      if en > EFermi or en > Etop:
         dos_terp[i] = 0.0
       mu_terp = np.interp(e1+E0-(Etop-en),e1,xanes*e1,left=0.0,right=xanes[-1])
       # Trapezoidal rule integration for mu. 
@@ -2624,7 +2640,13 @@ def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in):
     mu = mu*e_step/2.0
 
     # Cut mu off below EGap.
+    import matplotlib.pyplot as plt
+    plt.plot(e1,xanes*4.0)
+    plt.plot(e1,mu)
     mu[np.where(e1<EGap)] = 0.0
+    plt.plot(e1,mu*2.0)
+    plt.plot(w,dos)
+    plt.show()
     return mu
 
 def getHoleSymm(ihole):
