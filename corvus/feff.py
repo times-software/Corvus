@@ -1257,8 +1257,11 @@ class Feff(Handler):
                         mu0 = np.maximum(mu0,0.0)
                         e0 = e2[100] - (k2[100]*bohr)**2/2.0*hart
                         
-                        # Interpolate onto a union of the two energy-grids and smoothly go from one to the other between  
-                        e_tot = np.unique(np.append(e1,e2))
+                        # Interpolate onto a union of the two energy-grids and smoothly go from one to the other between.
+                        # Also add a fine grid between 0.1 and 40 eV.
+                        e_tot = np.append(np.append(e1,e2),np.arange(0.1,40.0,0.1))
+                        e_tot = np.unique(e_tot)
+                        
                         k_tot = np.where(e_tot > e0, np.sqrt(2.0*np.abs(e_tot-e0)/hart), -np.sqrt(2.0*np.abs(e0 - e_tot)/hart))/bohr
                         kstart = 3.0
                         kfin = 4.0
@@ -2594,7 +2597,6 @@ def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in):
     print('Gap energy:', EGap)
     print('EFermi:', EFermi)
     print('ETop:', Etop)
-    #import matplotlib.pyplot as plt
     #plt.plot(w-EFermi,dos)
     #plt.show()
     
@@ -2610,7 +2612,7 @@ def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in):
     dos_terp = np.interp(e_grid2,w,dos,left=0.0,right=0.0)
     dos_terp = dos_terp/np.trapz(dos_terp)/0.1
     for i,en in enumerate(e_grid2):
-      if en > EFermi:
+      if en > EFermi or en > Etop:
         dos_terp[i] = 0.0
       mu_terp = np.interp(e1+E0-(Etop-en),e1,xanes*e1,left=0.0,right=xanes[-1])
       # Trapezoidal rule integration for mu. 
@@ -2622,7 +2624,13 @@ def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in):
     mu = mu*e_step/2.0
 
     # Cut mu off below EGap.
+    import matplotlib.pyplot as plt
+    plt.plot(e1,xanes*4.0)
+    plt.plot(e1,mu)
     mu[np.where(e1<EGap)] = 0.0
+    plt.plot(e1,mu*2.0)
+    plt.plot(w,dos)
+    plt.show()
     return mu
 
 def getHoleSymm(ihole):
