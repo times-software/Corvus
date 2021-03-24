@@ -22,6 +22,17 @@ import more_itertools as mit
 import pprint
 pp_debug = pprint.PrettyPrinter(indent=4)
 
+# Added by FDV
+# fix the problem that the cumulative trapesoidal integration function has
+# different names for different versions of scipy
+if 'cumulative_trapezoid' in dir(scipy.integrate):
+  Corvus_cumtrapz = scipy.integrate.cumulative_trapezoid
+elif 'cumtrapz' in dir(scipy.integrate):
+  Corvus_cumtrapz = scipy.integrate.cumtrapz
+else:
+  print('Cumulative trapezoidal integration not found in scipy module')
+  sys.exit()
+
 # Do a linear interpolation of the YY data for point ii in XX
 def Linear_Interp(ii,XX,YY):
 
@@ -1072,6 +1083,9 @@ class Feff(Handler):
 # assigned to this run
 # For the EXAFS part we force a single processor
                         input2['feff.MPI.NP'] = [[1]]
+# Added by FDV
+# Forginc the use of only 4 legs in EXAFS, to make the calculations faster
+                        input2['feff.nleg'] = [[4]]
                         pp_debug.pprint(input2)
                         iRun_Count += 1
                         Item_exafs = { 'config2':copy.deepcopy(config2),
@@ -1449,8 +1463,10 @@ class Feff(Handler):
                 print("Number Densities:", NumberDensity, np.sum(np.array(NumberDensity)))
                 #Total_NumberDensity = np.sum(np.array(NumberDensity))/vtot
                 Total_NumberDensity = Number_Of_Units/vtot
-                n_eff = 1.0/Total_NumberDensity*scipy.integrate.cumulative_trapezoid(w*eps2, x=w, initial=0.0)
-                n_eff_conv = 1.0/Total_NumberDensity*scipy.integrate.cumulative_trapezoid(w*eps2_conv, x=w, initial=0.0)
+#               n_eff = 1.0/Total_NumberDensity*scipy.integrate.cumulative_trapezoid(w*eps2, x=w, initial=0.0)
+                n_eff = 1.0/Total_NumberDensity*Corvus_cumtrapz(w*eps2, x=w, initial=0.0)
+#               n_eff_conv = 1.0/Total_NumberDensity*scipy.integrate.cumulative_trapezoid(w*eps2_conv, x=w, initial=0.0)
+                n_eff_conv = 1.0/Total_NumberDensity*Corvus_cumtrapz(w*eps2_conv, x=w, initial=0.0)
                 
                 print('Sumrule gives: ',1.0/Total_NumberDensity*np.trapz(w*eps2,w)/(2.0*np.pi**2))
                 print('Sumrule with convolution gives: ', 1.0/Total_NumberDensity*np.trapz(w*eps2_conv,w)/(2.0*np.pi**2))
