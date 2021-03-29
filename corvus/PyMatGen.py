@@ -117,12 +117,14 @@ class PyMatGen(Handler):
             structure = parser.get_structures()[0]
             sg_anal = SpacegroupAnalyzer(structure) 
             structure = sg_anal.get_symmetrized_structure()
+            print(input['absorbing_atom_type'])
             if "absorbing_atom_type" in input: # Will set up calculation of all unique absorbers in unit cell.
                 absorber_types=[input["absorbing_atom_type"][0][0]]
             else:
                 # Use all elements in crystal
                 absorber_types=structure.symbol_set
 
+            print("Absorber types:", absorber_types)
             ipot = 1
             cluster_array = []
             for inds in structure.equivalent_indices:
@@ -130,6 +132,7 @@ class PyMatGen(Handler):
                     structure.sites[ind].properties['itype'] = ipot
                 ipot += 1
     
+            print(structure.sites)
             for inds in structure.equivalent_indices:
                 for abs_symbol in absorber_types:
                     if abs_symbol == structure.sites[inds[0]].species_string:
@@ -144,6 +147,7 @@ class PyMatGen(Handler):
                         # cluster_array is a list of tuples, each with absorbing atom and associated cluster.
                         cluster_array = cluster_array + [(1,cluster)]
                         
+            print("Number of absorbers:", len(cluster_array))
             output['cluster_array'] = cluster_array
 
         elif 'supercell' in output:

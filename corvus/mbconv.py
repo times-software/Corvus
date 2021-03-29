@@ -139,8 +139,9 @@ class mbconv(Handler):
             first = w_terp[0] + wsf_terp[0]
             w_terp = np.linspace(0.0,scale,mu_mb.size) 
             w_terp = w_terp + first
+            mu0_terp = mu0_cs(w_terp)
             output['mbxanes'] = [w_terp,mu_mb]
-            np.savetxt('mbxanes.dat',np.array([w_terp, mu_mb]).transpose())
+            np.savetxt('mbxanes.dat',np.array([w_terp, mu_mb, mu0_terp]).transpose())
 
 
 

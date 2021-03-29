@@ -1,10 +1,10 @@
 from corvus.structures import Handler, Exchange, Loop, Update
 import corvutils.pyparsing as pp
-import os, sys, subprocess, shutil, resource
+import os, sys, subprocess, shutil #, resource
 import re
 import numpy as np
-from CifFile import ReadCif
-from cif2cell.uctools import *
+#from CifFile import ReadCif
+#from cif2cell.uctools import *
 
 # Debug: FDV
 import pprint
@@ -140,6 +140,13 @@ class Feff(Handler):
     # or not. 
     @staticmethod
     def run(config, input, output):
+        # Set os specific executable ending
+
+        if os.name == 'nt':
+            win_exe = '.exe'
+        else:
+            win_exe = ''
+
         # set atoms and potentials
 
         # Set directory to feff executables.
@@ -203,11 +210,12 @@ class Feff(Handler):
                     # Loop over executable: This is specific to feff. Other codes
                     # will more likely have only one executable.
                     # Run rdinp and atomic part of calculation
+
                     execs = ['rdinp','atomic','screen']
                     for exe in execs:
                         if 'feff.MPI.CMD' in feffInput:
-                            executable = feffInput.get('feff.MPI.CMD')[0]
-                            args = feffInput.get('feff.MPI.ARGS',[['']])[0] + [os.path.join(feffdir,exe)]
+                            executable = [feffInput.get('feff.MPI.CMD')[0] + win_exe]
+                            args = feffInput.get('feff.MPI.ARGS',[['']])[0] + [os.path.join(feffdir,exe) + win_exe]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -353,29 +361,47 @@ class Feff(Handler):
                 output[target] = dir
 
             elif (target == 'xanes'):
-                # Set output and error files
-                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                # Loop over edges. For now just run in the same directory. Should change this later.
+                for i,edge in enumerate(input['feff.edge'][0]):
+                    feffInput['feff.edge'] = [[edge]]
+                    # Set output and error files
+                    with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
                     
-                    # Write input file for FEFF.
-                    writeXANESInput(feffInput,inpf)
+                        # Write input file for FEFF.
+                        writeXANESInput(feffInput,inpf)
 
-                    # Loop over executable: This is specific to feff. Other codes
-                    # will more likely have only one executable. Here I am running
-                    # rdinp again since writeSCFInput may have different cards than
+                        # Loop over executable: This is specific to feff. Other codes
+                        # will more likely have only one executable. Here I am running
+                        # rdinp again since writeSCFInput may have different cards than
 
-                    execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
-                    for exe in execs:
-                        if 'feff.MPI.CMD' in feffInput:
-                            executable = feffInput.get('feff.MPI.CMD')[0]
-                            args = feffInput.get('feff.MPI.ARGS',[['']])[0] + [os.path.join(feffdir,exe)]
-                        else:
-                            executable = [os.path.join(feffdir,exe)]
-                            args = ['']
+                        execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                        for exe in execs:
+                            if 'feff.MPI.CMD' in feffInput:
+                                executable = [feffInput.get('feff.MPI.CMD')[0][0] + win_exe]
+                                args = feffInput.get('feff.MPI.ARGS',[['']])[0] + [os.path.join(feffdir,exe) + win_exe]
+                            else:
+                                executable = [os.path.join(feffdir,exe)]
+                                args = ['']
 
-                        runExecutable('',dir,executable,args,out,err)
+                            runExecutable('',dir,executable,args,out,err)
 
-                outFile=os.path.join(dir,'xmu.dat')
-                output[target] = np.loadtxt(outFile,usecols = (0,3)).T.tolist()
+                    outFile=os.path.join(dir,'xmu.dat')
+                    w,xmu = np.loadtxt(outFile,usecols = (0,3)).T
+
+                    if i==0:
+                        xmu_arr = [xmu]
+                        w_arr = [w]
+                    else:
+                        xmu_arr = xmu_arr + [xmu]
+                        w_arr = w_arr + [w]
+                        
+                # Now combine energy grids, interpolate files, and sum.
+                wtot = np.unique(np.append(w_arr[0],w_arr[1:]))
+                xmutot = np.zeros_like(wtot)
+                for i,xmu_elem in enumerate(xmu_arr):
+                    xmutot = xmutot + np.interp(wtot,w_arr[i],xmu_elem)
+
+                output[target] = [wtot,xmutot]
                 #print output[target]
 
 

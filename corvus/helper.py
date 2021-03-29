@@ -5,6 +5,7 @@ import os, sys, subprocess, shutil, resource
 import math
 import pprint
 import copy
+from matplotlib import pyplot as plt
 
 #Define dictionary of implemented calculations
 implemented = {}
@@ -94,6 +95,7 @@ class helper(Handler):
                 targetList = [['xanes']]
 
                 cluster_array = input['cluster_array']
+                print("Number of absorbers:", len(cluster_array))
                 for i,clust_elem in enumerate(cluster_array):
                     print(i, clust_elem[0])
                     input['absorbing_atom'] = [[clust_elem[0]]]
@@ -105,19 +107,20 @@ class helper(Handler):
                     config2['xcIndexStart'] = i+1
                     targetList = [['xanes']]
                     generateAndRunWorkflow(config2, input, targetList)
-
+            
                     # get results from input.
                     en,mu=np.array(input['xanes'])
-
+                    plt.plot(en,mu)
                     # If first run, make the common grid.
                     if i == 0:
                         egrid = en
                         mu_total = mu
                     else:
                         # interpolate onto the common grid and add to total.
-                        mu_total = mu_total + np.interp(egrid, en, mu, left = 0.0, right = 0.0)
+                        mu_total = mu_total + np.interp(egrid, en, mu, left = 0.0, right = mu[-1])
 
-
+                print('plotting...')
+                plt.show()
                 output['xanes_cfavg'] = [egrid.tolist(),(mu_total/len(cluster_array)).tolist()]
 
     @staticmethod
