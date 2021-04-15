@@ -33,6 +33,16 @@ else:
   print('Cumulative trapezoidal integration not found in scipy module')
   sys.exit()
 
+# Simple converter to avoid issues with numbers in xmu.dat that have format like
+# 5.7337465400+104 (i.e. missing the "e"). Any number that can't be converted
+# with float gets turned into a Nan (which is dealt with later on)
+def xmuConv(Str):
+  try:
+    Num = float(Str)
+  except:
+    Num = np.nan
+  return Num
+
 # Do a linear interpolation of the YY data for point ii in XX
 def Linear_Interp(ii,XX,YY):
 
@@ -72,12 +82,21 @@ def Linear_Interp_2(ii,iim,iip,XX,YY):
   return y_ii
 
 # Small routine to temporarily fix the NaN issues
-# A simpler routine assume the NaNs were isolated, but they can appear in pairs
-# This new implementation takes care of that too, hpefully.
+# A simpler routine assumed the NaNs were isolated, but they can appear in
+# groups. This new implementation takes care of that too, hopefully.
 def Temp_Fix_NaN(k2,exafs,mu0):
   nEne = len(k2)
 # Make a list of all points that have NaNs
-  iNaNs = [ ik for ik,(abs1,abs2) in enumerate(zip(exafs,mu0)) if math.isnan(abs1) or math.isnan(abs1) ]
+  iNaNs = [ ik for ik,(abs1,abs2) in enumerate(zip(exafs,mu0)) if math.isnan(abs1) or math.isnan(abs2) ]
+# iNaNs = []
+# for ik,(abs1,abs2) in enumerate(zip(exafs,mu0)):
+#   try:
+#     Dummy_float = float(abs1)
+#     Dummy_float = float(abs2)
+#   except:
+#     iNaNs.append(ik)
+#   if (math.isnan(abs1) or math.isnan(abs2)) and (ik not in iNaNs):
+#     iNaNs.append(ik)
   if len(iNaNs) >0:
 # Make a fake iNaNs to testing
 # iNaNs = [ 0,1,2, 8,9, 20,21, nEne-2,nEne-1 ]
@@ -1084,7 +1103,7 @@ class Feff(Handler):
 # For the EXAFS part we force a single processor
                         input2['feff.MPI.NP'] = [[1]]
 # Added by FDV
-# Forginc the use of only 4 legs in EXAFS, to make the calculations faster
+# Forcing the use of only 4 legs in EXAFS, to make the calculations faster
                         input2['feff.nleg'] = [[4]]
                         pp_debug.pprint(input2)
                         iRun_Count += 1
@@ -1258,7 +1277,12 @@ class Feff(Handler):
                         targetList = WF_Params_Dict[absorber][edge]['exafs']['targetList']
 ### BEGIN OUTPUT ANA --------------------------------------------------------------------------------------------
                         outFile = os.path.join(config2['xcDir'],'xmu.dat')
-                        e2,ep,k2,exafs,mu0 = np.loadtxt(outFile,usecols = (0,1,2,3,4)).T
+# Adding some extra control over the conversion of xmu files. This converts
+# any string number that has the wrong format into a NaN
+# This probably should be added in other parts of the code
+                        cols_xmu  = (0,1,2,3,4)
+                        convs_xmu = { icol:xmuConv for icol in cols_xmu }
+                        e2,ep,k2,exafs,mu0 = np.loadtxt(outFile,usecols=cols_xmu,converters=convs_xmu).T
 # Debug: FDV
 # Adding a little call to temporarily fix the NaN issues
                         (exafs, mu0) = Temp_Fix_NaN(k2,exafs,mu0)
