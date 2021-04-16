@@ -328,6 +328,10 @@ if Verbose:
     print("{:12s} {:6d} {:6d}".format(Sys,iSer[iRun],iNP[iRun]))
   print("{:s}".format('-'*60))
 
+# Get the CWD to use for full paths.
+# NOTE FDV: Trying to see if this fixes Ruoxi's problem
+Run_CWD = os.getcwd()
+
 # Create all the scripts we will need to run in each of the run directories
 Run_Path    = ['']*nRuns
 Script_Name = ['']*nRuns
@@ -397,7 +401,7 @@ for ii in range(min(iSer),max(iSer)+1):
   Serr  = []
   for Ind in Inds:
     Comms.append(Script_Name[Ind])
-    Dirs.append(Run_Path[Ind])
+    Dirs.append(os.path.join(Run_CWD,Run_Path[Ind]))
     if not Dry_Run:
       Sout.append(open(os.path.join(Run_Path[Ind],'opcons.sout'), 'w'))
       Serr.append(open(os.path.join(Run_Path[Ind],'opcons.serr'), 'w'))
