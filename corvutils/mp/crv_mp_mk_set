@@ -683,7 +683,8 @@ for mp_id in Set_Data.keys():
   FORMULA_FILE.write(Set_Data[mp_id]['formula']+'\n')
   FORMULA_FILE.close()
   CifWriter(Set_Data[mp_id]['str']).write_file(mp_id_Dir+'/CIF.cif')
-  CifWriter(Set_Data[mp_id]['str'],symprec=0.001).write_file(mp_id_Dir+'/CIF_symm.cif')
+# CifWriter(Set_Data[mp_id]['str'],symprec=0.001).write_file(mp_id_Dir+'/CIF_symm.cif')
+  CifWriter(Set_Data[mp_id]['str'],symprec=Sym_Prec).write_file(mp_id_Dir+'/CIF_symm.cif')
 
 # Create the files for the actual run (this is a temporary ugly hack)
   if Tgt_Prop == 'feff_xanes':
