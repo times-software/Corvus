@@ -1155,8 +1155,10 @@ class Feff(Handler):
                     exafsDir = os.path.join(config2['cwd'],component_labels[absorber-1],edge,'EXAFS')
                     if not os.path.exists(exafsDir):
                       os.makedirs(exafsDir)
-                    shutil.copyfile(os.path.join(xanesDir,'apot.bin'), os.path.join(exafsDir,'apot.bin'))
-                    shutil.copyfile(os.path.join(xanesDir,'pot.bin'), os.path.join(exafsDir,'pot.bin'))
+                    if 'opcons.usesaved' not in input2:
+                    	shutil.copyfile(os.path.join(xanesDir,'apot.bin'), os.path.join(exafsDir,'apot.bin'))
+                    	shutil.copyfile(os.path.join(xanesDir,'pot.bin'), os.path.join(exafsDir,'pot.bin'))
+                           
 
 # Modified by FDV
 # Commented out and moved to an independent loop
@@ -2564,7 +2566,7 @@ def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in):
     w = w_in[:]
     dos = dos_in[:]
     # Get all maxima in the dos
-    ind_max = argrelextrema(dos,np.greater)[0]
+    ind_max = argrelextrema(dos,np.greater,mode='wrap')[0]
 
     Etop = EFermi
     EGap = 0.0
@@ -2597,6 +2599,7 @@ def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in):
     print('Gap energy:', EGap)
     print('EFermi:', EFermi)
     print('ETop:', Etop)
+    print('EBottom:', w[ibottom])
     #plt.plot(w-EFermi,dos)
     #plt.show()
     
@@ -2624,13 +2627,15 @@ def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in):
     mu = mu*e_step/2.0
 
     # Cut mu off below EGap.
-    import matplotlib.pyplot as plt
-    plt.plot(e1,xanes*4.0)
-    plt.plot(e1,mu)
-    mu[np.where(e1<EGap)] = 0.0
-    plt.plot(e1,mu*2.0)
-    plt.plot(w,dos)
-    plt.show()
+    if True:
+      import matplotlib.pyplot as plt
+      #plt.plot(e1,xanes*4.0)
+      #plt.plot(e1,mu)
+      mu[np.where(e1<EGap)] = 0.0
+      plt.plot(e1,mu*2.0)
+      plt.plot(w,dos)
+      plt.xlim([-40, 10])
+      plt.show()
     return mu
 
 def getHoleSymm(ihole):
