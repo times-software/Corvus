@@ -7,6 +7,7 @@
 
 # Import and set some auxiliary stuff
 import sys
+import sysconfig
 import os
 import shutil
 #import json
@@ -24,7 +25,8 @@ pp_nice = pprint.PrettyPrinter(indent=4)
 # This should be set up during the installation process
 # Using python3 version of Corvus
 #CORVUS_EXE = '~/.local/cori/2.7-anaconda-2019.07/bin/run-corvus'
-CORVUS_EXE = '~/.local/cori/3.7-anaconda-2019.10/bin/run-corvus'
+user_scripts_path = sysconfig.get_path('scripts', f'{os.name}_user')
+CORVUS_EXE = os.path.join(user_scripts_path,'run-corvus')
 MPICOMM = 'srun'
 MPIOPT_NP = '-n'
 MPIOPT_NN = '-N'

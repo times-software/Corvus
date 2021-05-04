@@ -101,11 +101,11 @@ def Temp_Fix_NaN(k2,exafs,mu0):
 # Make a fake iNaNs to testing
 # iNaNs = [ 0,1,2, 8,9, 20,21, nEne-2,nEne-1 ]
 # Debug
-    print('FDV iNaNs:',iNaNs)
+    #print('FDV iNaNs:',iNaNs)
 # Group them into consecutive sets to simplify fixing
     iNaNs_Groups = [ list(grp) for grp in mit.consecutive_groups(iNaNs)]
 # Debug
-    print('FDV iNaNs_Groups:',iNaNs_Groups)
+    #print('FDV iNaNs_Groups:',iNaNs_Groups)
 # Make sure that the groups of NaNs are not too big, since that would indicate
 # bigger problems
     mxGroup = max([ len(grp) for grp in iNaNs_Groups ])
@@ -127,7 +127,7 @@ def Temp_Fix_NaN(k2,exafs,mu0):
       for Ind in Grp:
         iNaNs_Intp.append([Ind,[ilw,ihg]])
 # Debug
-    print('FDV iNaNs_Intp:',iNaNs_Intp)
+    #print('FDV iNaNs_Intp:',iNaNs_Intp)
 # Old code, saving for reference
 # exafs_new = []
 # mu0_new = []
@@ -521,10 +521,10 @@ class Feff(Handler):
 #                           print('XXX feffInput XXX')
 #                           pp_debug.pprint(feffInput)
                             nproc      = feffInput.get('feff.MPI.NP')[0]
-                            print('feff.MPI.PPN',feffInput.get('feff.MPI.PPN')[0][0])
+                            #print('feff.MPI.PPN',feffInput.get('feff.MPI.PPN')[0][0])
                             PPN_Val = feffInput.get('feff.MPI.PPN')[0][0]
                             nnodes = max(int(nproc[0]/PPN_Val),1)
-                            print('nnodes',nnodes)
+                            #print('nnodes',nnodes)
 #                           sys.exit()
 # Adjust nproc to get best efficiency, only run certain modules in parallel
                             if exe not in Parallel_Exes:
@@ -535,19 +535,19 @@ class Feff(Handler):
                               nproc = nproc[0]
                             otherflags = feffInput.get('feff.MPI.OTHER')[0]
 #                           print('executable',executable)
-                            print('nnflag',nnflag)
-                            print('nnodes',nnodes)
-                            print('npflag',npflag)
-                            print('nproc',nproc)
-                            print('otherflag',otherflags)
-                            print(os.path.join(feffdir,exe))
+                            #print('nnflag',nnflag)
+                            #print('nnodes',nnodes)
+                            #print('npflag',npflag)
+                            #print('nproc',nproc)
+                            #print('otherflag',otherflags)
+                            #print(os.path.join(feffdir,exe))
 # Create a different version of args
                             args = nnflag + [str(nnodes)] + npflag + [str(nproc)] + otherflags + [os.path.join(feffdir,exe)]
-                            print('executable',executable)
-                            print('args',args)
+                            #print('executable',executable)
+                            #print('args',args)
 #                           executable = feffInput.get('feff.MPI.CMD')[0]
 #                           args = feffInput.get('feff.MPI.ARGS',[['']])[0] + [os.path.join(feffdir,exe)]
-#                           print('executable',executable)
+#                           #print('executable',executable)
 #                           print('args',args)
 #                           sys.exit()
                         else:
@@ -845,6 +845,7 @@ class Feff(Handler):
 
 # Initialize variables that collect results (?)
                 NumberDensity = []
+                Element = []
                 vtot = 0.0
                 xas_arr = []
                 xas_conv_arr = []
@@ -906,11 +907,11 @@ class Feff(Handler):
                       absorbers_fdv = list(range(1,len(Sys_Str_Sym.equivalent_sites)+1))
 
 # Debug
-                    print(symmult_fdv)
-                    print(cluster_fdv)
-                    print(elements_fdv)
-                    print(component_labels_fdv)
-                    print(absorbers_fdv)
+                    #print(symmult_fdv)
+                    #print(cluster_fdv)
+                    #print(elements_fdv)
+                    #print(component_labels_fdv)
+                    #print(absorbers_fdv)
 #                   sys.exit()
 
 #                   cifFile = ReadCif(os.path.abspath(input2['cif_input'][0][0]))
@@ -971,8 +972,8 @@ class Feff(Handler):
                     OC_Tot_Runs = OC_Tot_Runs + 1
 
 # Debug
-                print(' FDV: OC_NP_Tot, OC_Tot_Runs')
-                print(OC_NP_Tot, OC_Tot_Runs)
+                #print(' FDV: OC_NP_Tot, OC_Tot_Runs')
+                #print(OC_NP_Tot, OC_Tot_Runs)
 #               sys.exit()
 
                 NP_Base = OC_NP_Tot//OC_Tot_Runs
@@ -981,7 +982,7 @@ class Feff(Handler):
                 for iRun in range(NP_Extra):
                   NP_Run_Partition[iRun] += 1
 
-                print('NP_Run_Partition',NP_Run_Partition)
+                #print('NP_Run_Partition',NP_Run_Partition)
 #               sys.exit()
 
 # For each atom in absorbing_atoms run a full-spectrum calculation (all edges, XANES + EXAFS)
@@ -1004,6 +1005,7 @@ class Feff(Handler):
 #                       element = list(cell_data.atomdata[absorber-1][0].species.keys())[0]
                         if 'number_density' not in input:
                             NumberDensity = NumberDensity + [symmult[absorber - 1]]
+                            Element = Element + [element]
 
                     else:
 # This only works if all elements are treated as the same for our calculation
@@ -1063,12 +1065,12 @@ class Feff(Handler):
 ### END INPUT GEN --------------------------------------------------------------------------------------------
 
 # Added by FDV
-                        print(' FDV: XANES INPUT')
+                        #print(' FDV: XANES INPUT')
 # Adjust the number of processors defined in the input so we only use those
 # assigned to this run
                         input2['feff.MPI.NP'] = [[NP_Run_Partition[iRun_Count]]]
-                        print('XXX input2 XXX')
-                        pp_debug.pprint(input2)
+                        #print('XXX input2 XXX')
+                        #pp_debug.pprint(input2)
                         Item_xanes = { 'config2':copy.deepcopy(config2),
                                        'input2':copy.deepcopy(input2),
                                        'targetList':copy.deepcopy(targetList) }
@@ -1077,7 +1079,7 @@ class Feff(Handler):
 #                       FirstEdge = False
 
 ### BEGIN INPUT GEN --------------------------------------------------------------------------------------------
-                        print("\t\t" + 'EXAFS')
+                        #print("\t\t" + 'EXAFS')
 
                         xanesDir = config2['xcDir']
                         exafsDir = os.path.join(config2['cwd'],component_labels[absorber-1],edge,'EXAFS')
@@ -1097,7 +1099,7 @@ class Feff(Handler):
 ### END INPUT GEN --------------------------------------------------------------------------------------------
 
 # Added by FDV
-                        print(' FDV: EXAFS INPUT')
+                        #print(' FDV: EXAFS INPUT')
 # Adjust the number of processors defined in the input so we only use those
 # assigned to this run
 # For the EXAFS part we force a single processor
@@ -1105,7 +1107,7 @@ class Feff(Handler):
 # Added by FDV
 # Forcing the use of only 4 legs in EXAFS, to make the calculations faster
                         input2['feff.nleg'] = [[4]]
-                        pp_debug.pprint(input2)
+                        #pp_debug.pprint(input2)
                         iRun_Count += 1
                         Item_exafs = { 'config2':copy.deepcopy(config2),
                                        'input2':copy.deepcopy(input2),
@@ -1119,9 +1121,9 @@ class Feff(Handler):
 # OPCONS LOOP SETUP END ---------------------------------------------------------------------------------------
 
 # Debug: FDV
-                print('#### FDV ####')
-                print('#### All WF Params ####')
-                pp_debug.pprint(WF_Params_Dict)
+                #print('#### FDV ####')
+                #print('#### All WF Params ####')
+                #pp_debug.pprint(WF_Params_Dict)
 # Monty has issue on 2.7, so will just use pickle
                 import pickle
                 pickle.dump(WF_Params_Dict,open('WF_Params_Dict.pickle','wb'))
@@ -1188,9 +1190,9 @@ class Feff(Handler):
                     exafsDir = os.path.join(config2['cwd'],component_labels[absorber-1],edge,'EXAFS')
                     if not os.path.exists(exafsDir):
                       os.makedirs(exafsDir)
-                    if 'opcons.usesaved' not in input2:
-                    	shutil.copyfile(os.path.join(xanesDir,'apot.bin'), os.path.join(exafsDir,'apot.bin'))
-                    	shutil.copyfile(os.path.join(xanesDir,'pot.bin'), os.path.join(exafsDir,'pot.bin'))
+                    #if ('opcons.usesaved' not in input2) or (not os.path.exists(os.path.join(config2['xcDir'],'xmu.dat'))):
+                    #	shutil.copyfile(os.path.join(xanesDir,'apot.bin'), os.path.join(exafsDir,'apot.bin'))
+                    #	shutil.copyfile(os.path.join(xanesDir,'pot.bin'), os.path.join(exafsDir,'pot.bin'))
                            
 
 # Modified by FDV
@@ -1209,6 +1211,8 @@ class Feff(Handler):
                       if not os.path.exists(os.path.join(config2['xcDir'],'xmu.dat')):
 #                       generateAndRunWorkflow(config2,input2,targetList)
 #                       thrd.Thread(target=generateAndRunWorkflow,args=(config2,input2,targetList)).start()
+                        shutil.copyfile(os.path.join(xanesDir,'apot.bin'), os.path.join(exafsDir,'apot.bin'))
+                        shutil.copyfile(os.path.join(xanesDir,'pot.bin'), os.path.join(exafsDir,'pot.bin'))
                         Prcs = mltp.Process(target=generateAndRunWorkflow,args=(config2,input2,targetList))
                         Tasks.append(Prcs)
                         nTasks += 1
@@ -1288,11 +1292,11 @@ class Feff(Handler):
 # Debug: FDV
 # Adding a little call to temporarily fix the NaN issues
                         (exafs, mu0) = Temp_Fix_NaN(k2,exafs,mu0)
-                        print('fdv e2',e2)
-                        print('fdv k2',k2)
-                        print('xcDir',config2['xcDir'])
-                        print('fdv exafs',exafs)
-                        print('fdv mu0',mu0)
+                        #print('fdv e2',e2)
+                        #print('fdv k2',k2)
+                        #print('xcDir',config2['xcDir'])
+                        #print('fdv exafs',exafs)
+                        #print('fdv mu0',mu0)
                         exafs = np.maximum(exafs,0.0)
                         mu0 = np.maximum(mu0,0.0)
                         e0 = e2[100] - (k2[100]*bohr)**2/2.0*hart
@@ -1341,14 +1345,25 @@ class Feff(Handler):
                             target_atom = int(line.split()[1])
 
                         # If this is the edge and absorber with the LDOS in it, load LDOS.
+                        print('Number density:', NumberDensity)
                         if iedge == 0 and iabs == 0:
                           ipot = 0
                           ldos_files = []
                           dos_array = []
+                          dos_tot = []
                           # Get the ldos.
                           while ipot <= npot:
                             ldos_files = ldos_files + ['ldos' + '{:02}'.format(ipot) + '.dat']
-                            dos_array = dos_array + [np.loadtxt(os.path.join(dos_dir,ldos_files[ipot])).T]
+                            if ipot == 0:
+                               dtmp = np.loadtxt(os.path.join(dos_dir,ldos_files[ipot])).T
+                               dtmp[1:] = 0.01*dtmp[1:]
+                               dos_array = dos_array + [dtmp]
+                               dos_tot = np.sum(dos_array[ipot][1:],0)
+                            else:
+                               dtmp = np.loadtxt(os.path.join(dos_dir,ldos_files[ipot])).T
+                               dtmp[1:] = NumberDensity[ipot-1]*dtmp[1:] 
+                               dos_array = dos_array + [dtmp]
+                               dos_tot = dos_tot + np.sum(dos_array[ipot][1:],0)
                             ipot += 1
 
                         # Use the dos from this target absorber, and ldos corresponding to the correct symmetry of the core-level.
@@ -1362,11 +1377,12 @@ class Feff(Handler):
                         xas_element[np.where(e_tot < e1[0])] = xas0_element[np.where(e_tot < e1[0])] 
 
 
-                        e_cv = 50.0 # This should be adjustable in general.
+                        e_cv = 40.0 # This should be adjustable in general.
                         # If edge energy is less than e_cv, run LDOS convolution on xas_element and xas0_element
                         if e0 < e_cv:
-                          xas_conv_element = dos_conv(e_tot, EFermi, e0, k_tot, xas_element, w, dos)
-                          xas0_conv_element = dos_conv(e_tot, EFermi, e0, k_tot, xas0_element, w, dos)
+                          #print('EEEE', w)
+                          xas_conv_element = dos_conv(e_tot, EFermi, e0, k_tot, xas_element, w, dos, dos_tot)
+                          xas0_conv_element = dos_conv(e_tot, EFermi, e0, k_tot, xas0_element, w, dos, dos_tot)
                         else:
                           xas_conv_element = xas_element
                           xas0_conv_element = xas0_element
@@ -1388,7 +1404,17 @@ class Feff(Handler):
                 # Interpolate onto common grid from 0 to 500000 eV
                 # Make common grid as union of all grids.
                 energy_grid = np.unique(np.concatenate(en_arr))
+                tol = 0.1
+                ne2 = 0
+                for i,en in enumerate(energy_grid):
+                   if i > 0:
+                      if en - energy_grid2[ne2] > tol:
+                         energy_grid2 = np.append(energy_grid2,en)
+                         ne2 += 1
+                   else:
+                      energy_grid2 = np.array([en])
 
+                energy_grid = energy_grid2
                 # Now loop through all elements and add xas from each element
                 xas_tot = np.zeros_like(energy_grid)
                 xas_conv_tot = np.zeros_like(energy_grid)
@@ -1428,6 +1454,8 @@ class Feff(Handler):
                 print('Performaing KK-transform of eps2:')
                 print('')
 
+                print('Number of points in eps2:',energy_grid.size, energy_grid2.size)
+                
                 # Background
                 w,eps1_bg = kk_transform(energy_grid, eps2_bg)
                 # Add Drude term if requested
@@ -1478,7 +1506,7 @@ class Feff(Handler):
                 # With LDOS convolution
                 index_of_refraction_conv = np.sqrt(eps_conv)
                 index_of_refraction_conv_bg = np.sqrt(eps_conv_bg)
-                reflectance_conv = np.abs((index_of_refraction-1)/(index_of_refraction+1))**2
+                reflectance_conv = np.abs((index_of_refraction_conv-1)/(index_of_refraction_conv+1))**2
                 reflectance_conv_bg = np.abs((index_of_refraction_conv_bg-1)/(index_of_refraction_conv_bg+1))**2
                 absorption_conv = 2*w*1.0/alpinv*np.imag(index_of_refraction_conv)/bohr*1000
                 absorption_conv_bg = 2*w*1.0/alpinv*np.imag(index_of_refraction_conv_bg)/bohr*1000
@@ -1488,18 +1516,30 @@ class Feff(Handler):
                 # Calculate sumrules
                 # eps2 sumrule: V/(2pi^2 N) * \int_0^{\omega} d\omega' \omega' eps2(\omega')
                 # Find the number of chemical units
+                TotNum = []
+                j = 0
+                for i,numdens in enumerate(NumberDensity):
+                    if i == 0:
+                        TotNum = [NumberDensity[i]]
+                    else:
+                        if Element[i] == Element[i-1]:
+                            TotNum[j] = TotNum[j] + NumberDensity[i]
+                        else:
+                            TotNum = TotNum + [NumberDensity[i]]
+                            j += 1
+
                 iUnit = 2
                 Number_Of_Units = 1
-                while iUnit <= min(NumberDensity):
-                    formula = np.array(NumberDensity)/float(iUnit)
-                    print('formula', formula)
-                    print(np.all(np.mod(formula,1) == 0))
-                    if int(min(NumberDensity)/iUnit) == 0:
+                while iUnit <= min(TotNum):
+                    formula = np.array(TotNum)/float(iUnit)
+                    print('formula', formula,iUnit)
+                    if int(min(TotNum)/iUnit) == 0:
                         print('break')
                         break
+                    #elif np.all(np.mod(formula,1) == 0) or iUnit == min(TotNum):
                     elif np.all(np.mod(formula,1) == 0):
                         Number_Of_Units = iUnit
-                    iUnit += iUnit
+                    iUnit += 1
 
                 print("Number of Chemical Formula Units in Unit Cell: ", Number_Of_Units)
                 print("Number Densities:", NumberDensity, np.sum(np.array(NumberDensity)))
@@ -2574,6 +2614,8 @@ def kk_transform(w,eps2):
     # Create new frequency grid that is centered between the points in w.
     wnew = (w[:-1] + w[1:])/2.0
     eps1 = np.zeros_like(wnew)
+    ipercent = 0
+    ip = 0
     for iw, w0 in enumerate(wnew):
         if False:
             for jw,w1 in enumerate(w[:-1]):
@@ -2598,26 +2640,36 @@ def kk_transform(w,eps2):
         g2 = ((w[:-1] + delta)**2 - w0**2)/(w[:-1]**2 - w0**2)
         g2 = np.log(np.abs(g2))
         eps1[iw] = np.sum(a*delta + a*w0/2.0*g1 + b/2.0*g2)
+        if ip >= wnew.size/10:
+           ip = 0
+           ipercent +=10
+           print(ipercent,'%')
+        ip+=1
     return wnew,eps1*2/np.pi
 
-def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in):
+def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in,dos_tot):
     ''' Convolve xmu.dat with appropriate LDOS to get low frequency optical spectrum. '''
 
     w = w_in[:]
+    #print('WWWWW', w)
     dos = dos_in[:]
+    xanes_tmp = xanes[:]
+    xanes_tmp[e1 < E0] = 0.0 
+    xanes = xanes_tmp
     # Get all maxima in the dos
-    ind_max = argrelextrema(dos,np.greater,mode='wrap')[0]
+    ind_max = argrelextrema(dos_tot,np.greater,mode='wrap')[0]
 
     Etop = EFermi
     EGap = 0.0
     itop = -1
+    ibottom = 0
     # Now find maxima that are closest to Fermi level
     for i,ind in enumerate(ind_max[:-1]):
       if w[ind] < EFermi < w[ind_max[i+1]]:
         # Now run backward to find first point where dos < half max
         iw = ind_max[i+1]
         while iw > ind:
-          if dos[iw] < dos[ind_max[i+1]]/2.0:
+          if dos_tot[iw] < dos_tot[ind_max[i+1]]/2.0:
             Etop = w[iw]
             itop = iw
             break
@@ -2628,7 +2680,7 @@ def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in):
         # Now run forward to find same from bottom of gap
         iw = ind
         while iw < ind_max[i+1]:
-          if dos[iw] < dos[ind]/2.0:
+          if dos_tot[iw] < dos_tot[ind]/2.0:
             EGap = Etop - w[iw]
             ibottom = iw
             break
@@ -2636,13 +2688,21 @@ def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in):
 
         break
       
+    Ebottom = w[ibottom]
+    if EGap > 0.0:
+       EFermi = (Etop + w[ibottom])/2.0
+    else:
+       Etop = EFermi
+       Ebottom = EFermi
+
     print('Gap energy:', EGap)
     print('EFermi:', EFermi)
     print('ETop:', Etop)
     print('EBottom:', w[ibottom])
+    print('E0:', E0)
     #plt.plot(w-EFermi,dos)
     #plt.show()
-    
+     
     # Redefine DOS as occupied DOS.
     dos = dos[w<EFermi]
     w = w[w<EFermi]
@@ -2650,31 +2710,58 @@ def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in):
 
     # Make grids for dos (-100 to 100)
     e_step = 0.1
-    e_grid = np.arange(0.1,100,0.1) 
+    e_grid = np.arange(-Etop+0.1,100,0.1) 
     e_grid2 = np.flip(-e_grid)
     dos_terp = np.interp(e_grid2,w,dos,left=0.0,right=0.0)
     dos_terp = dos_terp/np.trapz(dos_terp)/0.1
+    e1_flip = np.flip(-e1)
+    import matplotlib.pyplot as plt
     for i,en in enumerate(e_grid2):
-      if en > EFermi or en > Etop:
+      if en >= EFermi or en >= Etop:
         dos_terp[i] = 0.0
       mu_terp = np.interp(e1+E0-(Etop-en),e1,xanes*e1,left=0.0,right=xanes[-1])
+      #mu_terp[np.where(e1<=Etop-en-E0)] = 0.0
+      #mu_terp = np.interp(e1+E0-(Etop-en),e1,xanes,left=0.0,right=xanes[-1])
+      #mu_terp1 = np.interp(0.1+E0-(Etop-en),e1,xanes,left=0.0,right=xanes[-1])
+      mu_terp1 = np.interp(0.1+E0-(Etop-en),e1,xanes*e1,left=0.0,right=xanes[-1])
+      #mu_terp[np.where(e1<=0.1)] = e1[e1<=0.1]**2/0.1**2*mu_terp1
+      #if i >= e_grid2.size-10:
+      if False:
+         print(E0-(Etop-en), E0, Etop, en)
+         plt.plot(e1,mu_terp)
+         plt.plot(e1,xanes*e1)
+         #plt.plot(e1,mu_terp2)
+         #plt.plot(e1,mu_terp+mu_terp2)
+         plt.xlim([0,10.0])
+         plt.show()
+      # Make sure that mu always is antisymmetric about 0.
       # Trapezoidal rule integration for mu. 
       if i == 0:
         mu = mu_terp*dos_terp[i]/e1
+        #mu = mu_terp*dos_terp[i]
+      elif i == e_grid2.size - 1:
+        mu = mu + mu_terp*dos_terp[i]/e1
       else:
         mu = mu + mu_terp*dos_terp[i]*2.0/e1
+        #mu = mu + mu_terp*dos_terp[i]*2.0
 
     mu = mu*e_step/2.0
 
     # Cut mu off below EGap.
-    if True:
+    mu[np.where(e1<EGap)] = 0.0
+    if False:
       import matplotlib.pyplot as plt
       #plt.plot(e1,xanes*4.0)
       #plt.plot(e1,mu)
-      mu[np.where(e1<EGap)] = 0.0
-      plt.plot(e1,mu*2.0)
+      #mu0=mu[:]
+      #mu[np.where(e1<EGap)] = 0.0
       plt.plot(w,dos)
       plt.xlim([-40, 10])
+      plt.show()
+      plt.plot(e1,mu)
+      plt.plot(e1,xanes)
+      plt.legend()
+      plt.xlim([0,160])
       plt.show()
     return mu
 

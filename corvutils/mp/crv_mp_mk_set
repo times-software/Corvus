@@ -9,7 +9,7 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.cif import CifParser, CifWriter
 from pymatgen.io.feff.sets import MPXANESSet
 from pymatgen.core.periodic_table import Element
-from pymatgen import Composition, Element
+from pymatgen.core.composition import Composition, Element
 from pymatgen.symmetry.groups import sg_symbol_from_int_number
 from pymatgen.io.feff import Atoms
 from math import sqrt
@@ -17,7 +17,7 @@ import numpy as np
 import jenkspy
 
 # Import and set some auxiliary stuff
-import feff_edges
+from corvutils.mp import feff_edges
 import sys
 import os
 import glob
@@ -160,6 +160,7 @@ Tgt_Prop_List = [ 'feff_xanes', 'corvus_oc' ]
 Help = {'Desc':'Gather structural information from the Materials Project to do a particular type of run on each system in the set.',
         'k':'MP API key.',
         'f':'Formula to define systems in the set.',
+        'mpid':'Run a single structure with mpid from the Materials Project database.',
         'p':'Property to compute.',
         'd':'Delete old set directory if present.',
         'dr':'Dry run of gethering without any file creation.',
@@ -188,6 +189,9 @@ parser.add_argument("--k",dest="APIKEY",default=None,help=Help['k'])
 
 # Get the string formula to define the set
 parser.add_argument("--f",dest="Formula",default=None,help=Help['f'])
+
+# Get the mpid to degine the set - Added by JJK
+parser.add_argument("--mpid",dest="MP_ID",default=None,help=Help['mpid'])
 
 # Get the property to prepare
 parser.add_argument("--p",dest="Tgt_Prop",default='corvus_oc',help=Help['p'])
@@ -310,7 +314,7 @@ if MkPT:
 
     Set_Data_Raw.append(Elem_Data[0])
 
-else:
+elif Formula is not None:
 
   try:
 #   print(Formula)
@@ -318,6 +322,10 @@ else:
   except:
     print('Error retrieving MP data: Check your formula?')
     sys.exit()
+
+else:
+    # JJK - Adding capability to run a single mpid.
+    Set_Data_Raw = mp.query(MP_ID,['pretty_formula','material_id','structure','formation_energy_per_atom','density','elasticity'])
 
 # Debug
 #pp_nice.pprint(Set_Data_Raw[0]['material_id'])

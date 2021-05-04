@@ -1,0 +1,42 @@
+#!/bin/bash
+#SBATCH -A m2757
+#SBATCH --qos=debug
+#SBATCH --time=30
+#SBATCH --nodes=4
+#SBATCH --constraint=haswell
+
+# The following command should be run on the command line to set up the calculation. Use a different mpid to run a different material.
+# This sets up a minimal run.
+#crv_mp_mk_set --k Dj6BUJTm3tFXzR165XK --mpid mp-1018134  --nedg 250 --nSCF 1 --nFMS 1 --v --dw --temp 298.0 --d Li_mpid
+# The input is as follows:
+# --k MP_API_KEY - set mp api key
+# --mpid MP_ID - mpid of structure that you want to run
+# --nedg max_edges - only get materials with max_edges or less
+# --nSCF N_SCF - number of shells to include in the scf cluster. 3 to 4 is probably good for most materials.
+# --nFMS N_FMS - number of shells to include in the fms cluster. 5-7 is probably good for most materials.
+# --v - verbose
+# --dw - include Debye-Waller factors
+# --temp TEMP - set temperature for Debye-Waller factors
+#  --d DIR_NAME - Name of directory where this set of runs will be held. 
+#                 All output will then be located in DIR_NAME/CHEMICAL_FORMULA/MP_ID/corvus_oc/
+#         
+# The most important output is located in PROPERTY_conv.dat, where PROPERTY can be epsilon, absorption, index, reflectivity, sumrules, loss.
+# Format:
+# complex functions - epsilon, index
+# energy, re, im, re_atomic, im_atomic
+#
+# Re functions - absorption, reflectivity, loss
+# energy, property, property_atomic
+#
+# sumrules_conv.dat
+# energy, eps2_sumrule
+
+# The output of the above command will tell you how many edges exist for this set of runs. You can then change the -nn parameter
+# in the below command.
+
+# If needed set the path.
+#export PATH=${PATH}:~/.local/unknown/3.7-anaconda-2019.10/bin/
+
+# run corvus on all the sets (this example only has one).
+#crv_mp_run_set --ppn PROCESORS_PER_EDGE --nn NUMBER_OF_NODES --v DIR_NAME
+crv_mp_run_set --ppn 64 --nn 4 --v Li_mpid
