@@ -153,7 +153,8 @@ def Temp_Fix_NaN(k2,exafs,mu0):
 
 # Added by FDV
 # List of feff modules that should be run in parallel if requested
-Parallel_Exes = [ 'feff_timer', 'ldos', 'fms', 'pot' ]
+#Parallel_Exes = [ 'feff_timer', 'ldos', 'fms', 'pot' ]
+Parallel_Exes = [ 'ldos', 'fms', 'pot' ]
 
 # Define dictionary of implemented calculations
 implemented = {}
@@ -510,7 +511,8 @@ class Feff(Handler):
                     # rdinp again since writeSCFInput may have different cards than
 
 #                   execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
-                    execs = ['feff_timer','rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv','feff_timer']
+                    #execs = ['feff_timer','rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv','feff_timer']
+                    execs = ['rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                     for exe in execs:
                         if 'feff.MPI.CMD' in feffInput:
 # Modified by FDV
