@@ -14,102 +14,314 @@ import shutil
 from monty.serialization import dumpfn, loadfn
 import pprint
 from argparse import ArgumentParser
+from configparser import ConfigParser
 import numpy as np
 import time
 from subprocess import Popen
 from math import ceil
+import corvutils
+import pkg_resources
 
 pp_nice = pprint.PrettyPrinter(indent=4)
+
+user_scripts_path = sysconfig.get_path('scripts', f'{os.name}_user')
+CORVUS_EXE = os.path.join(user_scripts_path,'run-corvus')
 
 # NOTE: HARDWIRING FOR NOW!!!
 # This should be set up during the installation process
 # Using python3 version of Corvus
-#CORVUS_EXE = '~/.local/cori/2.7-anaconda-2019.07/bin/run-corvus'
-user_scripts_path = sysconfig.get_path('scripts', f'{os.name}_user')
-CORVUS_EXE = os.path.join(user_scripts_path,'run-corvus')
-MPICOMM = 'srun'
-MPIOPT_NP = '-n'
-MPIOPT_NN = '-N'
-MPIOPT_Other = '-c 1 --exclusive -C haswell --cpu_bind=cores'
+configmpi = ConfigParser()
+crv_mp_ini = pkg_resources.resource_filename(__name__,"crv_mp.ini")
+# Debug: FDV
+#print(crv_mp_ini)
+configmpi.read(crv_mp_ini)
+MPISYS = configmpi.get('MPI','MPISYS',fallback='openmpi')
+# Debug: FDV
+#print(MPISYS)
+if   MPISYS.lower() in [ 'openmpi', 'mvapich2' ]:
+  MPICOMM = 'mpirun'
+  MPIOPT_NP = '-n'
+elif MPISYS.lower() in [ 'slurm' ]:
+  MPICOMM = 'srun'
+  MPIOPT_NP = '-n'
+  MPIOPT_NN = '-N'
+else:
+  print('Unrecognized MPI system: ', MPISYS)
+  sys.exit()
 
-# Optimal partition of processors
-def Proc_Part(NT,NP):
+MPIOPT_Other = configmpi.get('MPI', 'MPIOPT_User',fallback='-v')
 
-  NP_T_Base  = NP//NT
-  NP_T_Extra = NP%NT
-  Part1 = NP_T_Base*np.ones(NT,dtype=np.int)
-  Part2 = np.zeros(NT,dtype=np.int)
-  Part2[np.where(np.arange(NT)<NP_T_Extra)] = 1
-  Part = Part1 + Part2
-# Part = [ NP_T_Base+1 if i < NP_T_Extra else NP_T_Base for i in range(NT) ]
+# To avoid possible issues, we make sure that MPIOPT_Other is not an empty
+# string
+if MPIOPT_Other == '':
+  MPIOPT_Other = '-v'
 
-  return Part
+#MPIOPT_Other = '-c 1 --exclusive -C haswell --cpu_bind=cores'
 
-def Partition_Load(nRuns,NP_Tot,PPN,Ser_Frac):
+# New partitioning scheme ####################################################
 
-# Trying to be smarter with this
-  Part_List = []
-  for iln in range(1,nRuns+1):
+def OpCons_Part(NP_Tot,Ser_Frac,Mac_nEdg):
 
-# 1) Given a number of runs, generate all possible serial indexings
-    Ser_Ind = np.repeat(np.arange(nRuns),iln)[0:nRuns]
+  import sys
+  from math import ceil
+  import pprint
+  pp_nice = pprint.PrettyPrinter(indent=4)
 
-# 2) Now we generate the best possible proc. part. for this serial indexing
-    NP_T = np.zeros(nRuns,dtype=np.int)
-    T_Tot = 0.0
-    for ii in range(min(Ser_Ind),max(Ser_Ind)+1):
-      Ind = np.where(Ser_Ind == ii)
-      iSim = len(Ind[0])
-      NP_T[Ind] = Proc_Part(iSim,NP_Tot)
-      if all(NP_T[Ind]>0):
-        T_Tot = T_Tot + max(Ser_Frac+(1.0-Ser_Frac)/NP_T[Ind])
+  def Partition_Group(Sys_Cost,NP_Tot):
 
-# Debug
-#   print(Ser_Ind)
-#   print(NP_T)
+  # Initialize partition to reduced cost
+    NP_Dist = [ round(Cost/min(Sys_Cost)) for Cost in Sys_Cost ]
 
-# 3) Make sure that this partition makes sense (no 0 proc for any run) and save
-    if not any([ val == 0 for val in NP_T ]):
-      Part_List.append([T_Tot,Ser_Ind,NP_T])
+  # Normalize to NP_Tot
+    NP_Dist = [ ceil(Cost/sum(NP_Dist)*NP_Tot) for Cost in NP_Dist ]
 
-# 4) Find the partition with the lowest estimates execution time and return
-  T_Min = Part_List[0][0]
-  Best_Partition = Part_List[0]
-  for Part in Part_List:
-    if Part[0] < T_Min:
-      Best_Partition = Part
+  # Adjust normalization if needed by removing from task with most processors
+  # if sum(NP_Dist) != NP_Tot:
+  #   iMax = [i[0] for i in sorted(enumerate(NP_Dist), key=lambda x:x[1])][-1]
+  #   NP_Dist[iMax] = NP_Dist[iMax] - ( sum(NP_Dist) - NP_Tot )
+  # This code gives a better distribution
+    while sum(NP_Dist) != NP_Tot:
+      iMax = [i[0] for i in sorted(enumerate(NP_Dist), key=lambda x:x[1])][-1]
+      NP_Dist[iMax] = NP_Dist[iMax] - 1
 
-# Debug
-# print('Part_List',Part_List)
+    return NP_Dist
 
-  return Best_Partition
+  def set_part(ns, m):
+    def visit(n, a):
+      ps = [[] for i in range(m)]
+      for j in range(n):
+          ps[a[j + 1]].append(ns[j])
+      return ps
 
-# Partition the processors according to cost
-def Partition_Load_Cost(Sys_Cost,NP_Tot,PPN,Ser_Frac):
+    def f(mu, nu, sigma, n, a):
+      if mu == 2:
+          yield visit(n, a)
+      else:
+          for v in f(mu - 1, nu - 1, (mu + sigma) % 2, n, a):
+              yield v
+      if nu == mu + 1:
+          a[mu] = mu - 1
+          yield visit(n, a)
+          while a[nu] > 0:
+              a[nu] = a[nu] - 1
+              yield visit(n, a)
+      elif nu > mu + 1:
+          if (mu + sigma) % 2 == 1:
+              a[nu - 1] = mu - 1
+          else:
+              a[mu] = mu - 1
+          if (a[nu] + sigma) % 2 == 1:
+              for v in b(mu, nu - 1, 0, n, a):
+                  yield v
+          else:
+              for v in f(mu, nu - 1, 0, n, a):
+                  yield v
+          while a[nu] > 0:
+              a[nu] = a[nu] - 1
+              if (a[nu] + sigma) % 2 == 1:
+                  for v in b(mu, nu - 1, 0, n, a):
+                      yield v
+              else:
+                  for v in f(mu, nu - 1, 0, n, a):
+                      yield v
 
-# Initialize partition to reduced cost
-  NP_Dist = [ round(Cost/min(Sys_Cost)) for Cost in Sys_Cost ]
+    def b(mu, nu, sigma, n, a):
+        if nu == mu + 1:
+            while a[nu] < mu - 1:
+                yield visit(n, a)
+                a[nu] = a[nu] + 1
+            yield visit(n, a)
+            a[mu] = 0
+        elif nu > mu + 1:
+            if (a[nu] + sigma) % 2 == 1:
+                for v in f(mu, nu - 1, 0, n, a):
+                    yield v
+            else:
+                for v in b(mu, nu - 1, 0, n, a):
+                    yield v
+            while a[nu] < mu - 1:
+                a[nu] = a[nu] + 1
+                if (a[nu] + sigma) % 2 == 1:
+                    for v in f(mu, nu - 1, 0, n, a):
+                        yield v
+                else:
+                    for v in b(mu, nu - 1, 0, n, a):
+                        yield v
+            if (mu + sigma) % 2 == 1:
+                a[nu - 1] = 0
+            else:
+                a[mu] = 0
+        if mu == 2:
+            yield visit(n, a)
+        else:
+            for v in b(mu - 1, nu - 1, (mu + sigma) % 2, n, a):
+                yield v
 
-# Normalize to NP_Tot
-  NP_Dist = [ ceil(Cost/sum(NP_Dist)*NP_Tot) for Cost in NP_Dist ]
+    n = len(ns)
+    a = [0] * (n + 1)
+    for j in range(1, m + 1):
+        a[n - m + j] = j - 1
+    if m == 1:
+      return [[ns]];
+    else:
+      return f(m, n, 0, n, a)
 
-# Adjust normalization if needed by removing from task with most processors
-  if sum(NP_Dist) != NP_Tot:
-    iMax = [i[0] for i in sorted(enumerate(NP_Dist), key=lambda x:x[1])][-1]
-    NP_Dist[iMax] = NP_Dist[iMax] - ( sum(NP_Dist) - NP_Tot )
+  # Given a number of tasks and a number of processors, return all possible
+  # serial/parallel partitions
+  def Ser_Par_Part(nTasks,NP):
+    Partitions_Raw = [ ]
+    for iPart in range(1,nTasks+1):
+      Part_List = list(set_part(list(range(nTasks)),iPart))
+      Partitions_Raw = Partitions_Raw + list(set_part(list(range(nTasks)),iPart))
 
-# Debug
-# print(NP_Dist)
-# sys.exit()
+  # Now we remove all serializations that require more processors per block
+  # than the number of processors available. This simplifies things later
+      Partitions = []
+      for Part in Partitions_Raw:
+        if max([ len(Block) for Block in Part ]) <= NP_Tot:
+          Partitions.append(Part)
+    return Partitions
 
-  Times_Est = []
-  for (Cost,NP) in zip(Sys_Cost,NP_Dist):
-    Best_Partition = Partition_Load(Cost,NP,PPN,Ser_Frac)
-    Times_Est.append(Best_Partition[0])
+  nEdg_Tot = sum(Mac_nEdg)
+  nMac = len(Mac_nEdg)
 
-  Best_Partition_Load = [ NP_Dist, Times_Est ]
+  Mac_Prt_Lst = Ser_Par_Part(nMac,NP_Tot)
 
-  return Best_Partition_Load
+  # Debug
+  #pp_nice.pprint(Mac_Prt_Lst)
+  #sys.exit()
+
+  Mac_Prt_Opt = {'Mac_Prt':None,'Mac_Prt_Time':1000*nEdg_Tot}
+  for Mac_Prt in Mac_Prt_Lst:
+#   print(64*'-')
+    Mac_iSer_List = [ -1 for i in range(nMac) ]
+    Mac_Grp_nEdg  = [ [] for i in range(len(Mac_Prt)) ]
+    Mac_Grp_NP    = [ [] for i in range(len(Mac_Prt)) ]
+    Mac_Grp_Info  = [ [] for i in range(len(Mac_Prt)) ]
+    Mac_Prt_Time  = 0.0
+    for (Mac_iSer,Mac_Grp) in zip(range(len(Mac_Prt)),Mac_Prt):
+      for Elem in Mac_Grp:
+        Mac_iSer_List[Elem] = Mac_iSer
+        Mac_Grp_nEdg[Mac_iSer].append(Mac_nEdg[Elem])
+      Mac_Grp_NP[Mac_iSer] = Partition_Group(Mac_Grp_nEdg[Mac_iSer],NP_Tot)
+#     print('  Mac Grp: ',Mac_iSer,Mac_Grp,' nEdg: ',Mac_Grp_nEdg[Mac_iSer],' NP: ', Mac_Grp_NP[Mac_iSer])
+  ## At this point we have the cost (number of edges) and the processor partition
+  ## for this group. We now have to calculate how much time it would take to
+  ## compute this group
+      for (iMac,iMac_nEdg,iMac_NP) in zip(Mac_Grp,Mac_Grp_nEdg[Mac_iSer],Mac_Grp_NP[Mac_iSer]):
+  #     print('    Tst: ',iMac,iMac_nEdg,iMac_NP)
+  ## First we have to compute all possible serializations for this number of edges
+        Mic_Prt_Lst = Ser_Par_Part(iMac_nEdg,iMac_NP)
+  #     pp_nice.pprint(Mic_Prt_Lst)
+        Mic_Prt_Opt = {'Mic_Prt':None,'Mic_Prt_Time':1000*nEdg_Tot}
+        for Mic_Prt in Mic_Prt_Lst:
+  #       print('    Mic_Prt: ',Mic_Prt)
+          Mic_Prt_Times = []
+          for Mic_Grp in Mic_Prt:
+            Mic_Grp_nEdg = [ 1 for i in range(len(Mic_Grp)) ]
+            Mic_Grp_NP = Partition_Group(Mic_Grp_nEdg,iMac_NP)
+            Mic_Grp_Time = max([ Ser_Frac+(1.0-Ser_Frac)/iNP if iNP > 0 else 10*nEdg_Tot for iNP in Mic_Grp_NP ])
+  #         print('      Mic Grp:',Mic_Grp,' nEdg: ',Mic_Grp_nEdg,' NP: ',Mic_Grp_NP,' Time: ',Mic_Grp_Time) 
+            Mic_Prt_Times.append(Mic_Grp_Time)
+          if sum(Mic_Prt_Times) <= Mic_Prt_Opt['Mic_Prt_Time']:
+            Mic_Prt_Opt = {'Mic_Prt':Mic_Prt,'Mic_Prt_Time':sum(Mic_Prt_Times)}
+  #     print('    Mic_Prt_Opt: ',Mic_Prt_Opt)
+        Mac_Grp_Info[Mac_iSer].append(Mic_Prt_Opt)
+  #   print('  Mac Grp Info: ')
+  #   pp_nice.pprint(Mac_Grp_Info[Mac_iSer])
+      Mac_Grp_Time = max([ Mic_Prt_Opt['Mic_Prt_Time'] for Mic_Prt_Opt in Mac_Grp_Info[Mac_iSer] ])
+  #   print('  Mac Grp Time: ',Mac_Grp_Time)
+  # Now we get the maximum time for this group
+      Mac_Prt_Time = Mac_Prt_Time + Mac_Grp_Time
+#   print('Mac Prt: ',Mac_Prt, Mac_Prt_Time)
+    if Mac_Prt_Time <= Mac_Prt_Opt['Mac_Prt_Time']:
+      Mac_Prt_Opt = {'Mac_Prt':Mac_Prt,'Mac_iSer_List':Mac_iSer_List,'Mac_Grp_nEdg':Mac_Grp_nEdg,'Mac_Grp_NP':Mac_Grp_NP,'Mac_Grp_Info':Mac_Grp_Info,'Mac_Prt_Time':Mac_Prt_Time}
+  # print(Part,' => ',iSer_List, Part_Time)
+  # print(64*'-')
+  # pp_nice.pprint(Mac_Prt_Opt)
+  return Mac_Prt_Opt
+
+##############################################################################
+
+# Old partitioning scheme
+## Optimal partition of processors
+#def Proc_Part(NT,NP):
+#
+#  NP_T_Base  = NP//NT
+#  NP_T_Extra = NP%NT
+#  Part1 = NP_T_Base*np.ones(NT,dtype=np.int32)
+#  Part2 = np.zeros(NT,dtype=np.int32)
+#  Part2[np.where(np.arange(NT)<NP_T_Extra)] = 1
+#  Part = Part1 + Part2
+## Part = [ NP_T_Base+1 if i < NP_T_Extra else NP_T_Base for i in range(NT) ]
+#
+#  return Part
+#
+#def Partition_Load(nRuns,NP_Tot,PPN,Ser_Frac):
+#
+## Trying to be smarter with this
+#  Part_List = []
+#  for iln in range(1,nRuns+1):
+#
+## 1) Given a number of runs, generate all possible serial indexings
+#    Ser_Ind = np.repeat(np.arange(nRuns),iln)[0:nRuns]
+#
+## 2) Now we generate the best possible proc. part. for this serial indexing
+#    NP_T = np.zeros(nRuns,dtype=np.int32)
+#    T_Tot = 0.0
+#    for ii in range(min(Ser_Ind),max(Ser_Ind)+1):
+#      Ind = np.where(Ser_Ind == ii)
+#      iSim = len(Ind[0])
+#      NP_T[Ind] = Proc_Part(iSim,NP_Tot)
+#      if all(NP_T[Ind]>0):
+#        T_Tot = T_Tot + max(Ser_Frac+(1.0-Ser_Frac)/NP_T[Ind])
+#
+## Debug
+##   print(Ser_Ind)
+##   print(NP_T)
+#
+## 3) Make sure that this partition makes sense (no 0 proc for any run) and save
+#    if not any([ val == 0 for val in NP_T ]):
+#      Part_List.append([T_Tot,Ser_Ind,NP_T])
+#
+## 4) Find the partition with the lowest estimates execution time and return
+#  T_Min = Part_List[0][0]
+#  Best_Partition = Part_List[0]
+#  for Part in Part_List:
+#    if Part[0] < T_Min:
+#      Best_Partition = Part
+#
+## Debug
+## print('Part_List',Part_List)
+#
+#  return Best_Partition
+#
+## Partition the processors according to cost
+#def Partition_Load_Cost(Sys_Cost,NP_Tot,PPN,Ser_Frac):
+#
+## Initialize partition to reduced cost
+#  NP_Dist = [ round(Cost/min(Sys_Cost)) for Cost in Sys_Cost ]
+#
+## Normalize to NP_Tot
+#  NP_Dist = [ ceil(Cost/sum(NP_Dist)*NP_Tot) for Cost in NP_Dist ]
+#
+## Adjust normalization if needed by removing from task with most processors
+#  if sum(NP_Dist) != NP_Tot:
+#    iMax = [i[0] for i in sorted(enumerate(NP_Dist), key=lambda x:x[1])][-1]
+#    NP_Dist[iMax] = NP_Dist[iMax] - ( sum(NP_Dist) - NP_Tot )
+#
+## Debug
+## print(NP_Dist)
+## sys.exit()
+#
+#  Times_Est = []
+#  for (Cost,NP) in zip(Sys_Cost,NP_Dist):
+#    Best_Partition = Partition_Load(Cost,NP,PPN,Ser_Frac)
+#    Times_Est.append(Best_Partition[0])
+#
+#  Best_Partition_Load = [ NP_Dist, Times_Est ]
+#
+#  return Best_Partition_Load
 
 # Hardwire the possible properties for now
 Tgt_Prop_List = [ 'feff_xanes', 'corvus_oc' ]
@@ -159,10 +371,10 @@ parser.add_argument("--ppn",dest="PPN",type=int,default=64,help=Help['ppn'])
 parser.add_argument("--np",dest="NP_Tot",type=int,default=1,help=Help['np'])
 
 # Number of nodes to use
-parser.add_argument("--nn",dest="NNodes",type=int,default=0,help=Help['nn'])
+parser.add_argument("--nn",dest="NNodes",type=int,default=1,help=Help['nn'])
 
 # Fraction of serial code, to estimate parallel times
-parser.add_argument("--sf",dest="Ser_Frac",type=float,default=0.05,help=Help['sf'])
+parser.add_argument("--sf",dest="Ser_Frac",type=float,default=0.50,help=Help['sf'])
 
 # Parse the arguments
 args = parser.parse_args()
@@ -177,8 +389,17 @@ locals().update(vars(args))
 Set_FileName = Set_Name+'.mson'
 Set_Data = loadfn(Set_FileName)
 
+# Debug
+#pp_nice.pprint(Set_Data)
+#print(Set_Data.keys())
+#sys.exit()
+
 # Set the number of processors based on the NP_Tot and NNodes inputs
-NP_Tot = max(NP_Tot,NNodes*PPN)
+if NP_Tot != NNodes*PPN:
+    # Commenting out the warning since it might get confusing for users
+# print('Warning: Inconsistent input')
+# print('         NP != NN*PPN')
+  NP_Tot = min(NP_Tot,NNodes*PPN)
 
 #print(NP_Tot)
 #sys.exit()
@@ -232,18 +453,35 @@ print('{:d} systems left in the set after checks'.format(nSys))
 # Set nRuns to reuse the Siesta utils code
 nRuns = nSys
 
+# Since we are doing serialization, we need to make sure that we have the
+# runs preserve their order. For that, I will just order from lowest to highest
+# number of edges
+
 # Collect the number of edges from the data to form an estimate the cost of each
 # run
+Sys_List = []
 Sys_Cost = []
 Sys_Cost_Tot = 0
 for Sys in list(Set_Data.keys()):
+  Sys_List.append(Sys)
   Sys_Cost.append(Set_Data[Sys]['nedges'])
   Sys_Cost_Tot += Set_Data[Sys]['nedges']
 
 # Debug
-#print(Sys_Cost)
 #print(Sys_Cost_Tot)
-#print(32*Sys_Cost_Tot)
+
+# Debug
+#print(Sys_List)
+#print(Sys_Cost)
+
+Sort_Ind = sorted(range(len(Sys_Cost)), key=lambda k: Sys_Cost[k])
+Sys_List = [ Sys_List[i] for i in Sort_Ind ]
+Sys_Cost = [ Sys_Cost[i] for i in Sort_Ind ]
+
+# Debug
+#print(Sys_List)
+#print(Sys_Cost)
+#sys.exit()
 
 # Print out a table for each number of processors up to NP_Tot, listing the
 # estimated time, efficiency and total cost of the run.
@@ -253,14 +491,18 @@ if Test_NP:
   print("Searching up to {:d} processors.".format(NP_Tot))
 # Make a list of the number of proc we want to check, by PPN to target large
 # machines
-  NP_List = [ nSys ]+ [ N for N in range(PPN,NP_Tot+1,PPN) if N > nSys ]
+# NP_List = [ nSys ]+ [ N for N in range(PPN,NP_Tot+1,PPN) if N > nSys ]
+  NP_List = [ N for N in range(1,NP_Tot+1) ]
+# print(NP_List)
   nNP = len(NP_List)
   Times = [0]*nNP
   Eff   = [0]*nNP
   Cost  = [0]*nNP
   for (Ind,iNP) in enumerate(NP_List):
-    Best_Partition_Load = Partition_Load_Cost(Sys_Cost,iNP,PPN,Ser_Frac)
-    Time_Mx = max(Best_Partition_Load[1])
+    Best_Partition = OpCons_Part(iNP,Ser_Frac,Sys_Cost)
+#   print(Best_Partition)
+#   Best_Partition_Load = Partition_Load_Cost(Sys_Cost,iNP,PPN,Ser_Frac)
+    Time_Mx = Best_Partition['Mac_Prt_Time']
     Times[Ind] = Time_Mx
     Eff[Ind] = Times[0]/Times[Ind]/iNP
     Cost[Ind] = Times[Ind]*iNP
@@ -283,21 +525,26 @@ if Test_NP:
 #print(PPN)
 #sys.exit()
 
-Best_Partition_Load = Partition_Load_Cost(Sys_Cost,NP_Tot,PPN,Ser_Frac)
+Best_Partition = OpCons_Part(NP_Tot,Ser_Frac,Sys_Cost)
 
 # Debug
-#print(Best_Partition_Load)
+#pp_nice.pprint(Best_Partition)
 
-# Since we are not serializing the runs over systems, we have to gen a fake
-# list of serial indices for the rest of the code below. Later we might want
-# to generalize this
+#sys.exit()
 
-iSer = np.array([0]*nSys)
-iNP = Best_Partition_Load[0]
-Est_Time_Cost = max(Best_Partition_Load[1])
+# The best partition no has serialization information (as oposed to the
+# previous version of this tool). We adjust the code accordingly
+
+#iSer = np.array([0]*nSys)
+#iNP = Best_Partition_Load[0]
+#Est_Time_Cost = max(Best_Partition_Load[1])
+iSer = Best_Partition['Mac_iSer_List']
+iPart = Best_Partition['Mac_Prt']
+iNP = Best_Partition['Mac_Grp_NP']
+Est_Time_Cost = Best_Partition['Mac_Prt_Time']
 
 # NOTE FDV: shortcircuting here to implement a simpler partitioning scheme to
-iNP = [ Cost*PPN for Cost in Sys_Cost ]
+#iNP = [ Cost*PPN for Cost in Sys_Cost ]
 
 # Debug
 #print(Best_Partition_Load)
@@ -313,6 +560,9 @@ iNP = [ Cost*PPN for Cost in Sys_Cost ]
 
 # Debug
 #print(iSer)
+#print(iPart)
+#print(PPN)
+#print(Sys_Cost)
 #print(iNP)
 #sys.exit()
 
@@ -324,92 +574,128 @@ if Verbose:
   print("{:s}".format('-'*60))
   print("Estimated time cost: {:7.3f}".format(Est_Time_Cost))
   print("Runs partitioning:")
-  print('{:s}               {:s}   {:s}'.format('Run','Ser','NP'))
-# for iRun in range(nRuns):
-  for iRun,Sys in enumerate(Set_Data.keys()):
-    print("{:12s} {:6d} {:6d}".format(Sys,iSer[iRun],iNP[iRun]))
+  print('{:s}               {:s}   {:s}   {:s}'.format('Sys','Ser','NP','Edges'))
+  for iRun in range(max(iSer)+1):
+    for iSys,iiNP in zip(iPart[iRun],iNP[iRun]):
+#     print(Sys_List[iSys],iRun,iiNP,Sys_Cost[iSys])
+      print("{:12s} {:6d} {:6d} {:6d}".format(Sys_List[iSys],iRun,iiNP,Sys_Cost[iSys]))
   print("{:s}".format('-'*60))
 
+#sys.exit()
 # Get the CWD to use for full paths.
 # NOTE FDV: Trying to see if this fixes Ruoxi's problem
 Run_CWD = os.getcwd()
 
 # Create all the scripts we will need to run in each of the run directories
-Run_Path    = ['']*nRuns
-Script_Name = ['']*nRuns
-for iRun,Sys in enumerate(list(Set_Data.keys())):
-  Tgt_Prop = Set_Data[Sys]['prop']
-  Sys_Dir = os.path.join(Set_Name,Set_Data[Sys]['formula'],Sys,Tgt_Prop)
-# iRun_Dir = Sys_Dir
-  Run_Path[iRun] = Sys_Dir
-  PENDING_FLAG = open(Run_Path[iRun]+'/CTRL_PENDING','w')
-  PENDING_FLAG.write('\n')
-  PENDING_FLAG.close()
-  Script_Name[iRun] = 'run_' + Sys + '.csh'
-  Script_FullPath = Run_Path[iRun]+'/'+Script_Name[iRun]
+#Run_Path    = ['']*nRuns
+#Script_Name = ['']*nRuns
+Run_Path    = {}
+Script_Name = {}
+for iRun in range(max(iSer)+1):
+  for iSys,iiNP in zip(iPart[iRun],iNP[iRun]):
+    Sys = Sys_List[iSys]
+    Tgt_Prop = Set_Data[Sys]['prop']
+    Sys_Dir = os.path.join(Set_Name,Set_Data[Sys]['formula'],Sys,Tgt_Prop)
+    Run_Path[Sys] = Sys_Dir
+    PENDING_FLAG = open(Run_Path[Sys]+'/CTRL_PENDING','w')
+    PENDING_FLAG.write('\n')
+    PENDING_FLAG.close()
+    Script_Name[Sys] = 'run_' + Sys + '.csh'
+    Script_FullPath = Run_Path[Sys]+'/'+Script_Name[Sys]
 # Debug
 # print(Script_FullPath)
-  SCRIPT = open(Script_FullPath,'w')
-  SCRIPT.write('#!/bin/csh\n')
-  SCRIPT.write('\n')
-  SCRIPT.write('# Remove the pending flag\n')
-  SCRIPT.write('rm CTRL_PENDING\n')
-  SCRIPT.write('\n')
-  SCRIPT.write('# Set a flag so crv_mp_stat knows this is running\n')
-  SCRIPT.write('touch CTRL_RUNNING\n')
-  SCRIPT.write('\n')
+    SCRIPT = open(Script_FullPath,'w')
+    SCRIPT.write('#!/bin/csh\n')
+    SCRIPT.write('\n')
+    SCRIPT.write('# Remove the pending flag\n')
+    SCRIPT.write('rm CTRL_PENDING\n')
+    SCRIPT.write('\n')
+    SCRIPT.write('# Set a flag so crv_mp_stat knows this is running\n')
+    SCRIPT.write('touch CTRL_RUNNING\n')
+    SCRIPT.write('\n')
 # NOTE FDV: This should not be necessary enymore since we are using the python3
 # version of Corvus
 # SCRIPT.write('# Swap the modules to make Coruvs work properly\n')
 # SCRIPT.write('module swap python/3.7-anaconda-2019.10 python/2.7-anaconda-2019.07\n')
-  SCRIPT.write('\n')
-  SCRIPT.write('# Set the Corvus location\n')
-  SCRIPT.write('setenv CORVUS_EXE '+CORVUS_EXE+'\n')
-  SCRIPT.write('\n')
-  SCRIPT.write('# Run Corvus\n')
-  SCRIPT.write('$CORVUS_EXE -i opcons.in\n')
-  SCRIPT.write('\n')
+    SCRIPT.write('\n')
+    SCRIPT.write('# Set the Corvus location\n')
+    SCRIPT.write('setenv CORVUS_EXE '+CORVUS_EXE+'\n')
+    SCRIPT.write('\n')
+    SCRIPT.write('# Run Corvus\n')
+    SCRIPT.write('$CORVUS_EXE -i opcons.in\n')
+    SCRIPT.write('\n')
 # SCRIPT.write('# Clean up\n')
 # SCRIPT.write('\n')
-  SCRIPT.write('# Remove the running flag\n')
-  SCRIPT.write('rm CTRL_RUNNING\n')
-  SCRIPT.write('\n')
-  SCRIPT.write('# Set a flag indicating the calculation is done\n')
-  SCRIPT.write('touch CTRL_COMPLETED\n')
-  SCRIPT.write('\n')
-  SCRIPT.close()
-  os.chmod(Script_FullPath,0o755)
+    SCRIPT.write('# Remove the running flag\n')
+    SCRIPT.write('rm CTRL_RUNNING\n')
+    SCRIPT.write('\n')
+    SCRIPT.write('# Set a flag indicating the calculation is done\n')
+    SCRIPT.write('touch CTRL_COMPLETED\n')
+    SCRIPT.write('\n')
+    SCRIPT.close()
+    os.chmod(Script_FullPath,0o755)
 
 # Now we have to add the parallel directives in the Corvus input file by copying
 # the template that we already generated and adding them there
-  shutil.copyfile(Run_Path[iRun]+'/opcons.in.tmplt',Run_Path[iRun]+'/opcons.in')
-  OCINFILE = open(Run_Path[iRun]+'/opcons.in','a+')
-  OCINFILE.write('feff.MPI.CMD{'+MPICOMM+'}\n')
-  OCINFILE.write('feff.MPI.NNFLAG{'+' '+MPIOPT_NN+'}\n')
-  OCINFILE.write('feff.MPI.PPN{{ {:d} }}\n'.format(PPN))
-  OCINFILE.write('feff.MPI.NPFLAG{'+' '+MPIOPT_NP+'}\n')
-  OCINFILE.write('feff.MPI.NPTOT{{ {:d} }}\n'.format(iNP[iRun]))
-  OCINFILE.write('feff.MPI.OTHER{'+MPIOPT_Other+' }\n')
-  OCINFILE.close()
+    shutil.copyfile(Run_Path[Sys]+'/opcons.in.tmplt',Run_Path[Sys]+'/opcons.in')
+    OCINFILE = open(Run_Path[Sys]+'/opcons.in','a+')
+# Depending onf the MPI system we have, we choose different ways of creating
+# the MPI command:
+#  format(Sys_List[iSys],iRun,iiNP,Sys_Cost[iSys]))
+#   if   MPISYS.lower() in [ 'openmpi', 'mvapich2' ]:
+#     MPIFULLCOMM = ' '.join([MPICOMM,MPIOPT_NP,str(iiNP),MPIOPT_Other])
+#   elif MPISYS.lower() in [ 'slurm' ]:
+#     MPIFULLCOMM = MPICOMM + ' ' + MPIOPT_NN + ' xx ' + MPIOPT_NP + ' xx ' + MPIOPT_Other
+#   else:
+#     print('Unrecognized MPI system: ', MPISYS)
+#     sys.exit()
+    OCINFILE.write('feff.MPI.SYS{'+MPISYS+'}\n')
+#   OCINFILE.write('feff.MPI.NNFLAG{'+' '+MPIOPT_NN+'}\n')
+    OCINFILE.write('feff.MPI.PPN{{ {:d} }}\n'.format(PPN))
+#   OCINFILE.write('feff.MPI.NPFLAG{'+' '+MPIOPT_NP+'}\n')
+    OCINFILE.write('feff.MPI.SERFRAC{{ {:f} }}\n'.format(Ser_Frac))
+    OCINFILE.write('feff.MPI.NPTOT{{ {:d} }}\n'.format(iiNP))
+    OCINFILE.write('feff.MPI.OTHER{'+MPIOPT_Other+' }\n')
+    OCINFILE.close()
+
+# Debug
+#pp_nice.pprint(Run_Path)
+#pp_nice.pprint(Script_Name)
+#sys.exit()
 
 # Loop over the serial index
 Tot_Time = 0.0
 for ii in range(min(iSer),max(iSer)+1):
 # Find all the runs in this serial step
-  Inds = np.where(iSer == ii)[0]
+# Inds = np.where(iSer == ii)[0]
+  Inds = [ iii for (iii,iiSer) in enumerate(iSer) if ii==iiSer ]
+# Debug
+# print(Inds)
   Comms = []
   Dirs  = []
   Sout  = []
   Serr  = []
   for Ind in Inds:
-    Comms.append(Script_Name[Ind])
-    Dirs.append(os.path.join(Run_CWD,Run_Path[Ind]))
+#   print(Sys_List[Ind])
+    Sys = Sys_List[Ind]
+#   Comms.append(Script_Name[Ind])
+# Fixing the Comms so they have full path
+#   Comms.append(Script_Name[Sys])
+    Comms.append(os.path.join(Run_CWD,Run_Path[Sys],Script_Name[Sys]))
+#   Dirs.append(os.path.join(Run_CWD,Run_Path[Ind]))
+    Dirs.append(os.path.join(Run_CWD,Run_Path[Sys]))
     if not Dry_Run:
-      Sout.append(open(os.path.join(Run_Path[Ind],'opcons.sout'), 'w'))
-      Serr.append(open(os.path.join(Run_Path[Ind],'opcons.serr'), 'w'))
+#     Sout.append(open(os.path.join(Run_Path[Ind],'opcons.sout'), 'w'))
+#     Serr.append(open(os.path.join(Run_Path[Ind],'opcons.serr'), 'w'))
+      Sout.append(open(os.path.join(Run_Path[Sys],'opcons.sout'), 'w'))
+      Serr.append(open(os.path.join(Run_Path[Sys],'opcons.serr'), 'w'))
   print('Serial step: {:4d}    of {:4d}'.format(ii+1,max(iSer)+1))
-  for iRun in Inds:
-    print('   Run: {:18s}   #Proc: {:5d}'.format(Run_Path[iRun],iNP[iRun]))
+# print('FDV Comms: ',Comms)
+# print('FDV Dirs: ',Dirs)
+  for (iRun,iiNP) in zip(Inds,iNP[ii]):
+    Sys = Sys_List[iRun]
+#   print('   Run: {:18s}   #Proc: {:5d}'.format(Run_Path[Sys],iNP[Sys]))
+    print('   Run: {:18s}   #Proc: {:5d}'.format(Run_Path[Sys],iiNP))
   T0 = time.time()
   if not Dry_Run:
     Procs = [ Popen(Comm,cwd=Dir,stdout=Out,stderr=Err) for (Comm,Dir,Out,Err) in zip(Comms,Dirs,Sout,Serr) ]

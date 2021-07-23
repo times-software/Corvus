@@ -22,6 +22,63 @@ import more_itertools as mit
 import pprint
 pp_debug = pprint.PrettyPrinter(indent=4)
 
+# Partitioning scheme for tasks with equal estimated timings
+def Partition_Load(nRuns,NP_Tot,PPN,Ser_Frac):
+
+  def Proc_Part(NT,NP):
+
+    NP_T_Base  = NP//NT
+    NP_T_Extra = NP%NT
+    Part1 = NP_T_Base*np.ones(NT,dtype=np.int)
+    Part2 = np.zeros(NT,dtype=np.int)
+    Part2[np.where(np.arange(NT)<NP_T_Extra)] = 1
+    Part = Part1 + Part2
+
+    return Part
+
+# Test the optimal partition proc.
+# print(Proc_Part(3,6))
+# print(Proc_Part(3,8))
+# print(Proc_Part(2,8))
+# print(Proc_Part(5,8))
+# print(Proc_Part(5,5))
+# print(Proc_Part(5,1))
+# sys.exit()
+
+# Trying to be smarter with this
+  Part_List = []
+  for iln in range(1,nRuns+1):
+
+# 1) Given a number of runs, generate all possible serial indexings
+    Ser_Ind = np.repeat(np.arange(nRuns),iln)[0:nRuns]
+
+# 2) Now we generate the best possible proc. part. for this serial indexing
+    NP_T = np.zeros(nRuns,dtype=np.int)
+    T_Tot = 0.0
+    for ii in range(min(Ser_Ind),max(Ser_Ind)+1):
+      Ind = np.where(Ser_Ind == ii)
+      iSim = len(Ind[0])
+      NP_T[Ind] = Proc_Part(iSim,NP_Tot)
+      if all(NP_T[Ind]>0):
+        T_Tot = T_Tot + max(Ser_Frac+(1.0-Ser_Frac)/NP_T[Ind])
+
+# Debug
+#   print(Ser_Ind)
+#   print(NP_T)
+
+# 3) Make sure that this partition makes sense (no 0 proc for any run) and save
+    if not any([ val == 0 for val in NP_T ]):
+      Part_List.append([T_Tot,Ser_Ind,NP_T])
+
+# 4) Find the partition with the lowest estimates execution time and return
+  T_Min = Part_List[0][0]
+  Best_Partition = Part_List[0]
+  for Part in Part_List:
+    if Part[0] < T_Min:
+      Best_Partition = Part
+
+  return Best_Partition
+
 # Added by FDV
 # fix the problem that the cumulative trapesoidal integration function has
 # different names for different versions of scipy
@@ -153,8 +210,8 @@ def Temp_Fix_NaN(k2,exafs,mu0):
 
 # Added by FDV
 # List of feff modules that should be run in parallel if requested
-#Parallel_Exes = [ 'feff_timer', 'ldos', 'fms', 'pot' ]
-Parallel_Exes = [ 'ldos', 'fms', 'pot' ]
+Parallel_Exes = [ 'feff_timer', 'ldos', 'fms', 'pot' ]
+#Parallel_Exes = [ 'ldos', 'fms', 'pot' ]
 
 # Define dictionary of implemented calculations
 implemented = {}
@@ -257,7 +314,7 @@ class Feff(Handler):
         if key not in implemented:
             raise LookupError('Corvus cannot currently produce ' + key + ' using FEFF')
         f = lambda subkey : implemented[key][subkey]
-        if f('type') is 'Exchange':
+        if f('type') == 'Exchange':
             return Exchange(Feff, f('req'), f('out'), cost=f('cost'), desc=f('desc'))
 
     @staticmethod
@@ -511,14 +568,25 @@ class Feff(Handler):
                     # rdinp again since writeSCFInput may have different cards than
 
 #                   execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
-                    #execs = ['feff_timer','rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv','feff_timer']
-                    execs = ['rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                    execs = ['feff_timer','rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv','feff_timer']
+                    #execs = ['rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                     for exe in execs:
-                        if 'feff.MPI.CMD' in feffInput:
+#                       if 'feff.MPI.CMD' in feffInput:
+                        if 'feff.MPI.SYS' in feffInput:
 # Modified by FDV
-                            executable = feffInput.get('feff.MPI.CMD')[0]
-                            npflag     = feffInput.get('feff.MPI.NPFLAG')[0]
-                            nnflag     = feffInput.get('feff.MPI.NNFLAG')[0]
+                            MPISYS = feffInput.get('feff.MPI.SYS')[0][0]
+# Debug
+#                           print('FDV MPISYS:',MPISYS)
+                            if   MPISYS.lower() in [ 'openmpi', 'mvapich2' ]:
+                              executable = ['mpirun']
+                              npflag = ['-np']
+                            elif MPISYS.lower() in [ 'slurm' ]:
+                              executable = ['srun']
+                              npflag = ['-n']
+                              nnflag = ['-N']
+#                           executable = feffInput.get('feff.MPI.CMD')[0]
+#                           npflag     = feffInput.get('feff.MPI.NPFLAG')[0]
+#                           nnflag     = feffInput.get('feff.MPI.NNFLAG')[0]
 # Check the input we have here
 #                           print('XXX feffInput XXX')
 #                           pp_debug.pprint(feffInput)
@@ -535,18 +603,27 @@ class Feff(Handler):
 #                             nproc = nproc[0]
                             else:
                               nproc = nproc[0]
-                            otherflags = feffInput.get('feff.MPI.OTHER')[0]
+#                           otherflags = feffInput.get('feff.MPI.OTHER')[0]
+                            otherflags = feffInput.get('feff.MPI.OTHER')
+                            if not otherflags:
+                              otherflags = ['']
+                            else:
+                              otherflags = otherflags[0]
 #                           print('executable',executable)
-                            #print('nnflag',nnflag)
-                            #print('nnodes',nnodes)
-                            #print('npflag',npflag)
-                            #print('nproc',nproc)
-                            #print('otherflag',otherflags)
+#                           print('nnflag',nnflag)
+#                           print('nnodes',nnodes)
+#                           print('npflag',npflag)
+#                           print('nproc',nproc)
+#                           print('otherflags',otherflags)
+#                           sys.exit()
                             #print(os.path.join(feffdir,exe))
 # Create a different version of args
-                            args = nnflag + [str(nnodes)] + npflag + [str(nproc)] + otherflags + [os.path.join(feffdir,exe)]
-                            #print('executable',executable)
-                            #print('args',args)
+                            if   MPISYS.lower() in [ 'openmpi', 'mvapich2' ]:
+                              args = npflag + [str(nproc)] + otherflags + [os.path.join(feffdir,exe)]
+                            elif MPISYS.lower() in [ 'slurm' ]:
+                              args = nnflag + [str(nnodes)] + npflag + [str(nproc)] + otherflags + [os.path.join(feffdir,exe)]
+#                           print('FDV executable:',executable)
+#                           print('FDV args:',args)
 #                           executable = feffInput.get('feff.MPI.CMD')[0]
 #                           args = feffInput.get('feff.MPI.ARGS',[['']])[0] + [os.path.join(feffdir,exe)]
 #                           #print('executable',executable)
@@ -965,7 +1042,8 @@ class Feff(Handler):
 # Creating a list to collect the inputs for delayed execution
                 WF_Params_Dict = {}
 
-# Determine how many processors we can dedicate to each edge run
+# Get the number of tasks (edges) to complete, and the total number of proc.
+# available to do so
                 OC_NP_Tot = input2['feff.MPI.NPTOT'][0][0]
                 OC_Tot_Runs = 0
 #               for (element,absorber) in zip(elements,absorbers):
@@ -974,18 +1052,56 @@ class Feff(Handler):
                     OC_Tot_Runs = OC_Tot_Runs + 1
 
 # Debug
-                #print(' FDV: OC_NP_Tot, OC_Tot_Runs')
-                #print(OC_NP_Tot, OC_Tot_Runs)
+#               print(' FDV: OC_NP_Tot, OC_Tot_Runs')
+#               print(OC_NP_Tot, OC_Tot_Runs)
 #               sys.exit()
 
-                NP_Base = OC_NP_Tot//OC_Tot_Runs
-                NP_Extra = OC_NP_Tot%OC_Tot_Runs
-                NP_Run_Partition = OC_Tot_Runs*[NP_Base]
-                for iRun in range(NP_Extra):
-                  NP_Run_Partition[iRun] += 1
+# Determine how many processors we can dedicate to each edge run
 
-                #print('NP_Run_Partition',NP_Run_Partition)
+# Here I change the way the partitioning is done. Previously we assumed that
+# we cloud parallelize all the edge. Now I will do a serial/parallel mix to
+# allow for systems with fewer processors.
+
+#############################################################################
+# Old Paritioning code
+#               NP_Base = OC_NP_Tot//OC_Tot_Runs
+#               NP_Extra = OC_NP_Tot%OC_Tot_Runs
+#               NP_Run_Partition = OC_Tot_Runs*[NP_Base]
+#               for iRun in range(NP_Extra):
+#                 NP_Run_Partition[iRun] += 1
+#
+#               print('FDV: NP_Run_Partition')
+#               print(NP_Run_Partition)
 #               sys.exit()
+#############################################################################
+# New Paritioning code
+# To partition we assume that all the edges should take about the same time.
+# This means that the actual order in which they are executed will not be
+# important, only how they are grouped.
+                PPN = feffInput.get('feff.MPI.PPN')[0][0]
+                Ser_Frac = feffInput.get('feff.MPI.SERFRAC')[0][0]
+                Best_Part = Partition_Load(OC_Tot_Runs,OC_NP_Tot,PPN,Ser_Frac)
+                iSer = Best_Part[1]
+                iNP  = Best_Part[2]
+# Now we create a list connecting the partition to each individual absorber
+# and edge, to make things simpler below. Otherwise, if we rely on the
+# order of the keys we might have trouble
+#               print(elements,absorbers)
+                iRun_Count = 0
+                Abs_Edge_to_Run = {}
+                for (element,absorber) in zip(elements,absorbers):
+#                 print(feff_edge_dict[only_alpha.sub('',element)])
+                  for iedge,edge in enumerate(feff_edge_dict[only_alpha.sub('',element)]):
+#                   print('FDV Tasks: ',iRun_Count,element,absorber,iedge,edge)
+                    Abs_Edge_to_Run[(absorber,edge)] = iRun_Count
+                    iRun_Count += 1
+# Debug
+#               print('FDV: Best_Part')
+#               print(Best_Part)
+#               print('FDV: Abs_Edge_to_Run')
+#               print(Abs_Edge_to_Run)
+#               sys.exit()
+#############################################################################
 
 # For each atom in absorbing_atoms run a full-spectrum calculation (all edges, XANES + EXAFS)
                 iRun_Count = 0
@@ -1070,7 +1186,9 @@ class Feff(Handler):
                         #print(' FDV: XANES INPUT')
 # Adjust the number of processors defined in the input so we only use those
 # assigned to this run
-                        input2['feff.MPI.NP'] = [[NP_Run_Partition[iRun_Count]]]
+#                       input2['feff.MPI.NP'] = [[NP_Run_Partition[iRun_Count]]]
+# Now we adjust to the actual number of proc. available for this edge
+                        input2['feff.MPI.NP'] = [[iNP[Abs_Edge_to_Run[(absorber,edge)]]]]
                         #print('XXX input2 XXX')
                         #pp_debug.pprint(input2)
                         Item_xanes = { 'config2':copy.deepcopy(config2),
@@ -1139,9 +1257,14 @@ class Feff(Handler):
 # simplify things a bit since the EXAFS runs wil only be done in 1 core.
 # XANES LOOP
 
+# NOTE FDV: Disregard comment below
 # Attempting to multithread the calls
 # For now we launch all threads to run with whatever number of cores are in the input and not try to do
 # anything smart. We will just put enough cores available in the overall run.
+
+# We now attempt to do something smart and use the serial/parallel partition
+# generate above to run in a more efficient way, and to allow for
+# runs with fewer processors than edges.
                 nTasks_Est = len(absorbers)*len(list(WF_Params_Dict[absorber].keys()))
                 nTasks = 0
                 Tasks = []
@@ -1168,13 +1291,35 @@ class Feff(Handler):
                       else:
                         print("\t\t\txmu.dat already calculated. Skipping.")
 
+# Old launch code
 # Launch all the tasks
-                for Tsk in Tasks:
-                    Tsk.start()
+#               for Tsk in Tasks:
+#                   Tsk.start()
 
 # Ensure all of the tasks have finished
-                for Tsk in Tasks:
-                    Tsk.join()
+#               for Tsk in Tasks:
+#                   Tsk.join()
+
+# Here instead of launching all the tasks, we launch according to the
+# serial/parallel partition
+#               print('FDV nTasks: ',len(Tasks))
+# Mock run
+                for iiSer in range(min(iSer),max(iSer+1)):
+                  print(iiSer)
+                  for (iTsk,Tsk) in enumerate(Tasks):
+                    if iSer[iTsk] == iiSer:
+#                     print('Start: ',iTsk)
+                      Tsk.start()
+                  for (iTsk,Tsk) in enumerate(Tasks):
+                    if iSer[iTsk] == iiSer:
+#                     print('Join: ',iTsk)
+                      Tsk.join()
+#               sys.exit()
+#               for Tsk in Tasks:
+#                   Tsk.start()
+
+#               for Tsk in Tasks:
+#                   Tsk.join()
 
 # Monitor the number of threads until they are all done..
 #               while thrd.active_count()>1:
@@ -1219,13 +1364,24 @@ class Feff(Handler):
                         Tasks.append(Prcs)
                         nTasks += 1
 
+                for iiSer in range(min(iSer),max(iSer+1)):
+                  print(iiSer)
+                  for (iTsk,Tsk) in enumerate(Tasks):
+                    if iSer[iTsk] == iiSer:
+                      print('Start: ',iTsk)
+                      Tsk.start()
+                  for (iTsk,Tsk) in enumerate(Tasks):
+                    if iSer[iTsk] == iiSer:
+                      print('Join: ',iTsk)
+                      Tsk.join()
+
 # Launch all the tasks
-                for Tsk in Tasks:
-                    Tsk.start()
+#               for Tsk in Tasks:
+#                   Tsk.start()
 
 # Ensure all of the tasks have finished
-                for Tsk in Tasks:
-                    Tsk.join()
+#               for Tsk in Tasks:
+#                   Tsk.join()
 
 # Monitor the number of threads until they are all done..
 #               while thrd.active_count()>1:
@@ -1709,16 +1865,20 @@ def runExecutable(execDir,workDir,executable, args,out,err):
     # Runs executable located in execDir from working directory workDir.
     # Tees stdout to file out in real-time, and stderr to file err.
     print('--- FDV ---',args)
-    print((runExecutable.prefix + 'Running exectuable: ' + executable[0] + ' ' + ' '.join(args)))
+    print((runExecutable.prefix + 'Running executable: ' + executable[0] + ' ' + ' '.join(args)))
     # Modified by FDV:
     # Adding the / to make the config more generic
     # Modified by JJK to use os.path.join (even safer than above).
     execList = [os.path.join(execDir,executable[0])] + args
+#   print('FDV execList:',execList)
+#   print('FDV workDir:',workDir)
     p = subprocess.Popen(execList, bufsize=0, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf8')
     while True:
         output = p.stdout.readline()
         error = p.stderr.readline()
-        if output == '' and p.poll() is not None:
+#       print('FDV output:',output)
+#       print('FDV error :',error)
+        if output == '' and error == '' and p.poll() is not None:
             break
         if output:
             print(output.strip())

@@ -45,6 +45,6 @@ setuptools.setup(name='corvus',
       scripts=['bin/run-corvus', 'corvutils/mp/crv_mp_mk_set', 'corvutils/mp/crv_mp_run_set'],
       packages=setuptools.find_packages(),
       # J Kas - Moved corvus.conf to corvus/config since pip/setuptools don't like names that start with the module name?
-      package_data={'corvutils':['parsnip.corvus.config','parsnip.corvus.formats'],'corvus':['config']},
-      install_requires=['lmfit','more_itertools','pymatgen','numpy>=1.20.1', 'jenkspy'],
+      package_data={'corvutils':['parsnip.corvus.config','parsnip.corvus.formats','mp/crv_mp.ini'],'corvus':['config']},
+      install_requires=['lmfit','more_itertools','pymatgen','numpy>=1.20.1', 'jenkspy','cif2cell'],
       )

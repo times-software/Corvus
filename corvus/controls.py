@@ -552,7 +552,7 @@ def oneshot(argv):
 #   sys.exit()
 
     # Skip to specified Workflow step (developer option)
-    if jumpPoint is not 0:
+    if jumpPoint != 0:
         workflowStart = jumpPoint - 1
 
     # Save intial state
