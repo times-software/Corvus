@@ -651,7 +651,7 @@ for iRun in range(max(iSer)+1):
 #     sys.exit()
     OCINFILE.write('feff.MPI.SYS{'+MPISYS+'}\n')
 #   OCINFILE.write('feff.MPI.NNFLAG{'+' '+MPIOPT_NN+'}\n')
-    OCINFILE.write('feff.MPI.PPN{{ {:d} }}\n'.format(PPN))
+#   OCINFILE.write('feff.MPI.PPN{{ {:d} }}\n'.format(PPN))
 #   OCINFILE.write('feff.MPI.NPFLAG{'+' '+MPIOPT_NP+'}\n')
     OCINFILE.write('feff.MPI.SERFRAC{{ {:f} }}\n'.format(Ser_Frac))
     OCINFILE.write('feff.MPI.NPTOT{{ {:d} }}\n'.format(iiNP))
