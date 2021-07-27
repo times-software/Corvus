@@ -583,7 +583,7 @@ class Feff(Handler):
                             elif MPISYS.lower() in [ 'slurm' ]:
                               executable = ['srun']
                               npflag = ['-n']
-                              nnflag = ['-N']
+#                             nnflag = ['-N']
 #                           executable = feffInput.get('feff.MPI.CMD')[0]
 #                           npflag     = feffInput.get('feff.MPI.NPFLAG')[0]
 #                           nnflag     = feffInput.get('feff.MPI.NNFLAG')[0]
@@ -592,7 +592,9 @@ class Feff(Handler):
 #                           pp_debug.pprint(feffInput)
                             nproc      = feffInput.get('feff.MPI.NP')[0]
                             #print('feff.MPI.PPN',feffInput.get('feff.MPI.PPN')[0][0])
-                            PPN_Val = feffInput.get('feff.MPI.PPN')[0][0]
+# Shortcircuiting PPN for now
+#                           PPN_Val = feffInput.get('feff.MPI.PPN')[0][0]
+                            PPN_Val = 1
                             nnodes = max(int(nproc[0]/PPN_Val),1)
                             #print('nnodes',nnodes)
 #                           sys.exit()
@@ -621,7 +623,8 @@ class Feff(Handler):
                             if   MPISYS.lower() in [ 'openmpi', 'mvapich2' ]:
                               args = npflag + [str(nproc)] + otherflags + [os.path.join(feffdir,exe)]
                             elif MPISYS.lower() in [ 'slurm' ]:
-                              args = nnflag + [str(nnodes)] + npflag + [str(nproc)] + otherflags + [os.path.join(feffdir,exe)]
+#                             args = nnflag + [str(nnodes)] + npflag + [str(nproc)] + otherflags + [os.path.join(feffdir,exe)]
+                              args = npflag + [str(nproc)] + otherflags + [os.path.join(feffdir,exe)]
 #                           print('FDV executable:',executable)
 #                           print('FDV args:',args)
 #                           executable = feffInput.get('feff.MPI.CMD')[0]
@@ -1078,7 +1081,9 @@ class Feff(Handler):
 # To partition we assume that all the edges should take about the same time.
 # This means that the actual order in which they are executed will not be
 # important, only how they are grouped.
-                PPN = feffInput.get('feff.MPI.PPN')[0][0]
+# NOTE FDV: Shortcircuiting the PPN for now
+#               PPN = feffInput.get('feff.MPI.PPN')[0][0]
+                PPN = 1
                 Ser_Frac = feffInput.get('feff.MPI.SERFRAC')[0][0]
                 Best_Part = Partition_Load(OC_Tot_Runs,OC_NP_Tot,PPN,Ser_Frac)
                 iSer = Best_Part[1]
@@ -1310,10 +1315,16 @@ class Feff(Handler):
                     if iSer[iTsk] == iiSer:
 #                     print('Start: ',iTsk)
                       Tsk.start()
+                      print('Debug: sleeping 5 to stagger launch')
+                      time.sleep(5)
+                      print('Debug: Done sleeping')
                   for (iTsk,Tsk) in enumerate(Tasks):
                     if iSer[iTsk] == iiSer:
 #                     print('Join: ',iTsk)
                       Tsk.join()
+                      print('Debug: sleeping 5 to stagger launch')
+                      time.sleep(5)
+                      print('Debug: Done sleeping')
 #               sys.exit()
 #               for Tsk in Tasks:
 #                   Tsk.start()
@@ -1370,10 +1381,16 @@ class Feff(Handler):
                     if iSer[iTsk] == iiSer:
                       print('Start: ',iTsk)
                       Tsk.start()
+                      print('Debug: sleeping 5 to stagger launch')
+                      time.sleep(5)
+                      print('Debug: Done sleeping')
                   for (iTsk,Tsk) in enumerate(Tasks):
                     if iSer[iTsk] == iiSer:
                       print('Join: ',iTsk)
                       Tsk.join()
+                      print('Debug: sleeping 5 to stagger launch')
+                      time.sleep(5)
+                      print('Debug: Done sleeping')
 
 # Launch all the tasks
 #               for Tsk in Tasks:
