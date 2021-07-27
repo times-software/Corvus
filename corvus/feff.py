@@ -14,7 +14,7 @@ from scipy.signal import argrelextrema
 import time
 #import threading as thrd
 import multiprocessing as mltp
-from pymatgen.io.cif import CifParser
+from pymatgen.io.cif import CifParser,CifWriter
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import more_itertools as mit
 
@@ -952,11 +952,19 @@ class Feff(Handler):
                       print('More than one structure in CIF file. Check input')
                       sys.exit()
                     Sys_Str = Sys_Str_Parser.get_structures()[0]
+                    
 # There is no way to generate a sym structure from a read CIF in pymatgen as far
 # as I can tell. So we have to symmetrize again
                     spgAna = SpacegroupAnalyzer(Sys_Str)
                     Sys_Str_Sym = spgAna.get_symmetrized_structure()
                     formula = Sys_Str_Sym.formula
+
+                    # JJK - Write a new cif file, since pymatgen does not keep the atoms in order when reading,
+                    #       and FEFF needs them in order by line number to set the taget correctly. The writer
+                    #       seems to keep the ordering. I'm just going to overwrite the initial cif for now.
+                    cifwr = CifWriter(Sys_Str)
+                    cifwr.write_file('CIF_symm.cif')
+
 
                     VTot_fdv = Sys_Str_Sym.volume
 # Debug
@@ -1028,6 +1036,7 @@ class Feff(Handler):
                     elements = elements_fdv
                     component_labels = component_labels_fdv
                     absorbers = absorbers_fdv
+
 #                   print('element',element)
 
                     if 'cluster' not in input2:    
