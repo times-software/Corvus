@@ -1315,16 +1315,16 @@ class Feff(Handler):
                     if iSer[iTsk] == iiSer:
 #                     print('Start: ',iTsk)
                       Tsk.start()
-                      print('Debug: sleeping 5 to stagger launch')
-                      time.sleep(5)
-                      print('Debug: Done sleeping')
+#                     print('Debug: sleeping 5 to stagger launch')
+#                     time.sleep(5)
+#                     print('Debug: Done sleeping')
                   for (iTsk,Tsk) in enumerate(Tasks):
                     if iSer[iTsk] == iiSer:
 #                     print('Join: ',iTsk)
                       Tsk.join()
-                      print('Debug: sleeping 5 to stagger launch')
-                      time.sleep(5)
-                      print('Debug: Done sleeping')
+#                     print('Debug: sleeping 5 to stagger launch')
+#                     time.sleep(5)
+#                     print('Debug: Done sleeping')
 #               sys.exit()
 #               for Tsk in Tasks:
 #                   Tsk.start()
@@ -1381,16 +1381,16 @@ class Feff(Handler):
                     if iSer[iTsk] == iiSer:
                       print('Start: ',iTsk)
                       Tsk.start()
-                      print('Debug: sleeping 5 to stagger launch')
-                      time.sleep(5)
-                      print('Debug: Done sleeping')
+#                     print('Debug: sleeping 5 to stagger launch')
+#                     time.sleep(5)
+#                     print('Debug: Done sleeping')
                   for (iTsk,Tsk) in enumerate(Tasks):
                     if iSer[iTsk] == iiSer:
                       print('Join: ',iTsk)
                       Tsk.join()
-                      print('Debug: sleeping 5 to stagger launch')
-                      time.sleep(5)
-                      print('Debug: Done sleeping')
+#                     print('Debug: sleeping 5 to stagger launch')
+#                     time.sleep(5)
+#                     print('Debug: Done sleeping')
 
 # Launch all the tasks
 #               for Tsk in Tasks:

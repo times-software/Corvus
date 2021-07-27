@@ -1,0 +1,9 @@
+[MPI]
+
+# Uncomment these settings for openmpi
+#MPISYS      = openmpi
+#MPIOPT_User = -v --bind-to none
+
+# Uncomment these settings for slurm
+#MPISYS      = slurm
+#MPIOPT_User = -v --cpu-bind=none
