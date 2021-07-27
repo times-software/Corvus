@@ -1,0 +1,2 @@
+/home/fdv/.local/lib/python3.8/site-packages/pymatgen-2022.0.11-py3.8-linux-x86_64.egg/pymatgen/io/cif.py:1165: UserWarning: Issues encountered while parsing CIF: Some fractional co-ordinates rounded to ideal values to avoid issues with finite precision.
+  warnings.warn("Issues encountered while parsing CIF: %s" % "\n".join(self.warnings))

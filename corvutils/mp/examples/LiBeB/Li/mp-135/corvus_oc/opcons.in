@@ -1,0 +1,12 @@
+target_list { opcons }
+usehandlers { Feff }
+opcons.usesaved{ True }
+cif_input{CIF_symm.cif}
+feff.scf{ 3.497789724569212 0 30 0.1 0 }
+feff.fms{ 4.888076605085935 0 0 0.0 0.0 40.0 }
+
+# The lines below should set the parallel settings
+feff.MPI.SYS{openmpi}
+feff.MPI.SERFRAC{ 0.500000 }
+feff.MPI.NPTOT{ 1 }
+feff.MPI.OTHER{-v }

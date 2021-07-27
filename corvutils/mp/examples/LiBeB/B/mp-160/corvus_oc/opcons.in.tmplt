@@ -1,0 +1,8 @@
+target_list { opcons }
+usehandlers { Feff }
+opcons.usesaved{ True }
+cif_input{CIF_symm.cif}
+feff.scf{ 2.039440573481996 0 30 0.1 0 }
+feff.fms{ 3.6699133500789496 0 0 0.0 0.0 40.0 }
+
+# The lines below should set the parallel settings
