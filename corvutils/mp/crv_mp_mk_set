@@ -191,7 +191,7 @@ parser.add_argument("--k",dest="APIKEY",default=None,help=Help['k'])
 parser.add_argument("--f",dest="Formula",default=None,help=Help['f'])
 
 # Get the mpid to degine the set - Added by JJK
-parser.add_argument("--mpid",dest="MP_ID",default=None,help=Help['mpid'])
+parser.add_argument("--mpid",dest="MP_ID",default=PT_MP_Material_IDs['Cu'],help=Help['mpid'])
 
 # Get the property to prepare
 parser.add_argument("--p",dest="Tgt_Prop",default='corvus_oc',help=Help['p'])
