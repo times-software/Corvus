@@ -368,13 +368,13 @@ parser.add_argument("--t",dest="Test_NP",action='store_true',help=Help['t'])
 # Number of processors per node
 # NOTE: At some point in the future, we should set the default based on
 # analysis from the installer
-parser.add_argument("--ppn",dest="PPN",type=int,default=64,help=Help['ppn'])
+parser.add_argument("--ppn",dest="PPN",type=int,default=1,help=Help['ppn'])
 
 # Number of processors to use
 parser.add_argument("--np",dest="NP_Tot",type=int,default=1,help=Help['np'])
 
 # Number of nodes to use
-parser.add_argument("--nn",dest="NNodes",type=int,default=-1,help=Help['nn'])
+parser.add_argument("--nn",dest="NNodes",type=int,default=1,help=Help['nn'])
 
 # Fraction of serial code, to estimate parallel times
 parser.add_argument("--sf",dest="Ser_Frac",type=float,default=0.50,help=Help['sf'])

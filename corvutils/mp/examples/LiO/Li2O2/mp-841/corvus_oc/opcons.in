@@ -10,4 +10,4 @@ feff.debye{ 298.0 760.9922146806778 0 }
 feff.MPI.SYS{openmpi}
 feff.MPI.SERFRAC{ 0.500000 }
 feff.MPI.NPTOT{ 10 }
-feff.MPI.OTHER{-v }
+feff.MPI.OTHER{-v --bind-to none }

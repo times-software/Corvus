@@ -51,9 +51,14 @@ Number in unit cell: 4
 		XANES
 
 
+			xmu.dat already calculated. Skipping.
+			xmu.dat already calculated. Skipping.
+			xmu.dat already calculated. Skipping.
+			xmu.dat already calculated. Skipping.
+			xmu.dat already calculated. Skipping.
 0
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
 --------------------------------------------------------------------------
 mpirun was unable to launch the specified application as it could not access
 or execute an executable:
@@ -63,970 +68,25 @@ Node: macchiato
 
 while attempting to start process rank 0.
 --------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
 Launching FEFF version FEFF 10.0
 RGRID, rgrd;   1.00000E-02
 Working in real space.
 CIF and ATOMS cards used: ATOMS card will be ignored.
 Taking crystal structure from .cif file.
-Warning - H-M name of space group possibly sloppy or incorrect.
-Using provided International Tables number for space group, and proceeding.
-International Tables space group number from cif file:          194
-This may correspond to H-M symbol P63/mmc
-The CIF file provided P6_3/mmc   (adjusted toP63/mmc   )
-If this is not what you intended, please edit the cif file to avoid ambiguity.
-E.g., it is possible to #comment out the line given the International Tables nu
-mber.
 :WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
 :WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
 :WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
 :WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
 :WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-Now making real-space atoms list from cif input.
-nats=            8  lattice=H nshift=            0
-using           17 x          17 x           3  unit cells or         6936
-atoms
-original list:
-1    -0.28868     -0.50000      0.84945
-2    -0.28868      0.50000     -0.36166
-3     0.00000      0.00000     -0.96721
-4    -0.57735     -0.00000      0.24389
-5     0.00000      0.00000      0.00000
-6    -0.57735     -0.00000     -0.72332
-7    -0.57735     -0.00000      1.21111
-8     0.00000      0.00000      0.48779
-Core hole lifetime is   0.156 eV.
-Your calculation:
-Once upon a time ...
-O K edge XANES using FSR corehole.
-Using:     * Debye-Waller factors   * Self-Consistent Field potentials
-Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT NLEG XANES RGRID EDGE SCF FMS ABSOLUTE REAL TARGET EGRID SETE CIF
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/atomic
-Calculating atomic potentials ...
-overlapped atomic potential and density for unique potential    0
-overlapped atomic potential and density for unique potential    1
-overlapped atomic potential and density for unique potential    2
-overlapped atomic potential and density for unique potential    3
-Done with module: atomic potentials.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/pot
-Calculating SCF potentials ...
-FEFF-MPI using     1 parallel threads.
-Muffin tin radii and interstitial parameters [bohr]:
-type, norman radius, muffin tin, overlap factor
-0  1.02695E+00  9.73596E-01  1.14662E+00
-1  1.32757E+00  1.29077E+00  1.07125E+00
-2  1.22304E+00  1.17657E+00  1.10150E+00
-3  1.06424E+00  1.01011E+00  1.14290E+00
-Core-valence separation energy:  ecv=   -40.000 eV
-Initial Fermi level:              mu=    -0.098 eV
-Zero temperature single thread
-SCF ITERATION NUMBER  1
-point #   1  energy = -40.000
-FMS for a cluster of    8 atoms around atom type   0
-FMS for a cluster of   13 atoms around atom type   1
-FMS for a cluster of   13 atoms around atom type   2
-FMS for a cluster of    8 atoms around atom type   3
-point #  20  energy = -28.777
-point #  40  energy = -12.681
-point #  60  energy = -11.143
-New Fermi level:    mu= -10.656 eV  Charge distance=  0.0410 (partial c.d.=  5.0121)
-Zero temperature single thread
-SCF ITERATION NUMBER  2
-point #   1  energy = -40.000
-point #  20  energy = -28.869
-point #  40  energy = -10.656
-point #  60  energy = -10.515
-New Fermi level:    mu= -10.264 eV  Charge distance=  0.2840 (partial c.d.=  0.0263)
-Zero temperature single thread
-SCF ITERATION NUMBER  3
-point #   1  energy = -40.000
-point #  20  energy = -28.721
-point #  40  energy = -10.264
-point #  60  energy = -10.174
-point #  80  energy =  -7.989
-New Fermi level:    mu=  -7.681 eV  Charge distance=  0.0152 (partial c.d.=  0.1952)
-Zero temperature single thread
-SCF ITERATION NUMBER  4
-point #   1  energy = -40.000
-point #  20  energy = -28.890
-point #  40  energy =  -8.691
-point #  60  energy =  -7.722
-New Fermi level:    mu=  -7.886 eV  Charge distance=  0.0317 (partial c.d.=  0.0285)
-negative density   1   -4.411 - usually harmless precision error, but check DOS if it persists
-Zero temperature single thread
-SCF ITERATION NUMBER  5
-point #   1  energy = -40.000
-point #  20  energy = -28.961
-point #  40  energy =  -8.890
-point #  60  energy =  -7.927
-point #  80  energy =  -8.580
-New Fermi level:    mu=  -8.545 eV  Charge distance=  0.0054 (partial c.d.=  0.0853)
-negative density   1  -11.427 - usually harmless precision error, but check DOS if it persists
-Zero temperature single thread
-SCF ITERATION NUMBER  6
-point #   1  energy = -40.000
-point #  20  energy = -28.839
-point #  40  energy =  -8.545
-point #  60  energy =  -8.595
-New Fermi level:    mu=  -8.644 eV  Charge distance=  0.0112 (partial c.d.=  0.0122)
-negative density   1  -16.165 - usually harmless precision error, but check DOS if it persists
-Zero temperature single thread
-SCF ITERATION NUMBER  7
-point #   1  energy = -40.000
-point #  20  energy = -28.874
-point #  40  energy =  -8.644
-point #  60  energy =  -8.694
-New Fermi level:    mu=  -8.706 eV  Charge distance=  0.0040 (partial c.d.=  0.0273)
-negative density   1  -18.662 - usually harmless precision error, but check DOS if it persists
-Zero temperature single thread
-SCF ITERATION NUMBER  8
-point #   1  energy = -40.000
-point #  20  energy = -28.896
-point #  40  energy =  -8.706
-New Fermi level:    mu=  -8.730 eV  Charge distance=  0.0002 (partial c.d.=  0.0100)
-negative density   1  -19.212 - usually harmless precision error, but check DOS if it persists
-Zero temperature single thread
-SCF ITERATION NUMBER  9
-point #   1  energy = -40.000
-point #  20  energy = -28.904
-point #  40  energy =  -8.730
-New Fermi level:    mu=  -8.730 eV  Charge distance=  0.0015 (partial c.d.=  0.0001)
-negative density   1  -24.050 - usually harmless precision error, but check DOS if it persists
-Zero temperature single thread
-SCF ITERATION NUMBER 10
-point #   1  energy = -40.000
-point #  20  energy = -28.904
-point #  40  energy =  -8.730
-New Fermi level:    mu=  -8.727 eV  Charge distance=  0.0001 (partial c.d.=  0.0003)
-negative density   1  -24.237 - usually harmless precision error, but check DOS if it persists
-Zero temperature single thread
-SCF ITERATION NUMBER 11
-point #   1  energy = -40.000
-point #  20  energy = -28.903
-point #  40  energy =  -8.727
-New Fermi level:    mu=  -8.727 eV  Charge distance=  0.0000 (partial c.d.=  0.0001)
-Electronic configuration
-type     l     N_el
-0     0    1.919
-0     1    5.036
-0     2    0.100
-0     3    0.000
-1     0    0.228
-1     1    0.481
-1     2    0.000
-1     3    0.000
-2     0    0.215
-2     1    0.498
-2     2    0.000
-2     3    0.000
-3     0    1.889
-3     1    4.269
-3     2    0.131
-3     3    0.000
-Charge transfer:  type  charge
-0    0.054
-1   -0.291
-2   -0.287
-3    0.289
-Convergence reached in   11 iterations.
-total time        170.3234s          (communication time     0.0000E+00s)
-Done with module: potentials.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/screen
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']--- FDV --- ['-np', '2', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 2 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-2 total processes failed to start
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
-Launching FEFF version FEFF 10.0
-RGRID, rgrd;   1.00000E-02
-Working in real space.
-CIF and ATOMS cards used: ATOMS card will be ignored.
-Taking crystal structure from .cif file.
-Warning - H-M name of space group possibly sloppy or incorrect.
-Using provided International Tables number for space group, and proceeding.
-International Tables space group number from cif file:          194
-This may correspond to H-M symbol P63/mmc
-The CIF file provided P6_3/mmc   (adjusted toP63/mmc   )
-If this is not what you intended, please edit the cif file to avoid ambiguity.
-E.g., it is possible to #comment out the line given the International Tables nu
-mber.
-:WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
+:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
 :WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
 :WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
 :WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
 :WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
 Now making real-space atoms list from cif input.
-nats=            8  lattice=H nshift=            0
-using           17 x          17 x           3  unit cells or         6936
-atoms
-original list:
-1     0.00000      0.00000      0.00000
-2     0.00000      0.00000     -1.21111
-3    -0.57735     -0.00000      0.60555
-4    -0.28868      0.50000     -0.60555
-5    -0.57735     -0.00000     -0.84945
-6    -0.28868     -0.50000      0.84945
-7    -0.28868      0.50000      0.36166
-8     0.28868     -0.50000     -0.36166
-Core hole lifetime is   0.036 eV.
-Your calculation:
-Once upon a time ...
-Li K edge XANES using FSR corehole.
-Using:     * Debye-Waller factors   * Self-Consistent Field potentials
-Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT XANES RGRID EDGE SCF FMS LDOS ABSOLUTE REAL TARGET EGRID SETE CIF
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/atomic
-Calculating atomic potentials ...
-overlapped atomic potential and density for unique potential    0
-overlapped atomic potential and density for unique potential    1
-overlapped atomic potential and density for unique potential    2
-overlapped atomic potential and density for unique potential    3
-Done with module: atomic potentials.
-
---- FDV --- ['-np', '2', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
-			Running executable: mpirun -np 2 -v /home/fdv/src/OpCons/feff10/bin/MPI/pot
-Calculating SCF potentials ...
-FEFF-MPI using     2 parallel threads.
-Muffin tin radii and interstitial parameters [bohr]:
-type, norman radius, muffin tin, overlap factor
-0  1.40372E+00  1.35365E+00  1.09446E+00
-1  1.32316E+00  1.28781E+00  1.06843E+00
-2  1.21634E+00  1.17162E+00  1.09776E+00
-3  1.05535E+00  1.00012E+00  1.14792E+00
-Core-valence separation energy:  ecv=   -40.000 eV
-Initial Fermi level:              mu=    -0.145 eV
-SCF ITERATION NUMBER  1
-point #   1  energy = -40.000
-FMS for a cluster of   13 atoms around atom type   0
-FMS for a cluster of   13 atoms around atom type   1
-FMS for a cluster of   13 atoms around atom type   2
-FMS for a cluster of    8 atoms around atom type   3
-point #  20  energy = -28.934
-point #  40  energy =  -8.815
-point #  60  energy =  -6.828
-point #  80  energy =  -7.078
-point # 100  energy =  -7.328
-point # 120  energy =  -7.578
-point # 140  energy =  -7.828
-point # 160  energy =  -8.078
-point # 180  energy =  -8.328
-point # 200  energy =  -8.578
-point # 220  energy =  -8.828
-point # 240  energy =  -9.078
-point # 260  energy =  -9.328
-New Fermi level:    mu=  -9.504 eV  Charge distance=  0.0809 (partial c.d.=  4.3713)
-SCF ITERATION NUMBER  2
-point #   1  energy = -40.000
-point #  20  energy = -28.818
-point #  40  energy =  -9.504
-point #  60  energy =  -9.442
-point #  80  energy =  -9.192
-New Fermi level:    mu=  -9.116 eV  Charge distance=  0.5730 (partial c.d.=  0.0530)
-negative density   0   -5.751 - usually harmless precision error, but check DOS if it persists
-SCF ITERATION NUMBER  3
-point #   1  energy = -40.000
-point #  20  energy = -29.041
-point #  40  energy =  -9.116
-point #  60  energy =  -9.066
-point #  80  energy =  -8.816
-point # 100  energy =  -8.566
-point # 120  energy =  -8.316
-point # 140  energy =  -8.066
-point # 160  energy =  -7.816
-point # 180  energy =  -7.566
-point # 200  energy =  -7.316
-point # 220  energy =  -7.066
-New Fermi level:    mu=  -6.869 eV  Charge distance=  0.0415 (partial c.d.=  0.4700)
-negative density   0  -16.812 - usually harmless precision error, but check DOS if it persists
-SCF ITERATION NUMBER  4
-point #   1  energy = -40.000
-point #  20  energy = -28.956
-point #  40  energy =  -8.877
-point #  60  energy =  -6.894
-New Fermi level:    mu=  -7.047 eV  Charge distance=  0.1385 (partial c.d.=  0.0672)
-negative density   0  -62.616 - usually harmless precision error, but check DOS if it persists
-SCF ITERATION NUMBER  5
-point #   1  energy = -40.000
-point #  20  energy = -29.016
-point #  40  energy =  -9.044
-point #  60  energy =  -7.072
-point #  80  energy =  -7.322
-point # 100  energy =  -7.572
-New Fermi level:    mu=  -7.732 eV  Charge distance=  0.0067 (partial c.d.=  0.1866)
-negative density   0  -69.199 - usually harmless precision error, but check DOS if it persists
-SCF ITERATION NUMBER  6
-point #   1  energy = -40.000
-point #  20  energy = -28.908
-point #  40  energy =  -8.741
-point #  60  energy =  -7.770
-New Fermi level:    mu=  -7.781 eV  Charge distance=  0.0013 (partial c.d.=  0.0088)
-negative density   0  -73.964 - usually harmless precision error, but check DOS if it persists
-SCF ITERATION NUMBER  7
-point #   1  energy = -40.000
-point #  20  energy = -28.925
-point #  40  energy =  -8.788
-New Fermi level:    mu=  -7.792 eV  Charge distance=  0.0060 (partial c.d.=  0.0014)
-negative density   0  -84.694 - usually harmless precision error, but check DOS if it persists
-SCF ITERATION NUMBER  8
-point #   1  energy = -40.000
-point #  20  energy = -28.929
-point #  40  energy =  -8.799
-New Fermi level:    mu=  -7.804 eV  Charge distance=  0.0076 (partial c.d.=  0.0010)
-negative density   0 -100.206 - usually harmless precision error, but check DOS if it persists
-SCF ITERATION NUMBER  9
-point #   1  energy = -40.000
-point #  20  energy = -28.933
-point #  40  energy =  -8.810
-New Fermi level:    mu=  -7.821 eV  Charge distance=  0.0003 (partial c.d.=  0.0015)
-negative density   0 -100.468 - usually harmless precision error, but check DOS if it persists
-SCF ITERATION NUMBER 10
-point #   1  energy = -40.000
-point #  20  energy = -28.939
-point #  40  energy =  -8.827
-New Fermi level:    mu=  -7.821 eV  Charge distance=  0.0006 (partial c.d.=  0.0002)
-negative density   0  -98.717 - usually harmless precision error, but check DOS if it persists
-SCF ITERATION NUMBER 11
-point #   1  energy = -40.000
-point #  20  energy = -28.939
-point #  40  energy =  -8.827
-New Fermi level:    mu=  -7.822 eV  Charge distance=  0.0005 (partial c.d.=  0.0006)
-negative density   0  -97.608 - usually harmless precision error, but check DOS if it persists
-SCF ITERATION NUMBER 12
-point #   1  energy = -40.000
-point #  20  energy = -28.939
-point #  40  energy =  -8.827
-New Fermi level:    mu=  -7.822 eV  Charge distance=  0.0002 (partial c.d.=  0.0005)
-negative density   0  -95.647 - usually harmless precision error, but check DOS if it persists--- FDV --- ['-np', '2', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 2 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-2 total processes failed to start
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
-Launching FEFF version FEFF 10.0
-RGRID, rgrd;   1.00000E-02
-Working in real space.
-CIF and ATOMS cards used: ATOMS card will be ignored.
-Taking crystal structure from .cif file.
-Warning - H-M name of space group possibly sloppy or incorrect.
-Using provided International Tables number for space group, and proceeding.
-International Tables space group number from cif file:          194
-This may correspond to H-M symbol P63/mmc
-The CIF file provided P6_3/mmc   (adjusted toP63/mmc   )
-If this is not what you intended, please edit the cif file to avoid ambiguity.
-E.g., it is possible to #comment out the line given the International Tables nu
-mber.
-:WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-Now making real-space atoms list from cif input.
-nats=            8  lattice=H nshift=            0
-using           17 x          17 x           3  unit cells or         6936
-atoms
-original list:
-1     0.00000      0.00000      0.00000
-2     0.00000      0.00000     -1.21111
-3    -0.57735     -0.00000      0.60555
-4    -0.28868      0.50000     -0.60555
-5    -0.57735     -0.00000     -0.84945
-6    -0.28868     -0.50000      0.84945
-7    -0.28868      0.50000      0.36166
-8     0.28868     -0.50000     -0.36166
-Core hole lifetime is   0.113 eV.
-Your calculation:
-Once upon a time ...
-Li L1 edge XANES using FSR corehole.
-Using:     * Debye-Waller factors   * Self-Consistent Field potentials
-Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT NLEG XANES RGRID EDGE SCF FMS ABSOLUTE REAL TARGET EGRID SETE CIF
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/atomic
-Calculating atomic potentials ...
-overlapped atomic potential and density for unique potential    0
-overlapped atomic potential and density for unique potential    1
-overlapped atomic potential and density for unique potential    2
-overlapped atomic potential and density for unique potential    3
-Done with module: atomic potentials.
-
---- FDV --- ['-np', '2', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
-			Running executable: mpirun -np 2 -v /home/fdv/src/OpCons/feff10/bin/MPI/pot
-Calculating SCF potentials ...
-FEFF-MPI using     2 parallel threads.
-Muffin tin radii and interstitial parameters [bohr]:
-type, norman radius, muffin tin, overlap factor
-0  1.32332E+00  1.28702E+00  1.07046E+00
-1  1.32332E+00  1.28702E+00  1.07046E+00
-2  1.21891E+00  1.17288E+00  1.10082E+00
-3  1.06146E+00  1.00221E+00  1.15000E+00
-Core-valence separation energy:  ecv=   -40.000 eV
-Initial Fermi level:              mu=    -0.300 eV
-SCF ITERATION NUMBER  1
-point #   1  energy = -40.000
-FMS for a cluster of   13 atoms around atom type   0
-FMS for a cluster of   13 atoms around atom type   1
-FMS for a cluster of   13 atoms around atom type   2
-FMS for a cluster of    8 atoms around atom type   3
-point #  20  energy = -28.934
-point #  40  energy =  -8.815
-point #  60  energy =  -6.828
-point #  80  energy =  -7.078
-point # 100  energy =  -7.328
-point # 120  energy =  -7.578
-point # 140  energy =  -7.828
-point # 160  energy =  -8.078
-point # 180  energy =  -8.328
-point # 200  energy =  -8.578
-point # 220  energy =  -8.828
-point # 240  energy =  -9.078
-point # 260  energy =  -9.328
-point # 280  energy =  -9.578
-New Fermi level:    mu=  -9.801 eV  Charge distance=  0.0379 (partial c.d.=  4.3900)
-SCF ITERATION NUMBER  2
-point #   1  energy = -40.000
-point #  20  energy = -28.927
-point #  40  energy =  -9.801
-point #  60  energy =  -9.739
-point #  80  energy =  -9.489
-New Fermi level:    mu=  -9.420 eV  Charge distance=  0.2600 (partial c.d.=  0.0273)
-SCF ITERATION NUMBER  3
-point #   1  energy = -40.000
-point #  20  energy = -28.787
-point #  40  energy =  -9.420
-point #  60  energy =  -9.358
-point #  80  energy =  -9.108
-point # 100  energy =  -8.858
-point # 120  energy =  -8.608
-point # 140  energy =  -8.358
-point # 160  energy =  -8.108
-point # 180  energy =  -7.858
-point # 200  energy =  -7.608
-point # 220  energy =  -7.358
-New Fermi level:    mu=  -7.240 eV  Charge distance=  0.0047 (partial c.d.=  0.1814)
-SCF ITERATION NUMBER  4
-point #   1  energy = -40.000
-point #  20  energy = -28.739
-point #  40  energy =  -8.264
-point #  60  energy =  -7.277
-New Fermi level:    mu=  -7.405 eV  Charge distance=  0.0299 (partial c.d.=  0.0185)
-SCF ITERATION NUMBER  5
-point #   1  energy = -40.000
-point #  20  energy = -28.795
-point #  40  energy =  -8.423
-point #  60  energy =  -7.442
-point #  80  energy =  -7.692
-point # 100  energy =  -7.942
-New Fermi level:    mu=  -8.136 eV  Charge distance=  0.0006 (partial c.d.=  0.0708)
-SCF ITERATION NUMBER  6
-point #   1  energy = -40.000
-point #  20  energy = -28.693
-point #  40  energy =  -8.136
-New Fermi level:    mu=  -8.145 eV  Charge distance=  0.0001 (partial c.d.=  0.0010)
-SCF ITERATION NUMBER  7
-point #   1  energy = -40.000
-point #  20  energy = -28.697
-point #  40  energy =  -8.145
-New Fermi level:    mu=  -8.151 eV  Charge distance=  0.0006 (partial c.d.=  0.0005)
-SCF ITERATION NUMBER  8
-point #   1  energy = -40.000
-point #  20  energy = -28.699
-point #  40  energy =  -8.151
-New Fermi level:    mu=  -8.151 eV  Charge distance=  0.0013 (partial c.d.=  0.0002)
-SCF ITERATION NUMBER  9
-point #   1  energy = -40.000
-point #  20  energy = -28.699
-point #  40  energy =  -8.151
-New Fermi level:    mu=  -8.153 eV  Charge distance=  0.0001 (partial c.d.=  0.0003)
-SCF ITERATION NUMBER 10
-point #   1  energy = -40.000
-point #  20  energy = -28.700
-point #  40  energy =  -8.153
-New Fermi level:    mu=  -8.153 eV  Charge distance=  0.0000 (partial c.d.=  0.0000)
-Electronic configuration
-type     l     N_el
-0     0    0.235
-0     1    0.501
-0     2    0.000
-0     3    0.000
-1     0    0.235
-1     1    0.501
-1     2    0.000
-1     3    0.000
-2     0    0.220
-2     1    0.513
-2     2    0.000
-2     3    0.000
-3     0    1.876
-3     1    4.272
-3     2    0.118
-3     3    0.000
-Charge transfer:  type  charge
-0   -0.264
-1   -0.264
-2   -0.267
-3    0.266
-Convergence reached in   10 iterations.
-total time        163.3053s          (communication time     0.5916E+02s)
-Done with module: potentials.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/screen
---- FDV --- ['-np', '2', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
-			Running executable: mpirun -np 2 -v /home/fdv/src/OpCons/feff10/bin/MPI/ldos
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/xsph
-Calculating cross-section and phases ...
-Fixing edge energy from Elam table:
-emu =      5.300 eV
-absorption cross section
-ihole, xinorm        2  2.02644E-01
-There may be convergence problems.
-Xinorm should be 1. If you set the RGRID, minor interpolation errors that will not affect final results may occur.--- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
-Launching FEFF version FEFF 10.0
-RGRID, rgrd;   1.00000E-02
-Working in real space.
-CIF and ATOMS cards used: ATOMS card will be ignored.
-Taking crystal structure from .cif file.
-Warning - H-M name of space group possibly sloppy or incorrect.
-Using provided International Tables number for space group, and proceeding.
-International Tables space group number from cif file:          194
-This may correspond to H-M symbol P63/mmc
-The CIF file provided P6_3/mmc   (adjusted toP63/mmc   )
-If this is not what you intended, please edit the cif file to avoid ambiguity.
-E.g., it is possible to #comment out the line given the International Tables nu
-mber.
-:WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-Now making real-space atoms list from cif input.
-nats=            8  lattice=H nshift=            0
-using           17 x          17 x           3  unit cells or         6936
-atoms
-original list:
-1    -0.28868     -0.50000      0.84945
-2    -0.28868      0.50000     -0.36166
-3     0.00000      0.00000     -0.96721
-4    -0.57735     -0.00000      0.24389
-5     0.00000      0.00000      0.00000
-6    -0.57735     -0.00000     -0.72332
-7    -0.57735     -0.00000      1.21111
-8     0.00000      0.00000      0.48779
-Core hole lifetime is   0.367 eV.
-Your calculation:
-Once upon a time ...
-O L1 edge XANES using FSR corehole.
-Using:     * Debye-Waller factors   * Self-Consistent Field potentials
-Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT NLEG XANES RGRID EDGE SCF FMS ABSOLUTE REAL TARGET EGRID SETE CIF
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/atomic
-Calculating atomic potentials ...
-overlapped atomic potential and density for unique potential    0
-overlapped atomic potential and density for unique potential    1
-overlapped atomic potential and density for unique potential    2
-overlapped atomic potential and density for unique potential    3
-Done with module: atomic potentials.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/pot
-Calculating SCF potentials ...
-FEFF-MPI using     1 parallel threads.
-Muffin tin radii and interstitial parameters [bohr]:
-type, norman radius, muffin tin, overlap factor
-0  1.07705E+00  1.01342E+00  1.15000E+00
-1  1.32129E+00  1.28507E+00  1.07041E+00
-2  1.21700E+00  1.17105E+00  1.10077E+00
-3  1.06014E+00  9.95353E-01  1.15000E+00
-Core-valence separation energy:  ecv=   -40.000 eV
-Initial Fermi level:              mu=    -0.437 eV
-Zero temperature single thread
-SCF ITERATION NUMBER  1
-point #   1  energy = -40.000
-FMS for a cluster of    8 atoms around atom type   0
-FMS for a cluster of   13 atoms around atom type   1
-FMS for a cluster of   13 atoms around atom type   2
-FMS for a cluster of    8 atoms around atom type   3
-point #  20  energy = -28.847
-point #  40  energy = -12.750
-point #  60  energy = -10.959
-point #  80  energy = -10.009
-New Fermi level:    mu=  -9.952 eV  Charge distance=  0.0614 (partial c.d.=  4.5954)
-Zero temperature single thread
-SCF ITERATION NUMBER  2
-point #   1  energy = -40.000
-point #  20  energy = -28.982
-point #  40  energy =  -9.952
-point #  60  energy =  -9.861
-New Fermi level:    mu=  -9.521 eV  Charge distance=  0.3656 (partial c.d.=  0.0772)
-Zero temperature single thread
-SCF ITERATION NUMBER  3
-point #   1  energy = -40.000
-point #  20  energy = -28.824
-point #  40  energy =  -9.521
-point #  60  energy =  -9.430
-point #  80  energy =  -7.771
-point # 100  energy =  -7.408
-New Fermi level:    mu=  -7.398 eV  Charge distance=  0.0185 (partial c.d.=  0.4157)
-Zero temperature single thread
-SCF ITERATION NUMBER  4
-point #   1  energy = -40.000
-point #  20  energy = -28.793
-point #  40  energy =  -8.417
-point #  60  energy =  -7.435
-New Fermi level:    mu=  -7.530 eV  Charge distance=  0.0589 (partial c.d.=  0.0726)
-Zero temperature single thread
-SCF ITERATION NUMBER  5
-point #   1  energy = -40.000
-point #  20  energy = -28.838
-point #  40  energy =  -8.545
-point #  60  energy =  -7.570
-point #  80  energy =  -8.280
-New Fermi level:    mu=  -8.065 eV  Charge distance=  0.0052 (partial c.d.=  0.2056)
-Zero temperature single thread
-SCF ITERATION NUMBER  6
-point #   1  energy = -40.000
-point #  20  energy = -29.022
-point #  40  energy =  -9.063
-point #  60  energy =  -8.103
-New Fermi level:    mu=  -8.104 eV  Charge distance=  0.0095 (partial c.d.=  0.0128)
-Zero temperature single thread
-SCF ITERATION NUMBER  7
-point #   1  energy = -40.000
-point #  20  energy = -29.036
-point #  40  energy =  -9.101
-point #  60  energy =  -8.142
-New Fermi level:    mu=  -8.196 eV  Charge distance=  0.0000 (partial c.d.=  0.0254)
-Zero temperature single thread
-SCF ITERATION NUMBER  8
-point #   1  energy = -40.000
-point #  20  energy = -28.715
-point #  40  energy =  -8.196
-New Fermi level:    mu=  -8.200 eV  Charge distance=  0.0003 (partial c.d.=  0.0004)
-Zero temperature single thread
-SCF ITERATION NUMBER  9
-point #   1  energy = -40.000
-point #  20  energy = -28.716
-point #  40  energy =  -8.200
-New Fermi level:    mu=  -8.199 eV  Charge distance=  0.0010 (partial c.d.=  0.0002)
-Zero temperature single thread
-SCF ITERATION NUMBER 10
-point #   1  energy = -40.000
-point #  20  energy = -28.716
-point #  40  energy =  -8.199
-New Fermi level:    mu=  -8.197 eV  Charge distance=  0.0001 (partial c.d.=  0.0005)
-Zero temperature single thread
-SCF ITERATION NUMBER 11
-point #   1  energy = -40.000
-point #  20  energy = -28.715
-point #  40  energy =  -8.197
-New Fermi level:    mu=  -8.197 eV  Charge distance=  0.0000 (partial c.d.=  0.0002)
-Electronic configuration
-type     l     N_el
-0     0    1.892
-0     1    4.342
-0     2    0.131
-0     3    0.000
-1     0    0.233
-1     1    0.497
-1     2    0.000
-1     3    0.000
-2     0    0.219
-2     1    0.510
-2     2    0.000
-2     3    0.000
-3     0    1.877
-3     1    4.274
-3     2    0.119
-3     3    0.000
-Charge transfer:  type  charge
-0    0.365
-1   -0.269
-2   -0.271
-3    0.269
-Convergence reached in   11 iterations.
-total time        177.1491s          (communication time     0.0000E+00s)
-Done with module: potentials.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/screen
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ldos
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/xsph
-Calculating cross-section and phases ...
-Fixing edge energy from Elam table:
-emu =     41.600 eV
-absorption cross section
-ihole, xinorm        2  9.41430E-01
-There may be convergence problems.--- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
-Launching FEFF version FEFF 10.0
-RGRID, rgrd;   1.00000E-02
-Working in real space.
-CIF and ATOMS cards used: ATOMS card will be ignored.
-Taking crystal structure from .cif file.
-Warning - H-M name of space group possibly sloppy or incorrect.
-Using provided International Tables number for space group, and proceeding.
-International Tables space group number from cif file:          194
-This may correspond to H-M symbol P63/mmc
-The CIF file provided P6_3/mmc   (adjusted toP63/mmc   )
-If this is not what you intended, please edit the cif file to avoid ambiguity.
-E.g., it is possible to #comment out the line given the International Tables nu
-mber.
-:WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-Now making real-space atoms list from cif input.
-nats=            8  lattice=H nshift=            0
-using           17 x          17 x           3  unit cells or         6936
-atoms
-original list:
-1    -0.28868     -0.50000      0.84945
-2    -0.28868      0.50000     -0.36166
-3     0.00000      0.00000     -0.96721
-4    -0.57735     -0.00000      0.24389
-5     0.00000      0.00000      0.00000
-6    -0.57735     -0.00000     -0.72332
-7    -0.57735     -0.00000      1.21111
-8     0.00000      0.00000      0.48779
-Core hole lifetime is   0.008 eV.
-Your calculation:
-Once upon a time ...
-O L2 edge XANES using FSR corehole.
-Using:     * Debye-Waller factors   * Self-Consistent Field potentials
-Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT NLEG XANES RGRID EDGE SCF FMS ABSOLUTE REAL TARGET EGRID SETE CIF
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/atomic
-Calculating atomic potentials ...
-overlapped atomic potential and density for unique potential    0
-overlapped atomic potential and density for unique potential    1
-overlapped atomic potential and density for unique potential    2
-overlapped atomic potential and density for unique potential    3
-Done with module: atomic potentials.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/pot
-Calculating SCF potentials ...
-FEFF-MPI using     1 parallel threads.
-Muffin tin radii and interstitial parameters [bohr]:
-type, norman radius, muffin tin, overlap factor
-0  1.06086E+00  1.00177E+00  1.15000E+00
-1  1.32340E+00  1.28709E+00  1.07047E+00
-2  1.21898E+00  1.17294E+00  1.10082E+00
-3  1.06152E+00  1.00248E+00  1.15000E+00
-Core-valence separation energy:  ecv=   -40.000 eV
-Initial Fermi level:              mu=    -0.291 eV
-Zero temperature single thread
-SCF ITERATION NUMBER  1
-point #   1  energy = -40.000
-FMS for a cluster of    8 atoms around atom type   0
-FMS for a cluster of   13 atoms around atom type   1
-FMS for a cluster of   13 atoms around atom type   2
-FMS for a cluster of    8 atoms around atom type   3
-point #  20  energy = -28.817
-point #  40  energy = -12.720
-point #  60  energy = -10.783
-point #  80  energy =  -9.879
-New Fermi level:    mu=  -9.792 eV  Charge distance=  0.0377 (partial c.d.=  4.3872)
-Zero temperature single thread
-SCF ITERATION NUMBER  2
-point #   1  energy = -40.000
-point #  20  energy = -28.924
-point #  40  energy =  -9.792
-point #  60  energy =  -9.695
-New Fermi level:    mu=  -9.426 eV  Charge distance=  0.2567 (partial c.d.=  0.0256)
-Zero temperature single thread
-SCF ITERATION NUMBER  3
-point #   1  energy = -40.000
-point #  20  energy = -28.789
-point #  40  energy =  -9.426
-point #  60  energy =  -9.335
-point #  80  energy =  -7.641
-point # 100  energy =  -7.263
-New Fermi level:    mu=  -7.262 eV  Charge distance=  0.0051 (partial c.d.=  0.1777)
-Zero temperature single thread
-SCF ITERATION NUMBER  4
-point #   1  energy = -40.000
-point #  20  energy = -28.746
-point #  40  energy =  -8.286
-point #  60  energy =  -7.303
-point #  80  energy =  -7.559
-New Fermi level:    mu=  -7.445 eV  Charge distance=  0.0276 (partial c.d.=  0.0183)
-Zero temperature single thread
-SCF ITERATION NUMBER  5
-point #   1  energy = -40.000
-point #  20  energy = -28.809
-point #  40  energy =  -8.462
-point #  60  energy =  -7.486
-point #  80  energy =  -8.617
-point # 100  energy =  -8.201
-New Fermi level:    mu=  -8.178 eV  Charge distance=  0.0005 (partial c.d.=  0.0709)
-Zero temperature single thread
-SCF ITERATION NUMBER  6
-point #   1  energy = -40.000
-point #  20  energy = -28.708
-point #  40  energy =  -8.178
-New Fermi level:    mu=  -8.171 eV  Charge distance=  0.0009 (partial c.d.=  0.0020)
-Zero temperature single thread
-SCF ITERATION NUMBER  7
-point #   1  energy = -40.000
-point #  20  energy = -28.706
-point #  40  energy =  -8.171
-New Fermi level:    mu=  -8.165 eV  Charge distance=  0.0003 (partial c.d.=  0.0033)
-Zero temperature single thread
-SCF ITERATION NUMBER  8
-point #   1  energy = -40.000
-point #  20  energy = -28.704
-point #  40  energy =  -8.165
-New Fermi level:    mu=  -8.165 eV  Charge distance=  0.0011 (partial c.d.=  0.0003)
-Zero temperature single thread
-SCF ITERATION NUMBER  9
-point #   1  energy = -40.000
-point #  20  energy = -28.704
-point #  40  energy =  -8.165
-New Fermi level:    mu=  -8.163 eV  Charge distance=  0.0004 (partial c.d.=  0.0002)
-Zero temperature single thread
-SCF ITERATION NUMBER 10
-point #   1  energy = -40.000
-point #  20  energy = -28.703
-point #  40  energy =  -8.163
-New Fermi level:    mu=  -8.163 eV  Charge distance=  0.0001 (partial c.d.=  0.0005)
-Zero temperature single thread
-SCF ITERATION NUMBER 11
-point #   1  energy = -40.000
-point #  20  energy = -28.703
-point #  40  energy =  -8.163
-New Fermi level:    mu=  -8.163 eV  Charge distance=  0.0000 (partial c.d.=  0.0001)
-Electronic configuration
-type     l     N_el
-0     0    1.875
-0     1    4.269
-0     2    0.117
-0     3    0.000
-1     0    0.235
-1     1    0.501
-1     2    0.000
-1     3    0.000
-2     0    0.220
-2     1    0.513
-2     2    0.000
-2     3    0.000
-3     0    1.876
-3     1    4.272
-3     2    0.118
-3     3    0.000
-Charge transfer:  type  charge
-0    0.261
-1   -0.265
-2   -0.267
-3    0.265
-Convergence reached in   11 iterations.
-total time        180.8331s          (communication time     0.0000E+00s)
-Done with module: potentials.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/screen
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ldos
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/xsph
-Calculating cross-section and phases ...
-Fixing edge energy from Elam table:
-emu =     18.200 eV
-absorption cross section
-ihole, xinorm        3  8.72271E-01
-There may be convergence problems.--- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
-Launching FEFF version FEFF 10.0
-RGRID, rgrd;   1.00000E-02
-Working in real space.
-CIF and ATOMS cards used: ATOMS card will be ignored.
-Taking crystal structure from .cif file.
-Warning - H-M name of space group possibly sloppy or incorrect.
-Using provided International Tables number for space group, and proceeding.
-International Tables space group number from cif file:          194
-This may correspond to H-M symbol P63/mmc
-The CIF file provided P6_3/mmc   (adjusted toP63/mmc   )
-If this is not what you intended, please edit the cif file to avoid ambiguity.
-E.g., it is possible to #comment out the line given the International Tables nu
-mber.
-:WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-Now making real-space atoms list from cif input.
-nats=            8  lattice=H nshift=            0
+nats=            8  lattice=P nshift=            0
 using           17 x          17 x           3  unit cells or         6936
 atoms
 original list:
@@ -1035,212 +95,106 @@ original list:
 3     0.00000      0.00000      0.00000
 4    -0.57735     -0.00000     -1.21111
 5     0.00000      0.00000      0.96721
-6    -0.57735     -0.00000      0.24389
-7    -0.57735     -0.00000     -0.24389
+6     0.28868     -0.50000      0.24389
+7     0.28868     -0.50000     -0.24389
 8     0.00000      0.00000     -0.96721
-Core hole lifetime is   0.113 eV.
+Core hole lifetime is   0.002 eV.
 Your calculation:
 Once upon a time ...
-Li L1 edge XANES using FSR corehole.
+Li L2 edge XANES using FSR corehole.
 Using:     * Debye-Waller factors   * Self-Consistent Field potentials
 Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT NLEG XANES RGRID EDGE SCF FMS ABSOLUTE REAL TARGET EGRID SETE CIF
 
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/atomic
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/atomic
 Calculating atomic potentials ...
-overlapped atomic potential and density for unique potential    0
-overlapped atomic potential and density for unique potential    1
-overlapped atomic potential and density for unique potential    2
-overlapped atomic potential and density for unique potential    3
-Done with module: atomic potentials.
 
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/pot
+************************************************************************************
+************************************************************************************
+No electrons in initial state specified by ihole =  3
+************************************************************************************
+************************************************************************************
+
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/pot
 Calculating SCF potentials ...
+--------------------------------------------------------------------------
 FEFF-MPI using     1 parallel threads.
-Muffin tin radii and interstitial parameters [bohr]:
-type, norman radius, muffin tin, overlap factor
-0  1.21891E+00  1.17288E+00  1.10082E+00
-1  1.32332E+00  1.28702E+00  1.07046E+00
-2  1.21891E+00  1.17288E+00  1.10082E+00
-3  1.06146E+00  1.00221E+00  1.15000E+00
-Core-valence separation energy:  ecv=   -40.000 eV
-Initial Fermi level:              mu=    -0.299 eV
-Zero temperature single thread
-SCF ITERATION NUMBER  1
-point #   1  energy = -40.000
-FMS for a cluster of   13 atoms around atom type   0
-FMS for a cluster of   13 atoms around atom type   1
-FMS for a cluster of   13 atoms around atom type   2
-FMS for a cluster of    8 atoms around atom type   3
-point #  20  energy = -28.819
-point #  40  energy = -12.722
-point #  60  energy = -10.784
-point #  80  energy =  -9.881
-New Fermi level:    mu=  -9.791 eV  Charge distance=  0.0378 (partial c.d.=  4.3886)
-Zero temperature single thread
-SCF ITERATION NUMBER  2
-point #   1  energy = -40.000
-point #  20  energy = -28.923
-point #  40  energy =  -9.791
-point #  60  energy =  -9.694
-New Fermi level:    mu=  -9.421 eV  Charge distance=  0.2630 (partial c.d.=  0.0257)
-Zero temperature single thread
-SCF ITERATION NUMBER  3
-point #   1  energy = -40.000
-point #  20  energy = -28.788
-point #  40  energy =  -9.421
-point #  60  energy =  -9.330
-point #  80  energy =  -7.596
-point # 100  energy =  -7.211
-New Fermi level:    mu=  -7.201 eV  Charge distance=  0.0064 (partial c.d.=  0.1835)
-Zero temperature single thread
-SCF ITERATION NUMBER  4
-point #   1  energy = -40.000
-point #  20  energy = -28.725
-point #  40  energy =  -8.226
-point #  60  energy =  -7.242
-point #  80  energy =  -7.514
-New Fermi level:    mu=  -7.396 eV  Charge distance=  0.0324 (partial c.d.=  0.0196)
-Zero temperature single thread
-SCF ITERATION NUMBER  5
-point #   1  energy = -40.000
-point #  20  energy = -28.792
-point #  40  energy =  -8.414
-point #  60  energy =  -7.436
-point #  80  energy =  -8.567
-point # 100  energy =  -8.180
-New Fermi level:    mu=  -8.153 eV  Charge distance=  0.0004 (partial c.d.=  0.0732)
-Zero temperature single thread
-SCF ITERATION NUMBER  6
-point #   1  energy = -40.000
-point #  20  energy = -28.699
-point #  40  energy =  -8.153
-New Fermi level:    mu=  -8.150 eV  Charge distance=  0.0011 (partial c.d.=  0.0001)
-Zero temperature single thread
-SCF ITERATION NUMBER  7
-point #   1  energy = -40.000
-point #  20  energy = -28.698
-point #  40  energy =  -8.150
-New Fermi level:    mu=  -8.150 eV  Charge distance=  0.0009 (partial c.d.=  0.0001)
-Electronic configuration
-type     l     N_el
-0     0    0.220
-0     1    0.513
-0     2    0.000
-0     3    0.000
-1     0    0.235
-1     1    0.501
-1     2    0.000
-1     3    0.000
-2     0    0.220
-2     1    0.513
-2     2    0.000
-2     3    0.000
-3     0    1.876
-3     1    4.272
-3     2    0.118
-3     3    0.000
-Charge transfer:  type  charge
-0   -0.267
-1   -0.264
-2   -0.267
-3    0.266
-Convergence reached in    7 iterations.
-total time        119.1872s          (communication time     0.0000E+00s)
-Done with module: potentials.
+mpirun has exited due to process rank 0 with PID 0 on
 
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/screen
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ldos
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/xsph
-Calculating cross-section and phases ...
-Fixing edge energy from Elam table:
-emu =      5.300 eV
-absorption cross section
-ihole, xinorm        2  1.57177E-01
-There may be convergence problems.
-Xinorm should be 1. If you set the RGRID, minor interpolation errors that will not affect final results may occur.
-phase shifts for unique potential    0
-phase shifts for unique potential    1
-phase shifts for unique potential    2
-phase shifts for unique potential    3
-Done with module: cross-section and phases (XSPH).
+node macchiato exiting improperly. There are three reasons this could occur:
+************************************************************************************
 
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/fms
+************************************************************************************
+1. this process did not call "init" before exiting, but others in
+Error opening file: apot.bin
+the job did. This can cause a job to hang indefinitely while it waits
+OPEN returned error number   29
+for all processes to call "init". By rule, if one process calls "init",
+************************************************************************************
+then ALL processes must call "init" prior to termination.
+************************************************************************************
+
+
+2. this process called "init", but exited without calling "finalize".
+By rule, all processes that call "init" MUST call "finalize" prior to
+exiting or it will be considered an "abnormal termination"
+
+3. this process called "MPI_Abort" or "orte_abort" and the mca parameter
+orte_create_session_dirs is set to false. In this case, the run-time cannot
+detect that the abort call was an abnormal termination. Hence, the only
+error message you will receive is this one.
+
+This may have caused other processes in the application to be
+terminated by signals sent by mpirun (as reported here).
+
+You can avoid this message by specifying -quiet on the mpirun command line.
+--------------------------------------------------------------------------
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/screen
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/ldos
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/xsph
+forrtl: No such file or directory
+forrtl: severe (29): file not found, unit 99, file /home/fdv/src/OpCons/Corvus/corvutils/mp/examples/LiO/Li2O2/mp-841/corvus_oc/Corvus1_FEFF/O3/L2/XANES/pot.bin
+Image              PC                Routine            Line        Source
+xsph               00000000005DF6AB  for__io_return        Unknown  Unknown
+xsph               00000000005FE19B  for_open              Unknown  Unknown
+xsph               0000000000426BAE  Unknown               Unknown  Unknown
+xsph               000000000048064B  Unknown               Unknown  Unknown
+xsph               000000000047CE49  Unknown               Unknown  Unknown
+xsph               000000000040C4E2  Unknown               Unknown  Unknown
+libc-2.28.so       000014F5688F7493  __libc_start_main     Unknown  Unknown
+xsph               000000000040C3EE  Unknown               Unknown  Unknown
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+Process name: [[14227,1],0]
+Exit code:    29
+--------------------------------------------------------------------------
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/fms
 FMS calculation of full Green's function ...
+--------------------------------------------------------------------------
 FEFF-MPI using     1 parallel threads.
-Using   263 energy points.
-Applying Debye-Waller factors using a Correlated Debye model.
-xprep done
-FMS for a cluster of   27 atoms
-Energy point    1/ 263
-Energy point   10/ 263
-Energy point   20/ 263
-Energy point   30/ 263
-Energy point   40/ 263
-Energy point   50/ 263
-Energy point   60/ 263
-Energy point   70/ 263
-Energy point   80/ 263
-Energy point   90/ 263
-Energy point  100/ 263
-Energy point  110/ 263
-Energy point  120/ 263
-Energy point  130/ 263
-Energy point  140/ 263
-Energy point  150/ 263
-Energy point  160/ 263
-Energy point  170/ 263
-Energy point  180/ 263
-Energy point  190/ 263
-Energy point  200/ 263
-Energy point  210/ 263
-Energy point  220/ 263
-Energy point  230/ 263
-Energy point  240/ 263
-Energy point  250/ 263
-Energy point  260/ 263
-total time         73.4776s          (communication time     0.0000E+00s)
-Done with module: FMS.
+MPI_ABORT was invoked on rank 0 in communicator MPI_COMM_WORLD
+Error opening file, phase.bin in module rdxsph
+with errorcode 0.
+Fatal error
 
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
-MKGTR: Tracing over Green's function ...
-Done with module: MKGTR.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/path
-Pathfinder: finding scattering paths...
-Preparing plane wave scattering amplitudes
-Searching for paths
-Rmax  0.1000  keep and heap limits   0.0000000   0.0000000
-Preparing neighbor table
-Paths found        0   (maxheap, maxscatt       1   0)
-Eliminating path degeneracies
-0 paths retained.
-Done with module: pathfinder.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
-Calculating EXAFS parameters ...
-Done with module: EXAFS parameters (GENFMT).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
-Calculating XAS spectra ...
-electronic_temperature =    0.00000 (eV)
-Done with module: XAS spectra (FF2X: DW + final sum over paths).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
+CHOPEN
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
 --------------------------------------------------------------------------
 mpirun was unable to launch the specified application as it could not access
 or execute an executable:
@@ -1250,316 +204,25 @@ Node: macchiato
 
 while attempting to start process rank 0.
 --------------------------------------------------------------------------
-
-phase shifts for unique potential    0
-phase shifts for unique potential    1
-phase shifts for unique potential    2
-phase shifts for unique potential    3
-Done with module: cross-section and phases (XSPH).
-
---- FDV --- ['-np', '2', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
-			Running executable: mpirun -np 2 -v /home/fdv/src/OpCons/feff10/bin/MPI/fms
-FMS calculation of full Green's function ...
-FEFF-MPI using     2 parallel threads.
-Using   263 energy points.
-Applying Debye-Waller factors using a Correlated Debye model.
-xprep done
-FMS for a cluster of   33 atoms
-Energy point    1/ 263
-Energy point   11/ 263
-Energy point   21/ 263
-Energy point   31/ 263
-Energy point   41/ 263
-Energy point   51/ 263
-Energy point   61/ 263
-Energy point   71/ 263
-Energy point   81/ 263
-Energy point   91/ 263
-Energy point  101/ 263
-Energy point  111/ 263
-Energy point  121/ 263
-Energy point  131/ 263
-Energy point  141/ 263
-Energy point  151/ 263
-Energy point  161/ 263
-Energy point  171/ 263
-Energy point  181/ 263
-Energy point  191/ 263
-Energy point  201/ 263
-Energy point  211/ 263
-Energy point  221/ 263
-Energy point  231/ 263
-Energy point  241/ 263
-Energy point  251/ 263
-Energy point  261/ 263
-total time         55.1088s          (communication time     0.1156E+00s)
-Done with module: FMS.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
-MKGTR: Tracing over Green's function ...
-Done with module: MKGTR.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/path
-Pathfinder: finding scattering paths...
-Preparing plane wave scattering amplitudes
-Searching for paths
-Rmax  0.1000  keep and heap limits   0.0000000   0.0000000
-Preparing neighbor table
-Paths found        0   (maxheap, maxscatt       1   0)
-Eliminating path degeneracies
-0 paths retained.
-Done with module: pathfinder.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
-Calculating EXAFS parameters ...
-Done with module: EXAFS parameters (GENFMT).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
-Calculating XAS spectra ...
-electronic_temperature =    0.00000 (eV)
-Done with module: XAS spectra (FF2X: DW + final sum over paths).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
---- FDV --- ['-np', '2', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 2 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-2 total processes failed to start
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
 Launching FEFF version FEFF 10.0
 RGRID, rgrd;   1.00000E-02
 Working in real space.
 CIF and ATOMS cards used: ATOMS card will be ignored.
 Taking crystal structure from .cif file.
-Warning - H-M name of space group possibly sloppy or incorrect.
-Using provided International Tables number for space group, and proceeding.
-International Tables space group number from cif file:          194
-This may correspond to H-M symbol P63/mmc
-The CIF file provided P6_3/mmc   (adjusted toP63/mmc   )
-If this is not what you intended, please edit the cif file to avoid ambiguity.
-E.g., it is possible to #comment out the line given the International Tables nu
-mber.
 :WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
 :WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
 :WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
 :WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
 :WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-Now making real-space atoms list from cif input.
-nats=            8  lattice=H nshift=            0
-using           17 x          17 x           3  unit cells or         6936
-atoms
-original list:
-1    -0.28868     -0.50000      0.84945
-2    -0.28868      0.50000     -0.36166
-3     0.00000      0.00000     -0.96721
-4    -0.57735     -0.00000      0.24389
-5     0.00000      0.00000      0.00000
-6    -0.57735     -0.00000     -0.72332
-7    -0.57735     -0.00000      1.21111
-8     0.00000      0.00000      0.48779
-Core hole lifetime is   0.008 eV.
-Your calculation:
-Once upon a time ...
-O L3 edge XANES using FSR corehole.
-Using:     * Debye-Waller factors   * Self-Consistent Field potentials
-Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT NLEG XANES RGRID EDGE SCF FMS ABSOLUTE REAL TARGET EGRID SETE CIF
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/atomic
-Calculating atomic potentials ...
-overlapped atomic potential and density for unique potential    0
-overlapped atomic potential and density for unique potential    1
-overlapped atomic potential and density for unique potential    2
-overlapped atomic potential and density for unique potential    3
-Done with module: atomic potentials.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/pot
-Calculating SCF potentials ...
-FEFF-MPI using     1 parallel threads.
-Muffin tin radii and interstitial parameters [bohr]:
-type, norman radius, muffin tin, overlap factor
-0  1.06146E+00  1.00221E+00  1.15000E+00
-1  1.32332E+00  1.28702E+00  1.07046E+00
-2  1.21891E+00  1.17288E+00  1.10082E+00
-3  1.06146E+00  1.00221E+00  1.15000E+00
-Core-valence separation energy:  ecv=   -40.000 eV
-Initial Fermi level:              mu=    -0.296 eV
-Zero temperature single thread
-SCF ITERATION NUMBER  1
-point #   1  energy = -40.000
-FMS for a cluster of    8 atoms around atom type   0
-FMS for a cluster of   13 atoms around atom type   1
-FMS for a cluster of   13 atoms around atom type   2
-FMS for a cluster of    8 atoms around atom type   3
-point #  20  energy = -28.818
-point #  40  energy = -12.721
-point #  60  energy = -10.784
-point #  80  energy =  -9.881
-New Fermi level:    mu=  -9.798 eV  Charge distance=  0.0378 (partial c.d.=  4.3871)
-Zero temperature single thread
-SCF ITERATION NUMBER  2
-point #   1  energy = -40.000
-point #  20  energy = -28.926
-point #  40  energy =  -9.798
-point #  60  energy =  -9.701
-New Fermi level:    mu=  -9.429 eV  Charge distance=  0.2564 (partial c.d.=  0.0255)
-Zero temperature single thread
-SCF ITERATION NUMBER  3
-point #   1  energy = -40.000
-point #  20  energy = -28.791
-point #  40  energy =  -9.429
-point #  60  energy =  -9.338
-point #  80  energy =  -7.645
-point # 100  energy =  -7.266
-New Fermi level:    mu=  -7.266 eV  Charge distance=  0.0050 (partial c.d.=  0.1770)
-Zero temperature single thread
-SCF ITERATION NUMBER  4
-point #   1  energy = -40.000
-point #  20  energy = -28.748
-point #  40  energy =  -8.289
-point #  60  energy =  -7.307
-point #  80  energy =  -7.563
-New Fermi level:    mu=  -7.447 eV  Charge distance=  0.0270 (partial c.d.=  0.0181)
-Zero temperature single thread
-SCF ITERATION NUMBER  5
-point #   1  energy = -40.000
-point #  20  energy = -28.810
-point #  40  energy =  -8.465
-point #  60  energy =  -7.488
-point #  80  energy =  -8.619
-point # 100  energy =  -8.204
-New Fermi level:    mu=  -8.174 eV  Charge distance=  0.0004 (partial c.d.=  0.0698)
-Zero temperature single thread
-SCF ITERATION NUMBER  6
-point #   1  energy = -40.000
-point #  20  energy = -28.707
-point #  40  energy =  -8.174
-New Fermi level:    mu=  -8.168 eV  Charge distance=  0.0009 (partial c.d.=  0.0003)
-Zero temperature single thread
-SCF ITERATION NUMBER  7
-point #   1  energy = -40.000
-point #  20  energy = -28.705
-point #  40  energy =  -8.168
-New Fermi level:    mu=  -8.165 eV  Charge distance=  0.0012 (partial c.d.=  0.0003)
-Zero temperature single thread
-SCF ITERATION NUMBER  8
-point #   1  energy = -40.000
-point #  20  energy = -28.704
-point #  40  energy =  -8.165
-New Fermi level:    mu=  -8.165 eV  Charge distance=  0.0004 (partial c.d.=  0.0001)
-Electronic configuration
-type     l     N_el
-0     0    1.876
-0     1    4.272
-0     2    0.118
-0     3    0.000
-1     0    0.235
-1     1    0.501
-1     2    0.000
-1     3    0.000
-2     0    0.220
-2     1    0.513
-2     2    0.000
-2     3    0.000
-3     0    1.876
-3     1    4.272
-3     2    0.118
-3     3    0.000
-Charge transfer:  type  charge
-0    0.265
-1   -0.265
-2   -0.267
-3    0.265
-Convergence reached in    8 iterations.
-total time        146.0289s          (communication time     0.0000E+00s)
-Done with module: potentials.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/screen
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ldos
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/xsph
-Calculating cross-section and phases ...
-Fixing edge energy from Elam table:
-emu =     18.200 eV
-absorption cross section
-ihole, xinorm        4  8.77284E-01
-There may be convergence problems.
-Xinorm should be 1. If you set the RGRID, minor interpolation errors that will not affect final results may occur.
-phase shifts for unique potential    0
-phase shifts for unique potential    1
-phase shifts for unique potential    2
-phase shifts for unique potential    3
-Done with module: cross-section and phases (XSPH).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/fms
-FMS calculation of full Green's function ...
-FEFF-MPI using     1 parallel threads.
-Using   261 energy points.
-Applying Debye-Waller factors using a Correlated Debye model.
-xprep done
-FMS for a cluster of   33 atoms--- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
-Launching FEFF version FEFF 10.0
-RGRID, rgrd;   1.00000E-02
-Working in real space.
-CIF and ATOMS cards used: ATOMS card will be ignored.
-Taking crystal structure from .cif file.
-Warning - H-M name of space group possibly sloppy or incorrect.
-Using provided International Tables number for space group, and proceeding.
-International Tables space group number from cif file:          194
-This may correspond to H-M symbol P63/mmc
-The CIF file provided P6_3/mmc   (adjusted toP63/mmc   )
-If this is not what you intended, please edit the cif file to avoid ambiguity.
-E.g., it is possible to #comment out the line given the International Tables nu
-mber.
-:WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
+:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
 :WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
 :WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
 :WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
 :WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
 Now making real-space atoms list from cif input.
-nats=            8  lattice=H nshift=            0
+nats=            8  lattice=P nshift=            0
 using           17 x          17 x           3  unit cells or         6936
 atoms
 original list:
@@ -1568,9 +231,329 @@ original list:
 3     0.00000      0.00000      0.00000
 4    -0.57735     -0.00000     -1.21111
 5     0.00000      0.00000      0.96721
-6    -0.57735     -0.00000      0.24389
-7    -0.57735     -0.00000     -0.24389
+6     0.28868     -0.50000      0.24389
+7     0.28868     -0.50000     -0.24389
 8     0.00000      0.00000     -0.96721
+Core hole lifetime is   0.002 eV.
+Your calculation:
+Once upon a time ...
+Li L3 edge XANES using FSR corehole.
+Using:     * Debye-Waller factors   * Self-Consistent Field potentials
+Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT NLEG XANES RGRID EDGE SCF FMS ABSOLUTE REAL TARGET EGRID SETE CIF
+
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/atomic
+Calculating atomic potentials ...
+--------------------------------------------------------------------------
+
+mpirun has exited due to process rank 0 with PID 0 on
+************************************************************************************
+node macchiato exiting improperly. There are three reasons this could occur:
+************************************************************************************
+
+No electrons in initial state specified by ihole =  4
+1. this process did not call "init" before exiting, but others in
+************************************************************************************
+the job did. This can cause a job to hang indefinitely while it waits
+************************************************************************************
+for all processes to call "init". By rule, if one process calls "init",
+
+then ALL processes must call "init" prior to termination.
+
+2. this process called "init", but exited without calling "finalize".
+By rule, all processes that call "init" MUST call "finalize" prior to
+exiting or it will be considered an "abnormal termination"
+
+3. this process called "MPI_Abort" or "orte_abort" and the mca parameter
+orte_create_session_dirs is set to false. In this case, the run-time cannot
+detect that the abort call was an abnormal termination. Hence, the only
+error message you will receive is this one.
+
+This may have caused other processes in the application to be
+terminated by signals sent by mpirun (as reported here).
+
+You can avoid this message by specifying -quiet on the mpirun command line.
+--------------------------------------------------------------------------
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/pot
+Calculating SCF potentials ...
+FEFF-MPI using     1 parallel threads.
+
+************************************************************************************
+************************************************************************************
+Error opening file: apot.bin
+OPEN returned error number   29
+************************************************************************************
+************************************************************************************
+
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/screen
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/ldos
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/xsph
+forrtl: No such file or directory
+forrtl: severe (29): file not found, unit 99, file /home/fdv/src/OpCons/Corvus/corvutils/mp/examples/LiO/Li2O2/mp-841/corvus_oc/Corvus1_FEFF/O3/L3/XANES/pot.bin
+Image              PC                Routine            Line        Source
+xsph               00000000005DF6AB  for__io_return        Unknown  Unknown
+xsph               00000000005FE19B  for_open              Unknown  Unknown
+xsph               0000000000426BAE  Unknown               Unknown  Unknown
+xsph               000000000048064B  Unknown               Unknown  Unknown
+xsph               000000000047CE49  Unknown               Unknown  Unknown
+xsph               000000000040C4E2  Unknown               Unknown  Unknown
+libc-2.28.so       0000149D18917493  __libc_start_main     Unknown  Unknown
+xsph               000000000040C3EE  Unknown               Unknown  Unknown
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+Process name: [[10336,1],0]
+Exit code:    29
+--------------------------------------------------------------------------
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/fms
+FMS calculation of full Green's function ...
+--------------------------------------------------------------------------
+FEFF-MPI using     1 parallel threads.
+MPI_ABORT was invoked on rank 0 in communicator MPI_COMM_WORLD
+Error opening file, phase.bin in module rdxsph
+with errorcode 0.
+Fatal error
+
+CHOPEN
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
+MKGTR: Tracing over Green's function ...
+--------------------------------------------------------------------------
+Error opening file, phase.bin in module rdxsph
+MPI_ABORT was invoked on rank 0 in communicator MPI_COMM_WORLD
+Fatal error
+with errorcode 0.
+CHOPEN
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/path
+forrtl: No such file or directory
+forrtl: severe (29): file not found, unit 99, file /home/fdv/src/OpCons/Corvus/corvutils/mp/examples/LiO/Li2O2/mp-841/corvus_oc/Corvus1_FEFF/O3/L2/XANES/pot.bin
+Image              PC                Routine            Line        Source
+path               0000000000438DCB  for__io_return        Unknown  Unknown
+path               000000000045042B  for_open              Unknown  Unknown
+path               0000000000422EBE  Unknown               Unknown  Unknown
+path               0000000000423EDD  Unknown               Unknown  Unknown
+path               000000000040A9A2  Unknown               Unknown  Unknown
+libc-2.28.so       000014D235803493  __libc_start_main     Unknown  Unknown
+path               000000000040A8AE  Unknown               Unknown  Unknown
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+Process name: [[10751,1],0]
+Exit code:    29
+--------------------------------------------------------------------------
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
+Calculating EXAFS parameters ...
+--------------------------------------------------------------------------
+Error opening file, phase.bin in module rdxsph
+MPI_ABORT was invoked on rank 0 in communicator MPI_COMM_WORLD
+Fatal error
+with errorcode 0.
+CHOPEN
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
+Calculating XAS spectra ...
+forrtl: No such file or directory
+forrtl: severe (29): file not found, unit 8, file /home/fdv/src/OpCons/Corvus/corvutils/mp/examples/LiO/Li2O2/mp-841/corvus_oc/Corvus1_FEFF/O3/L2/XANES/fort.8
+Image              PC                Routine            Line        Source
+ff2x               00000000004C3F6B  for__io_return        Unknown  Unknown
+ff2x               00000000004F1EAD  for_read_seq_fmt      Unknown  Unknown
+ff2x               0000000000474F93  Unknown               Unknown  Unknown
+ff2x               0000000000481524  Unknown               Unknown  Unknown
+ff2x               00000000004B1EEF  Unknown               Unknown  Unknown
+ff2x               00000000004717F7  Unknown               Unknown  Unknown
+ff2x               000000000040C8A2  Unknown               Unknown  Unknown
+libc-2.28.so       0000147425EF2493  __libc_start_main     Unknown  Unknown
+ff2x               000000000040C7AE  Unknown               Unknown  Unknown
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+Process name: [[10842,1],0]
+Exit code:    29
+--------------------------------------------------------------------------
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
+--------------------------------------------------------------------------
+mpirun was unable to launch the specified application as it could not access
+or execute an executable:
+
+Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
+Node: macchiato
+
+while attempting to start process rank 0.
+--------------------------------------------------------------------------
+
+--------------------------------------------------------------------------
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
+MKGTR: Tracing over Green's function ...
+--------------------------------------------------------------------------
+Error opening file, phase.bin in module rdxsph
+MPI_ABORT was invoked on rank 0 in communicator MPI_COMM_WORLD
+Fatal error
+with errorcode 0.
+CHOPEN
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/path
+forrtl: No such file or directory
+forrtl: severe (29): file not found, unit 99, file /home/fdv/src/OpCons/Corvus/corvutils/mp/examples/LiO/Li2O2/mp-841/corvus_oc/Corvus1_FEFF/O3/L3/XANES/pot.bin
+Image              PC                Routine            Line        Source
+path               0000000000438DCB  for__io_return        Unknown  Unknown
+path               000000000045042B  for_open              Unknown  Unknown
+path               0000000000422EBE  Unknown               Unknown  Unknown
+path               0000000000423EDD  Unknown               Unknown  Unknown
+path               000000000040A9A2  Unknown               Unknown  Unknown
+libc-2.28.so       00001473B65BD493  __libc_start_main     Unknown  Unknown
+path               000000000040A8AE  Unknown               Unknown  Unknown
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+Process name: [[10746,1],0]
+Exit code:    29
+--------------------------------------------------------------------------
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
+Calculating EXAFS parameters ...
+--------------------------------------------------------------------------
+Error opening file, phase.bin in module rdxsph
+MPI_ABORT was invoked on rank 0 in communicator MPI_COMM_WORLD
+Fatal error
+with errorcode 0.
+CHOPEN
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
+Calculating XAS spectra ...
+forrtl: No such file or directory
+forrtl: severe (29): file not found, unit 8, file /home/fdv/src/OpCons/Corvus/corvutils/mp/examples/LiO/Li2O2/mp-841/corvus_oc/Corvus1_FEFF/O3/L3/XANES/fort.8
+Image              PC                Routine            Line        Source
+ff2x               00000000004C3F6B  for__io_return        Unknown  Unknown
+ff2x               00000000004F1EAD  for_read_seq_fmt      Unknown  Unknown
+ff2x               0000000000474F93  Unknown               Unknown  Unknown
+ff2x               0000000000481524  Unknown               Unknown  Unknown
+ff2x               00000000004B1EEF  Unknown               Unknown  Unknown
+ff2x               00000000004717F7  Unknown               Unknown  Unknown
+ff2x               000000000040C8A2  Unknown               Unknown  Unknown
+libc-2.28.so       000015313F160493  __libc_start_main     Unknown  Unknown
+ff2x               000000000040C7AE  Unknown               Unknown  Unknown
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+Process name: [[10847,1],0]
+Exit code:    29
+--------------------------------------------------------------------------
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
+--------------------------------------------------------------------------
+mpirun was unable to launch the specified application as it could not access
+or execute an executable:
+
+Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
+Node: macchiato
+
+while attempting to start process rank 0.
+--------------------------------------------------------------------------
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
+--------------------------------------------------------------------------
+mpirun was unable to launch the specified application as it could not access
+or execute an executable:
+
+Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
+Node: macchiato
+
+while attempting to start process rank 0.
+--------------------------------------------------------------------------
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
+Launching FEFF version FEFF 10.0
+RGRID, rgrd;   1.00000E-02
+Working in real space.
+CIF and ATOMS cards used: ATOMS card will be ignored.
+Taking crystal structure from .cif file.
+:WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
+:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
+:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
+:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
+:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
+:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
+:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
+:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
+:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
+:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
+Now making real-space atoms list from cif input.
+nats=            8  lattice=P nshift=            0
+using           17 x          17 x           3  unit cells or         6936
+atoms
+original list:
+1     0.00000      0.00000     -1.21111
+2     0.00000      0.00000      0.00000
+3     0.28868      0.50000     -0.60555
+4    -0.28868     -0.50000      0.60555
+5    -0.57735     -0.00000      0.36166
+6    -0.28868      0.50000     -0.36166
+7    -0.28868      0.50000     -0.84945
+8    -0.57735     -0.00000      0.84945
 Core hole lifetime is   0.036 eV.
 Your calculation:
 Once upon a time ...
@@ -1578,131 +561,193 @@ Li K edge XANES using FSR corehole.
 Using:     * Debye-Waller factors   * Self-Consistent Field potentials
 Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT NLEG XANES RGRID EDGE SCF FMS LDOS ABSOLUTE REAL TARGET EGRID SETE CIF
 
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/atomic
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/atomic
 Calculating atomic potentials ...
 overlapped atomic potential and density for unique potential    0
 overlapped atomic potential and density for unique potential    1
 overlapped atomic potential and density for unique potential    2
 overlapped atomic potential and density for unique potential    3
+overlapped atomic potential and density for unique potential    4
+overlapped atomic potential and density for unique potential    5
+overlapped atomic potential and density for unique potential    6
+overlapped atomic potential and density for unique potential    7
+overlapped atomic potential and density for unique potential    8
 Done with module: atomic potentials.
 
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/pot
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/pot
 Calculating SCF potentials ...
 FEFF-MPI using     1 parallel threads.
 Muffin tin radii and interstitial parameters [bohr]:
 type, norman radius, muffin tin, overlap factor
-0  1.30432E+00  1.24405E+00  1.12745E+00
-1  1.31881E+00  1.28476E+00  1.06591E+00
-2  1.21894E+00  1.17425E+00  1.09747E+00
-3  1.05190E+00  9.96018E-01  1.15000E+00
+0  1.40372E+00  1.35365E+00  1.09446E+00
+1  1.32373E+00  1.28733E+00  1.07065E+00
+2  1.32316E+00  1.28781E+00  1.06843E+00
+3  1.21634E+00  1.17117E+00  1.09889E+00
+4  1.21634E+00  1.17117E+00  1.09889E+00
+5  1.05535E+00  9.99555E-01  1.14975E+00
+6  1.05535E+00  9.99555E-01  1.14975E+00
+7  1.06163E+00  1.00456E+00  1.15000E+00
+8  1.06163E+00  1.00456E+00  1.15000E+00
 Core-valence separation energy:  ecv=   -40.000 eV
-Initial Fermi level:              mu=    -0.072 eV
+Initial Fermi level:              mu=    -0.185 eV
 Zero temperature single thread
 SCF ITERATION NUMBER  1
 point #   1  energy = -40.000
 FMS for a cluster of   13 atoms around atom type   0
 FMS for a cluster of   13 atoms around atom type   1
 FMS for a cluster of   13 atoms around atom type   2
-FMS for a cluster of    8 atoms around atom type   3
-point #  20  energy = -28.772
-point #  40  energy = -12.675
-point #  60  energy = -10.282
-point #  80  energy =  -9.528
-New Fermi level:    mu=  -9.477 eV  Charge distance=  0.0726 (partial c.d.=  4.3796)
+FMS for a cluster of   13 atoms around atom type   3
+FMS for a cluster of   13 atoms around atom type   4
+FMS for a cluster of    8 atoms around atom type   5
+FMS for a cluster of    8 atoms around atom type   6
+FMS for a cluster of    8 atoms around atom type   7
+FMS for a cluster of    8 atoms around atom type   8
+point #  20  energy = -28.795
+point #  40  energy = -12.698
+point #  60  energy = -10.417
+point #  80  energy =  -9.695
+New Fermi level:    mu=  -9.623 eV  Charge distance=  0.0808 (partial c.d.=  4.4157)
 Zero temperature single thread
 SCF ITERATION NUMBER  2
 point #   1  energy = -40.000
-point #  20  energy = -28.808
-point #  40  energy =  -9.477
-point #  60  energy =  -9.380
-New Fermi level:    mu=  -9.100 eV  Charge distance=  0.5542 (partial c.d.=  0.0423)
+point #  20  energy = -28.862
+point #  40  energy =  -9.623
+point #  60  energy =  -9.526
+New Fermi level:    mu=  -9.249 eV  Charge distance=  0.5787 (partial c.d.=  0.0444)
+negative density   0   -0.190 - usually harmless precision error, but check DOS if it persists
 Zero temperature single thread
 SCF ITERATION NUMBER  3
 point #   1  energy = -40.000
-point #  20  energy = -29.036
-point #  40  energy =  -9.100
-point #  60  energy =  -9.059
-point #  80  energy =  -7.138
-point # 100  energy =  -6.722
-New Fermi level:    mu=  -6.734 eV  Charge distance=  0.0377 (partial c.d.=  0.3971)
+point #  20  energy = -28.725
+point #  40  energy =  -9.249
+point #  60  energy =  -9.158
+point #  80  energy =  -7.396
+point # 100  energy =  -7.017
+New Fermi level:    mu=  -7.017 eV  Charge distance=  0.0393 (partial c.d.=  0.4399)
+negative density   0  -10.733 - usually harmless precision error, but check DOS if it persists
 Zero temperature single thread
 SCF ITERATION NUMBER  4
 point #   1  energy = -40.000
-point #  20  energy = -28.911
-point #  40  energy =  -8.750
-point #  60  energy =  -6.747
-point #  80  energy =  -7.059
-New Fermi level:    mu=  -6.958 eV  Charge distance=  0.1312 (partial c.d.=  0.0546)
+point #  20  energy = -29.006
+point #  40  energy =  -9.016
+point #  60  energy =  -7.030
+point #  80  energy =  -7.342
+New Fermi level:    mu=  -7.215 eV  Charge distance=  0.1327 (partial c.d.=  0.0578)
+negative density   0  -58.702 - usually harmless precision error, but check DOS if it persists
 Zero temperature single thread
 SCF ITERATION NUMBER  5
 point #   1  energy = -40.000
-point #  20  energy = -28.986
-point #  40  energy =  -8.961
-point #  60  energy =  -6.971
-point #  80  energy =  -8.208
-point # 100  energy =  -7.755
-New Fermi level:    mu=  -7.765 eV  Charge distance=  0.0011 (partial c.d.=  0.1673)
+point #  20  energy = -28.730
+point #  40  energy =  -8.239
+point #  60  energy =  -7.256
+point #  80  energy =  -8.387
+point # 100  energy =  -7.949
+New Fermi level:    mu=  -7.927 eV  Charge distance=  0.0039 (partial c.d.=  0.1728)
+negative density   0  -64.727 - usually harmless precision error, but check DOS if it persists
 Zero temperature single thread
 SCF ITERATION NUMBER  6
 point #   1  energy = -40.000
-point #  20  energy = -28.919
-point #  40  energy =  -8.772
-New Fermi level:    mu=  -7.786 eV  Charge distance=  0.0017 (partial c.d.=  0.0032)
+point #  20  energy = -28.975
+point #  40  energy =  -8.929
+point #  60  energy =  -7.964
+New Fermi level:    mu=  -7.959 eV  Charge distance=  0.0022 (partial c.d.=  0.0080)
+negative density   0  -69.677 - usually harmless precision error, but check DOS if it persists
 Zero temperature single thread
 SCF ITERATION NUMBER  7
 point #   1  energy = -40.000
-point #  20  energy = -28.926
-point #  40  energy =  -8.793
-New Fermi level:    mu=  -7.790 eV  Charge distance=  0.0101 (partial c.d.=  0.0004)
+point #  20  energy = -28.986
+point #  40  energy =  -8.960
+New Fermi level:    mu=  -7.961 eV  Charge distance=  0.0041 (partial c.d.=  0.0042)
+negative density   0  -78.083 - usually harmless precision error, but check DOS if it persists
 Zero temperature single thread
 SCF ITERATION NUMBER  8
 point #   1  energy = -40.000
-point #  20  energy = -28.928
-point #  40  energy =  -8.797
-New Fermi level:    mu=  -7.811 eV  Charge distance=  0.0001 (partial c.d.=  0.0018)
+point #  20  energy = -28.987
+point #  40  energy =  -8.963
+New Fermi level:    mu=  -7.965 eV  Charge distance=  0.0018 (partial c.d.=  0.0046)
+negative density   0  -81.630 - usually harmless precision error, but check DOS if it persists
 Zero temperature single thread
 SCF ITERATION NUMBER  9
 point #   1  energy = -40.000
-point #  20  energy = -28.935
-point #  40  energy =  -8.817
-New Fermi level:    mu=  -7.811 eV  Charge distance=  0.0006 (partial c.d.=  0.0000)
+point #  20  energy = -28.988
+point #  40  energy =  -8.966
+New Fermi level:    mu=  -7.966 eV  Charge distance=  0.0072 (partial c.d.=  0.0004)
+negative density   0  -96.740 - usually harmless precision error, but check DOS if it persists
+Zero temperature single thread
+SCF ITERATION NUMBER 10
+point #   1  energy = -40.000
+point #  20  energy = -28.988
+point #  40  energy =  -8.967
+New Fermi level:    mu=  -7.972 eV  Charge distance=  0.0001 (partial c.d.=  0.0017)
+negative density   0  -97.377 - usually harmless precision error, but check DOS if it persists
+Zero temperature single thread
+SCF ITERATION NUMBER 11
+point #   1  energy = -40.000
+point #  20  energy = -28.990
+point #  40  energy =  -8.973
+New Fermi level:    mu=  -7.972 eV  Charge distance=  0.0007 (partial c.d.=  0.0000)
 Electronic configuration
 type     l     N_el
-0     0    0.457
-0     1    1.076
+0     0    0.473
+0     1    1.029
 0     2    0.000
 0     3    0.000
-1     0    0.234
-1     1    0.504
+1     0    0.238
+1     1    0.508
 1     2    0.000
 1     3    0.000
-2     0    0.224
-2     1    0.520
+2     0    0.235
+2     1    0.503
 2     2    0.000
 2     3    0.000
-3     0    1.879
-3     1    4.256
-3     2    0.125
+3     0    0.220
+3     1    0.511
+3     2    0.000
 3     3    0.000
+4     0    0.220
+4     1    0.511
+4     2    0.000
+4     3    0.000
+5     0    1.888
+5     1    4.237
+5     2    0.121
+5     3    0.000
+6     0    1.888
+6     1    4.237
+6     2    0.121
+6     3    0.000
+7     0    1.879
+7     1    4.283
+7     2    0.122
+7     3    0.000
+8     0    1.879
+8     1    4.283
+8     2    0.122
+8     3    0.000
 Charge transfer:  type  charge
-0   -0.468
-1   -0.262
-2   -0.255
-3    0.260
-Convergence reached in    9 iterations.
-total time        139.1733s          (communication time     0.0000E+00s)
+0   -0.498
+1   -0.254
+2   -0.261
+3   -0.269
+4   -0.269
+5    0.245
+6    0.245
+7    0.284
+8    0.284
+Convergence reached in   11 iterations.
+total time         24.9306s          (communication time     0.0000E+00s)
 Done with module: potentials.
 
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/screen
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ldos
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/screen
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/ldos
 Calculating LDOS ...
 FEFF-MPI using     1 parallel threads.
 Using   160 energy points
-FMS for a cluster of  27 atoms around atom type  0
+FMS for a cluster of  33 atoms around atom type  0
 Energy point    1/ 160
 Energy point   10/ 160
 Energy point   30/ 160
@@ -1712,7 +757,7 @@ Energy point   90/ 160
 Energy point  110/ 160
 Energy point  130/ 160
 Energy point  150/ 160
-FMS for a cluster of  27 atoms around atom type  1
+FMS for a cluster of  33 atoms around atom type  1
 Energy point    1/ 160
 Energy point   10/ 160
 Energy point   30/ 160
@@ -1722,7 +767,7 @@ Energy point   90/ 160
 Energy point  110/ 160
 Energy point  130/ 160
 Energy point  150/ 160
-FMS for a cluster of  27 atoms around atom type  2
+FMS for a cluster of  33 atoms around atom type  2
 Energy point    1/ 160
 Energy point   10/ 160
 Energy point   30/ 160
@@ -1736,529 +781,56 @@ FMS for a cluster of  27 atoms around atom type  3
 Energy point    1/ 160
 Energy point   10/ 160
 Energy point   30/ 160
-Energy point    1/ 261
-Energy point   10/ 261
-Energy point   20/ 261
-Energy point   30/ 261
-Energy point   40/ 261
-Energy point   50/ 261
-Energy point   60/ 261
-Energy point   70/ 261
-Energy point   80/ 261
-Energy point   90/ 261
-Energy point  100/ 261
-Energy point  110/ 261
-Energy point  120/ 261
-Energy point  130/ 261
-Energy point  140/ 261
-Energy point  150/ 261
-Energy point  160/ 261
-Energy point  170/ 261
-Energy point  180/ 261
-Energy point  190/ 261
-Energy point  200/ 261
-Energy point  210/ 261
-Energy point  220/ 261
-Energy point  230/ 261
-Energy point  240/ 261
-Energy point  250/ 261
-Energy point  260/ 261
-total time         96.6084s          (communication time     0.0000E+00s)
-Done with module: FMS.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
-MKGTR: Tracing over Green's function ...
-Done with module: MKGTR.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/path
-Pathfinder: finding scattering paths...
-Preparing plane wave scattering amplitudes
-Searching for paths
-Rmax  0.1000  keep and heap limits   0.0000000   0.0000000
-Preparing neighbor table
-Paths found        0   (maxheap, maxscatt       1   0)
-Eliminating path degeneracies
-0 paths retained.
-Done with module: pathfinder.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
-Calculating EXAFS parameters ...
-Done with module: EXAFS parameters (GENFMT).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
-Calculating XAS spectra ...
-electronic_temperature =    0.00000 (eV)
-Done with module: XAS spectra (FF2X: DW + final sum over paths).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
-
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ldos
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/xsph
-Calculating cross-section and phases ...
-Fixing edge energy from Elam table:
-emu =    543.100 eV
-absorption cross section
-phase shifts for unique potential    0
-phase shifts for unique potential    1
-phase shifts for unique potential    2
-phase shifts for unique potential    3
-Done with module: cross-section and phases (XSPH).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/fms
-FMS calculation of full Green's function ...
-FEFF-MPI using     1 parallel threads.
-Using   264 energy points.
-Applying Debye-Waller factors using a Correlated Debye model.
-xprep done
-FMS for a cluster of   33 atoms
-Energy point    1/ 264
-Energy point   10/ 264
-Energy point   20/ 264
-Energy point   30/ 264
-Energy point   40/ 264
-Energy point   50/ 264
-Energy point   60/ 264
-Energy point   70/ 264
-Energy point   80/ 264
-Energy point   90/ 264
-Energy point  100/ 264
-Energy point  110/ 264
-Energy point  120/ 264
-Energy point  130/ 264
-Energy point  140/ 264
-Energy point  150/ 264
-Energy point  160/ 264
-Energy point  170/ 264
-Energy point  180/ 264
-Energy point  190/ 264
-Energy point  200/ 264
-Energy point  210/ 264
-Energy point  220/ 264
-Energy point  230/ 264
-Energy point  240/ 264
-Energy point  250/ 264
-Energy point  260/ 264
-total time         93.1216s          (communication time     0.0000E+00s)
-Done with module: FMS.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
-MKGTR: Tracing over Green's function ...
-Done with module: MKGTR.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/path
-Pathfinder: finding scattering paths...
-Preparing plane wave scattering amplitudes
-Searching for paths
-Rmax  0.1000  keep and heap limits   0.0000000   0.0000000
-Preparing neighbor table
-Paths found        0   (maxheap, maxscatt       1   0)
-Eliminating path degeneracies
-0 paths retained.
-Done with module: pathfinder.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
-Calculating EXAFS parameters ...
-Done with module: EXAFS parameters (GENFMT).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
-Calculating XAS spectra ...
-electronic_temperature =    0.00000 (eV)
-Done with module: XAS spectra (FF2X: DW + final sum over paths).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
-
-Xinorm should be 1. If you set the RGRID, minor interpolation errors that will not affect final results may occur.
-phase shifts for unique potential    0
-phase shifts for unique potential    1
-phase shifts for unique potential    2
-phase shifts for unique potential    3
-Done with module: cross-section and phases (XSPH).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/fms
-FMS calculation of full Green's function ...
-FEFF-MPI using     1 parallel threads.
-Using   266 energy points.
-Applying Debye-Waller factors using a Correlated Debye model.
-xprep done
-FMS for a cluster of   33 atoms
-Energy point    1/ 266
-Energy point   10/ 266
-Energy point   20/ 266
-Energy point   30/ 266
-Energy point   40/ 266
-Energy point   50/ 266
-Energy point   60/ 266
-Energy point   70/ 266
-Energy point   80/ 266
-Energy point   90/ 266
-Energy point  100/ 266
-Energy point  110/ 266
-Energy point  120/ 266
-Energy point  130/ 266
-Energy point  140/ 266
-Energy point  150/ 266
-Energy point  160/ 266
-Energy point  170/ 266
-Energy point  180/ 266
-Energy point  190/ 266
-Energy point  200/ 266
-Energy point  210/ 266
-Energy point  220/ 266
-Energy point  230/ 266
-Energy point  240/ 266
-Energy point  250/ 266
-Energy point  260/ 266
-total time         92.0068s          (communication time     0.0000E+00s)
-Done with module: FMS.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
-MKGTR: Tracing over Green's function ...
-Done with module: MKGTR.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/path
-Pathfinder: finding scattering paths...
-Preparing plane wave scattering amplitudes
-Searching for paths
-Rmax  0.1000  keep and heap limits   0.0000000   0.0000000
-Preparing neighbor table
-Paths found        0   (maxheap, maxscatt       1   0)
-Eliminating path degeneracies
-0 paths retained.
-Done with module: pathfinder.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
-Calculating EXAFS parameters ...
-Done with module: EXAFS parameters (GENFMT).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
-Calculating XAS spectra ...
-electronic_temperature =    0.00000 (eV)
-Done with module: XAS spectra (FF2X: DW + final sum over paths).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
-
-Xinorm should be 1. If you set the RGRID, minor interpolation errors that will not affect final results may occur.
-phase shifts for unique potential    0
-phase shifts for unique potential    1
-phase shifts for unique potential    2
-phase shifts for unique potential    3
-Done with module: cross-section and phases (XSPH).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/fms
-FMS calculation of full Green's function ...
-FEFF-MPI using     1 parallel threads.
-Using   261 energy points.
-Applying Debye-Waller factors using a Correlated Debye model.
-xprep done
-FMS for a cluster of   33 atoms
-Energy point    1/ 261
-Energy point   10/ 261
-Energy point   20/ 261
-Energy point   30/ 261
-Energy point   40/ 261
-Energy point   50/ 261
-Energy point   60/ 261
-Energy point   70/ 261
-Energy point   80/ 261
-Energy point   90/ 261
-Energy point  100/ 261
-Energy point  110/ 261
-Energy point  120/ 261
-Energy point  130/ 261
-Energy point  140/ 261
-Energy point  150/ 261
-Energy point  160/ 261
-Energy point  170/ 261
-Energy point  180/ 261
-Energy point  190/ 261
-Energy point  200/ 261
-Energy point  210/ 261
-Energy point  220/ 261
-Energy point  230/ 261
-Energy point  240/ 261
-Energy point  250/ 261
-Energy point  260/ 261
-total time         90.8531s          (communication time     0.0000E+00s)
-Done with module: FMS.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
-MKGTR: Tracing over Green's function ...
-Done with module: MKGTR.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/path
-Pathfinder: finding scattering paths...
-Preparing plane wave scattering amplitudes
-Searching for paths
-Rmax  0.1000  keep and heap limits   0.0000000   0.0000000
-Preparing neighbor table
-Paths found        0   (maxheap, maxscatt       1   0)
-Eliminating path degeneracies
-0 paths retained.
-Done with module: pathfinder.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
-Calculating EXAFS parameters ...
-Done with module: EXAFS parameters (GENFMT).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
-Calculating XAS spectra ...
-electronic_temperature =    0.00000 (eV)
-Done with module: XAS spectra (FF2X: DW + final sum over paths).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
-
-SCF ITERATION NUMBER 13
-point #   1  energy = -40.000
-point #  20  energy = -28.939
-point #  40  energy =  -8.827
-New Fermi level:    mu=  -7.822 eV  Charge distance=  0.0000 (partial c.d.=  0.0001)
-Electronic configuration
-type     l     N_el
-0     0    0.477
-0     1    1.042
-0     2    0.000
-0     3    0.000
-1     0    0.238
-1     1    0.510
-1     2    0.000
-1     3    0.000
-2     0    0.221
-2     1    0.515
-2     2    0.000
-2     3    0.000
-3     0    1.890
-3     1    4.246
-3     2    0.123
-3     3    0.000
-Charge transfer:  type  charge
-0   -0.481
-1   -0.253
-2   -0.264
-3    0.259
-Convergence reached in   13 iterations.
-total time        184.7790s          (communication time     0.6769E+02s)
-Done with module: potentials.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/screen
---- FDV --- ['-np', '2', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
-			Running executable: mpirun -np 2 -v /home/fdv/src/OpCons/feff10/bin/MPI/ldos
-Calculating LDOS ...
-FEFF-MPI using     2 parallel threads.
-Using   160 energy points
-FMS for a cluster of  33 atoms around atom type  0
+Energy point   50/ 160
+Energy point   70/ 160
+Energy point   90/ 160
+Energy point  110/ 160
+Energy point  130/ 160
+Energy point  150/ 160
+FMS for a cluster of  27 atoms around atom type  4
 Energy point    1/ 160
-Energy point   11/ 160
-Energy point   31/ 160
-Energy point   51/ 160
-Energy point   71/ 160
-Energy point   91/ 160
-Energy point  111/ 160
-Energy point  131/ 160
-Energy point  151/ 160
-FMS for a cluster of  33 atoms around atom type  1
+Energy point   10/ 160
+Energy point   30/ 160
+Energy point   50/ 160
+Energy point   70/ 160
+Energy point   90/ 160
+Energy point  110/ 160
+Energy point  130/ 160
+Energy point  150/ 160
+FMS for a cluster of  33 atoms around atom type  5
 Energy point    1/ 160
-Energy point   11/ 160
-Energy point   31/ 160
-Energy point   51/ 160
-Energy point   71/ 160
-Energy point   91/ 160
-Energy point  111/ 160
-Energy point  131/ 160
-Energy point  151/ 160
-FMS for a cluster of  27 atoms around atom type  2
+Energy point   10/ 160
+Energy point   30/ 160
+Energy point   50/ 160
+Energy point   70/ 160
+Energy point   90/ 160
+Energy point  110/ 160
+Energy point  130/ 160
+Energy point  150/ 160
+FMS for a cluster of  33 atoms around atom type  6
 Energy point    1/ 160
-Energy point   11/ 160
-Energy point   31/ 160
-Energy point   51/ 160
-Energy point   71/ 160
-Energy point   91/ 160
-Energy point  111/ 160
-Energy point  131/ 160
-Energy point  151/ 160
-FMS for a cluster of  33 atoms around atom type  3
+Energy point   10/ 160
+Energy point   30/ 160
+Energy point   50/ 160
+Energy point   70/ 160
+Energy point   90/ 160
+Energy point  110/ 160
+Energy point  130/ 160
+Energy point  150/ 160
+FMS for a cluster of  33 atoms around atom type  7
 Energy point    1/ 160
-Energy point   11/ 160
-Energy point   31/ 160
-Energy point   51/ 160
-Energy point   71/ 160
-Energy point   91/ 160
-Energy point  111/ 160
-Energy point  131/ 160
-Energy point  151/ 160
-Writing DOS for atom type     0
-Writing DOS for atom type     1
-Writing DOS for atom type     2
-Writing DOS for atom type     3
-Done with LDOS.
-total time        106.9847s          (communication time     0.2273E-03s)
-Done with module: LDOS.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/xsph
-Calculating cross-section and phases ...
-Fixing edge energy from Elam table:
-emu =     54.700 eV
-absorption cross section
-phase shifts for unique potential    0
-phase shifts for unique potential    1
-phase shifts for unique potential    2
-phase shifts for unique potential    3
-Done with module: cross-section and phases (XSPH).
-
---- FDV --- ['-np', '2', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
-			Running executable: mpirun -np 2 -v /home/fdv/src/OpCons/feff10/bin/MPI/fms
-FMS calculation of full Green's function ...
-FEFF-MPI using     2 parallel threads.
-Using   261 energy points.
-Applying Debye-Waller factors using a Correlated Debye model.
-xprep done
-FMS for a cluster of   33 atoms
-Energy point    1/ 261
-Energy point   11/ 261
-Energy point   21/ 261
-Energy point   31/ 261
-Energy point   41/ 261
-Energy point   51/ 261
-Energy point   61/ 261
-Energy point   71/ 261
-Energy point   81/ 261
-Energy point   91/ 261
-Energy point  101/ 261
-Energy point  111/ 261
-Energy point  121/ 261
-Energy point  131/ 261
-Energy point  141/ 261
-Energy point  151/ 261
-Energy point  161/ 261
-Energy point  171/ 261
-Energy point  181/ 261
-Energy point  191/ 261
-Energy point  201/ 261
-Energy point  211/ 261
-Energy point  221/ 261
-Energy point  231/ 261
-Energy point  241/ 261
-Energy point  251/ 261
-Energy point  261/ 261
-total time         33.6928s          (communication time     0.1162E-02s)
-Done with module: FMS.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
-MKGTR: Tracing over Green's function ...
-Done with module: MKGTR.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/path
-Pathfinder: finding scattering paths...
-Preparing plane wave scattering amplitudes
-Searching for paths
-Rmax  0.1000  keep and heap limits   0.0000000   0.0000000
-Preparing neighbor table
-Paths found        0   (maxheap, maxscatt       1   0)
-Eliminating path degeneracies
-0 paths retained.
-Done with module: pathfinder.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
-Calculating EXAFS parameters ...
-Done with module: EXAFS parameters (GENFMT).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
-Calculating XAS spectra ...
-electronic_temperature =    0.00000 (eV)
-Done with module: XAS spectra (FF2X: DW + final sum over paths).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
---- FDV --- ['-np', '2', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 2 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-2 total processes failed to start
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
-
+Energy point   10/ 160
+Energy point   30/ 160
+Energy point   50/ 160
+Energy point   70/ 160
+Energy point   90/ 160
+Energy point  110/ 160
+Energy point  130/ 160
+Energy point  150/ 160
+FMS for a cluster of  33 atoms around atom type  8
+Energy point    1/ 160
+Energy point   10/ 160
+Energy point   30/ 160
 Energy point   50/ 160
 Energy point   70/ 160
 Energy point   90/ 160
@@ -2269,14 +841,19 @@ Writing DOS for atom type     0
 Writing DOS for atom type     1
 Writing DOS for atom type     2
 Writing DOS for atom type     3
+Writing DOS for atom type     4
+Writing DOS for atom type     5
+Writing DOS for atom type     6
+Writing DOS for atom type     7
+Writing DOS for atom type     8
 Done with LDOS.
-total time        153.8300s          (communication time     0.0000E+00s)
+total time         37.6308s          (communication time     0.0000E+00s)
 Done with module: LDOS.
 
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/xsph
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/xsph
 Calculating cross-section and phases ...
 Fixing edge energy from Elam table:
 emu =     54.700 eV
@@ -2285,16 +862,21 @@ phase shifts for unique potential    0
 phase shifts for unique potential    1
 phase shifts for unique potential    2
 phase shifts for unique potential    3
+phase shifts for unique potential    4
+phase shifts for unique potential    5
+phase shifts for unique potential    6
+phase shifts for unique potential    7
+phase shifts for unique potential    8
 Done with module: cross-section and phases (XSPH).
 
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/fms
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/fms
 FMS calculation of full Green's function ...
 FEFF-MPI using     1 parallel threads.
 Using   261 energy points.
 Applying Debye-Waller factors using a Correlated Debye model.
 xprep done
-FMS for a cluster of   27 atoms
+FMS for a cluster of   33 atoms
 Energy point    1/ 261
 Energy point   10/ 261
 Energy point   20/ 261
@@ -2322,16 +904,16 @@ Energy point  230/ 261
 Energy point  240/ 261
 Energy point  250/ 261
 Energy point  260/ 261
-total time         40.1688s          (communication time     0.0000E+00s)
+total time          7.8341s          (communication time     0.0000E+00s)
 Done with module: FMS.
 
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
 MKGTR: Tracing over Green's function ...
 Done with module: MKGTR.
 
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/path
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/path
 Pathfinder: finding scattering paths...
 Preparing plane wave scattering amplitudes
 Searching for paths
@@ -2342,21 +924,21 @@ Eliminating path degeneracies
 0 paths retained.
 Done with module: pathfinder.
 
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
 Calculating EXAFS parameters ...
 Done with module: EXAFS parameters (GENFMT).
 
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
 Calculating XAS spectra ...
 electronic_temperature =    0.00000 (eV)
 Done with module: XAS spectra (FF2X: DW + final sum over paths).
 
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
+--- FDV --- ['-np', '1', '-v', '--bind-to', 'none', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
+			Running executable: mpirun -np 1 -v --bind-to none /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
 --------------------------------------------------------------------------
 mpirun was unable to launch the specified application as it could not access
 or execute an executable:
@@ -2366,1270 +948,3 @@ Node: macchiato
 
 while attempting to start process rank 0.
 --------------------------------------------------------------------------
-0
-Start:  0
-Start:  1
-Start:  2
-Start:  3
-Start:  4
-Start:  5
-Start:  6
-Start:  7
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
-Launching FEFF version FEFF 10.0
-RGRID, rgrd;   1.00000E-02
-Working in real space.
-CIF and ATOMS cards used: ATOMS card will be ignored.
-Taking crystal structure from .cif file.
-Warning - H-M name of space group possibly sloppy or incorrect.
-Using provided International Tables number for space group, and proceeding.
-International Tables space group number from cif file:          194
-This may correspond to H-M symbol P63/mmc
-The CIF file provided P6_3/mmc   (adjusted toP63/mmc   )
-If this is not what you intended, please edit the cif file to avoid ambiguity.
-E.g., it is possible to #comment out the line given the International Tables nu
-mber.
-:WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-Now making real-space atoms list from cif input.
-nats=            8  lattice=H nshift=            0
-using           17 x          17 x           3  unit cells or         6936
-atoms
-original list:
-1    -0.28868     -0.50000     -0.60555
-2    -0.28868     -0.50000      0.60555
-3     0.00000      0.00000      0.00000
-4    -0.57735     -0.00000     -1.21111
-5     0.00000      0.00000      0.96721
-6    -0.57735     -0.00000      0.24389
-7    -0.57735     -0.00000     -0.24389
-8     0.00000      0.00000     -0.96721
-Core hole lifetime is   0.036 eV.
-Your calculation:
-Once upon a time ...
-Li K edge XANES using FSR corehole.
-Using:     * Debye-Waller factors   * Self-Consistent Field potentials
-Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT NLEG XANES RGRID EDGE SCF FMS ABSOLUTE REAL TARGET EGRID SETE CIF
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/atomic
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/pot
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/screen
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ldos
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/xsph
-Calculating cross-section and phases ...
-Fixing edge energy from Elam table:
-emu =     54.700 eV
-absorption cross section
-phase shifts for unique potential    0
-Phase shift calculation is accurate to k=28
-See FEFF document to increase the range.
-phase shifts for unique potential    1
-Phase shift calculation is accurate to k=27
-See FEFF document to increase the range.
-phase shifts for unique potential    2
-Phase shift calculation is accurate to k=29
-See FEFF document to increase the range.
-phase shifts for unique potential    3
-Phase shift calculation is accurate to k=34
-See FEFF document to increase the range.
-Done with module: cross-section and phases (XSPH).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/fms
-FMS calculation of full Green's function ...
-FEFF-MPI using     1 parallel threads.
-Using   657 energy points.
-Applying Debye-Waller factors using a Correlated Debye model.
-xprep done
-total time          0.8291s          (communication time     0.0000E+00s)
-Done with module: FMS.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
-MKGTR: Tracing over Green's function ...
-Done with module: MKGTR.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/path
-Pathfinder: finding scattering paths...
-Preparing plane wave scattering amplitudes
-Searching for paths
-Rmax  3.8692  keep and heap limits   0.0000000   0.0000000
-Preparing neighbor table
-Paths found      110   (maxheap, maxscatt      33   3)
-Eliminating path degeneracies
-Unique paths     11,  total paths     110
-Done with module: pathfinder.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
-Calculating EXAFS parameters ...
-Done with module: EXAFS parameters (GENFMT).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
-Calculating XAS spectra ...
-Use all paths with cw amplitude ratio   4.00%
-S02  1.000  Temp  298.00  Debye temp  760.99  Global sig2  0.00000
-Applying Debye-Waller factors using a Correlated Debye model.
-electronic_temperature =    0.00000 (eV)
-Done with module: XAS spectra (FF2X: DW + final sum over paths).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
-Launching FEFF version FEFF 10.0
-RGRID, rgrd;   1.00000E-02
-Working in real space.
-CIF and ATOMS cards used: ATOMS card will be ignored.
-Taking crystal structure from .cif file.
-Warning - H-M name of space group possibly sloppy or incorrect.
-Using provided International Tables number for space group, and proceeding.
-International Tables space group number from cif file:          194
-This may correspond to H-M symbol P63/mmc
-The CIF file provided P6_3/mmc   (adjusted toP63/mmc   )
-If this is not what you intended, please edit the cif file to avoid ambiguity.
-E.g., it is possible to #comment out the line given the International Tables nu
-mber.
-:WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-Now making real-space atoms list from cif input.
-nats=            8  lattice=H nshift=            0
-using           17 x          17 x           3  unit cells or         6936
-atoms
-original list:
-1    -0.28868     -0.50000     -0.60555
-2    -0.28868     -0.50000      0.60555
-3     0.00000      0.00000      0.00000
-4    -0.57735     -0.00000     -1.21111
-5     0.00000      0.00000      0.96721
-6    -0.57735     -0.00000      0.24389
-7    -0.57735     -0.00000     -0.24389
-8     0.00000      0.00000     -0.96721
-Core hole lifetime is   0.113 eV.
-Your calculation:
-Once upon a time ...
-Li L1 edge XANES using FSR corehole.
-Using:     * Debye-Waller factors   * Self-Consistent Field potentials
-Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT NLEG XANES RGRID EDGE SCF FMS ABSOLUTE REAL TARGET EGRID SETE CIF
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/atomic
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/pot
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/screen
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ldos
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/xsph
-Calculating cross-section and phases ...
-Fixing edge energy from Elam table:
-emu =      5.300 eV
-absorption cross section
-ihole, xinorm        2  1.57177E-01
-There may be convergence problems.
-Xinorm should be 1. If you set the RGRID, minor interpolation errors that will not affect final results may occur.
-phase shifts for unique potential    0
-Phase shift calculation is accurate to k=29
-See FEFF document to increase the range.
-phase shifts for unique potential    1
-Phase shift calculation is accurate to k=27
-See FEFF document to increase the range.
-phase shifts for unique potential    2
-Phase shift calculation is accurate to k=29
-See FEFF document to increase the range.
-phase shifts for unique potential    3
-Phase shift calculation is accurate to k=34
-See FEFF document to increase the range.
-Done with module: cross-section and phases (XSPH).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/fms
-FMS calculation of full Green's function ...
-FEFF-MPI using     1 parallel threads.
-Using   659 energy points.
-Applying Debye-Waller factors using a Correlated Debye model.
-xprep done
-total time          0.9134s          (communication time     0.0000E+00s)
-Done with module: FMS.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
-MKGTR: Tracing over Green's function ...
-Done with module: MKGTR.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/path
-Pathfinder: finding scattering paths...
-Preparing plane wave scattering amplitudes
-Searching for paths
-Rmax  3.8692  keep and heap limits   0.0000000   0.0000000
-Preparing neighbor table
-Paths found      110   (maxheap, maxscatt      33   3)
-Eliminating path degeneracies
-Unique paths     11,  total paths     110
-Done with module: pathfinder.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
-Calculating EXAFS parameters ...
-Done with module: EXAFS parameters (GENFMT).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
-Calculating XAS spectra ...
-Use all paths with cw amplitude ratio   4.00%
-S02  1.000  Temp  298.00  Debye temp  760.99  Global sig2  0.00000
-Applying Debye-Waller factors using a Correlated Debye model.
-electronic_temperature =    0.00000 (eV)
-Done with module: XAS spectra (FF2X: DW + final sum over paths).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
-Launching FEFF version FEFF 10.0
-RGRID, rgrd;   1.00000E-02
-Working in real space.
-CIF and ATOMS cards used: ATOMS card will be ignored.
-Taking crystal structure from .cif file.
-Warning - H-M name of space group possibly sloppy or incorrect.
-Using provided International Tables number for space group, and proceeding.
-International Tables space group number from cif file:          194
-This may correspond to H-M symbol P63/mmc
-The CIF file provided P6_3/mmc   (adjusted toP63/mmc   )
-If this is not what you intended, please edit the cif file to avoid ambiguity.
-E.g., it is possible to #comment out the line given the International Tables nu
-mber.
-:WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-Now making real-space atoms list from cif input.
-nats=            8  lattice=H nshift=            0
-using           17 x          17 x           3  unit cells or         6936
-atoms
-original list:
-1     0.00000      0.00000      0.00000
-2     0.00000      0.00000     -1.21111
-3    -0.57735     -0.00000      0.60555
-4    -0.28868      0.50000     -0.60555
-5    -0.57735     -0.00000     -0.84945
-6    -0.28868     -0.50000      0.84945
-7    -0.28868      0.50000      0.36166
-8     0.28868     -0.50000     -0.36166
-Core hole lifetime is   0.036 eV.
-Your calculation:
-Once upon a time ...
-Li K edge XANES using FSR corehole.
-Using:     * Debye-Waller factors   * Self-Consistent Field potentials
-Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT NLEG XANES RGRID EDGE SCF FMS ABSOLUTE REAL TARGET EGRID SETE CIF
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/atomic
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/pot
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/screen
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ldos
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/xsph
-Calculating cross-section and phases ...
-Fixing edge energy from Elam table:
-emu =     54.700 eV
-absorption cross section
-phase shifts for unique potential    0
-Phase shift calculation is accurate to k=25
-See FEFF document to increase the range.
-phase shifts for unique potential    1
-Phase shift calculation is accurate to k=27
-See FEFF document to increase the range.
-phase shifts for unique potential    2
-Phase shift calculation is accurate to k=29
-See FEFF document to increase the range.
-phase shifts for unique potential    3
-Phase shift calculation is accurate to k=34
-See FEFF document to increase the range.
-Done with module: cross-section and phases (XSPH).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/fms
-FMS calculation of full Green's function ...
-FEFF-MPI using     1 parallel threads.
-Using   657 energy points.
-Applying Debye-Waller factors using a Correlated Debye model.
-xprep done
-total time          0.9115s          (communication time     0.0000E+00s)
-Done with module: FMS.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
-MKGTR: Tracing over Green's function ...
-Done with module: MKGTR.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/path
-Pathfinder: finding scattering paths...
-Preparing plane wave scattering amplitudes
-Searching for paths
-Rmax  3.8692  keep and heap limits   0.0000000   0.0000000
-Preparing neighbor table
-Paths found      122   (maxheap, maxscatt      33   3)
-Eliminating path degeneracies
-Unique paths     12,  total paths     122
-Done with module: pathfinder.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
-Calculating EXAFS parameters ...
-Done with module: EXAFS parameters (GENFMT).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
-Calculating XAS spectra ...
-Use all paths with cw amplitude ratio   4.00%
-S02  1.000  Temp  298.00  Debye temp  760.99  Global sig2  0.00000
-Applying Debye-Waller factors using a Correlated Debye model.
-electronic_temperature =    0.00000 (eV)
-Done with module: XAS spectra (FF2X: DW + final sum over paths).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
-Launching FEFF version FEFF 10.0
-RGRID, rgrd;   1.00000E-02
-Working in real space.
-CIF and ATOMS cards used: ATOMS card will be ignored.
-Taking crystal structure from .cif file.
-Warning - H-M name of space group possibly sloppy or incorrect.
-Using provided International Tables number for space group, and proceeding.
-International Tables space group number from cif file:          194
-This may correspond to H-M symbol P63/mmc
-The CIF file provided P6_3/mmc   (adjusted toP63/mmc   )
-If this is not what you intended, please edit the cif file to avoid ambiguity.
-E.g., it is possible to #comment out the line given the International Tables nu
-mber.
-:WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-Now making real-space atoms list from cif input.
-nats=            8  lattice=H nshift=            0
-using           17 x          17 x           3  unit cells or         6936
-atoms
-original list:
-1     0.00000      0.00000      0.00000
-2     0.00000      0.00000     -1.21111
-3    -0.57735     -0.00000      0.60555
-4    -0.28868      0.50000     -0.60555
-5    -0.57735     -0.00000     -0.84945
-6    -0.28868     -0.50000      0.84945
-7    -0.28868      0.50000      0.36166
-8     0.28868     -0.50000     -0.36166
-Core hole lifetime is   0.113 eV.
-Your calculation:
-Once upon a time ...
-Li L1 edge XANES using FSR corehole.
-Using:     * Debye-Waller factors   * Self-Consistent Field potentials
-Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT NLEG XANES RGRID EDGE SCF FMS ABSOLUTE REAL TARGET EGRID SETE CIF
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/atomic
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/pot
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/screen
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ldos
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/xsph
-Calculating cross-section and phases ...
-Fixing edge energy from Elam table:
-emu =      5.300 eV
-absorption cross section
-ihole, xinorm        2  2.02644E-01
-There may be convergence problems.
-Xinorm should be 1. If you set the RGRID, minor interpolation errors that will not affect final results may occur.
-phase shifts for unique potential    0
-Phase shift calculation is accurate to k=27
-See FEFF document to increase the range.
-phase shifts for unique potential    1
-Phase shift calculation is accurate to k=27
-See FEFF document to increase the range.
-phase shifts for unique potential    2
-Phase shift calculation is accurate to k=29
-See FEFF document to increase the range.
-phase shifts for unique potential    3
-Phase shift calculation is accurate to k=34
-See FEFF document to increase the range.
-Done with module: cross-section and phases (XSPH).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/fms
-FMS calculation of full Green's function ...
-FEFF-MPI using     1 parallel threads.
-Using   659 energy points.
-Applying Debye-Waller factors using a Correlated Debye model.
-xprep done
-total time          0.9135s          (communication time     0.0000E+00s)
-Done with module: FMS.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
-MKGTR: Tracing over Green's function ...
-Done with module: MKGTR.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/path
-Pathfinder: finding scattering paths...
-Preparing plane wave scattering amplitudes
-Searching for paths
-Rmax  3.8692  keep and heap limits   0.0000000   0.0000000
-Preparing neighbor table
-Paths found      122   (maxheap, maxscatt      33   3)
-Eliminating path degeneracies
-Unique paths     12,  total paths     122
-Done with module: pathfinder.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
-Calculating EXAFS parameters ...
-Done with module: EXAFS parameters (GENFMT).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
-Calculating XAS spectra ...
-Use all paths with cw amplitude ratio   4.00%
-S02  1.000  Temp  298.00  Debye temp  760.99  Global sig2  0.00000
-Applying Debye-Waller factors using a Correlated Debye model.
-electronic_temperature =    0.00000 (eV)
-Done with module: XAS spectra (FF2X: DW + final sum over paths).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
-Launching FEFF version FEFF 10.0
-RGRID, rgrd;   1.00000E-02
-Working in real space.
-CIF and ATOMS cards used: ATOMS card will be ignored.
-Taking crystal structure from .cif file.
-Warning - H-M name of space group possibly sloppy or incorrect.
-Using provided International Tables number for space group, and proceeding.
-International Tables space group number from cif file:          194
-This may correspond to H-M symbol P63/mmc
-The CIF file provided P6_3/mmc   (adjusted toP63/mmc   )
-If this is not what you intended, please edit the cif file to avoid ambiguity.
-E.g., it is possible to #comment out the line given the International Tables nu
-mber.
-:WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-Now making real-space atoms list from cif input.
-nats=            8  lattice=H nshift=            0
-using           17 x          17 x           3  unit cells or         6936
-atoms
-original list:
-1    -0.28868     -0.50000      0.84945
-2    -0.28868      0.50000     -0.36166
-3     0.00000      0.00000     -0.96721
-4    -0.57735     -0.00000      0.24389
-5     0.00000      0.00000      0.00000
-6    -0.57735     -0.00000     -0.72332
-7    -0.57735     -0.00000      1.21111
-8     0.00000      0.00000      0.48779
-Core hole lifetime is   0.156 eV.
-Your calculation:
-Once upon a time ...
-O K edge XANES using FSR corehole.
-Using:     * Debye-Waller factors   * Self-Consistent Field potentials
-Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT NLEG XANES RGRID EDGE SCF FMS ABSOLUTE REAL TARGET EGRID SETE CIF
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/atomic
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/pot
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/screen
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ldos
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/xsph
-Calculating cross-section and phases ...
-Fixing edge energy from Elam table:
-emu =    543.100 eV
-absorption cross section
-phase shifts for unique potential    0
-Phase shift calculation is accurate to k=35
-See FEFF document to increase the range.
-phase shifts for unique potential    1
-Phase shift calculation is accurate to k=27
-See FEFF document to increase the range.
-phase shifts for unique potential    2
-Phase shift calculation is accurate to k=29
-See FEFF document to increase the range.
-phase shifts for unique potential    3
-Phase shift calculation is accurate to k=34
-See FEFF document to increase the range.
-Done with module: cross-section and phases (XSPH).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/fms
-FMS calculation of full Green's function ...
-FEFF-MPI using     1 parallel threads.
-Using   660 energy points.
-Applying Debye-Waller factors using a Correlated Debye model.
-xprep done
-total time          1.3951s          (communication time     0.0000E+00s)
-Done with module: FMS.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
-MKGTR: Tracing over Green's function ...
-Done with module: MKGTR.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/path
-Pathfinder: finding scattering paths...
-Preparing plane wave scattering amplitudes
-Searching for paths
-Rmax  3.8692  keep and heap limits   0.0000000   0.0000000
-Preparing neighbor table
-Paths found      141   (maxheap, maxscatt      35   3)
-Eliminating path degeneracies
-Unique paths     25,  total paths     141
-Done with module: pathfinder.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
-Calculating EXAFS parameters ...
-Done with module: EXAFS parameters (GENFMT).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
-Calculating XAS spectra ...
-Use all paths with cw amplitude ratio   4.00%
-S02  1.000  Temp  298.00  Debye temp  760.99  Global sig2  0.00000
-Applying Debye-Waller factors using a Correlated Debye model.
-electronic_temperature =    0.00000 (eV)
-Done with module: XAS spectra (FF2X: DW + final sum over paths).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
-Launching FEFF version FEFF 10.0
-RGRID, rgrd;   1.00000E-02
-Working in real space.
-CIF and ATOMS cards used: ATOMS card will be ignored.
-Taking crystal structure from .cif file.
-Warning - H-M name of space group possibly sloppy or incorrect.
-Using provided International Tables number for space group, and proceeding.
-International Tables space group number from cif file:          194
-This may correspond to H-M symbol P63/mmc
-The CIF file provided P6_3/mmc   (adjusted toP63/mmc   )
-If this is not what you intended, please edit the cif file to avoid ambiguity.
-E.g., it is possible to #comment out the line given the International Tables nu
-mber.
-:WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-Now making real-space atoms list from cif input.
-nats=            8  lattice=H nshift=            0
-using           17 x          17 x           3  unit cells or         6936
-atoms
-original list:
-1    -0.28868     -0.50000      0.84945
-2    -0.28868      0.50000     -0.36166
-3     0.00000      0.00000     -0.96721
-4    -0.57735     -0.00000      0.24389
-5     0.00000      0.00000      0.00000
-6    -0.57735     -0.00000     -0.72332
-7    -0.57735     -0.00000      1.21111
-8     0.00000      0.00000      0.48779
-Core hole lifetime is   0.367 eV.
-Your calculation:
-Once upon a time ...
-O L1 edge XANES using FSR corehole.
-Using:     * Debye-Waller factors   * Self-Consistent Field potentials
-Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT NLEG XANES RGRID EDGE SCF FMS ABSOLUTE REAL TARGET EGRID SETE CIF
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/atomic
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/pot
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/screen
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ldos
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/xsph
-Calculating cross-section and phases ...
-Fixing edge energy from Elam table:
-emu =     41.600 eV
-absorption cross section
-ihole, xinorm        2  9.41430E-01
-There may be convergence problems.
-Xinorm should be 1. If you set the RGRID, minor interpolation errors that will not affect final results may occur.
-phase shifts for unique potential    0
-Phase shift calculation is accurate to k=34
-See FEFF document to increase the range.
-phase shifts for unique potential    1
-Phase shift calculation is accurate to k=27
-See FEFF document to increase the range.
-phase shifts for unique potential    2
-Phase shift calculation is accurate to k=29
-See FEFF document to increase the range.
-phase shifts for unique potential    3
-Phase shift calculation is accurate to k=34
-See FEFF document to increase the range.
-Done with module: cross-section and phases (XSPH).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/fms
-FMS calculation of full Green's function ...
-FEFF-MPI using     1 parallel threads.
-Using   662 energy points.
-Applying Debye-Waller factors using a Correlated Debye model.
-xprep done
-total time          1.3811s          (communication time     0.0000E+00s)
-Done with module: FMS.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
-MKGTR: Tracing over Green's function ...
-Done with module: MKGTR.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/path
-Pathfinder: finding scattering paths...
-Preparing plane wave scattering amplitudes
-Searching for paths
-Rmax  3.8692  keep and heap limits   0.0000000   0.0000000
-Preparing neighbor table
-Paths found      141   (maxheap, maxscatt      35   3)
-Eliminating path degeneracies
-Unique paths     25,  total paths     141
-Done with module: pathfinder.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
-Calculating EXAFS parameters ...
-Done with module: EXAFS parameters (GENFMT).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
-Calculating XAS spectra ...
-Use all paths with cw amplitude ratio   4.00%
-S02  1.000  Temp  298.00  Debye temp  760.99  Global sig2  0.00000
-Applying Debye-Waller factors using a Correlated Debye model.
-electronic_temperature =    0.00000 (eV)
-Done with module: XAS spectra (FF2X: DW + final sum over paths).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
-Launching FEFF version FEFF 10.0
-RGRID, rgrd;   1.00000E-02
-Working in real space.
-CIF and ATOMS cards used: ATOMS card will be ignored.
-Taking crystal structure from .cif file.
-Warning - H-M name of space group possibly sloppy or incorrect.
-Using provided International Tables number for space group, and proceeding.
-International Tables space group number from cif file:          194
-This may correspond to H-M symbol P63/mmc
-The CIF file provided P6_3/mmc   (adjusted toP63/mmc   )
-If this is not what you intended, please edit the cif file to avoid ambiguity.
-E.g., it is possible to #comment out the line given the International Tables nu
-mber.
-:WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-Now making real-space atoms list from cif input.
-nats=            8  lattice=H nshift=            0
-using           17 x          17 x           3  unit cells or         6936
-atoms
-original list:
-1    -0.28868     -0.50000      0.84945
-2    -0.28868      0.50000     -0.36166
-3     0.00000      0.00000     -0.96721
-4    -0.57735     -0.00000      0.24389
-5     0.00000      0.00000      0.00000
-6    -0.57735     -0.00000     -0.72332
-7    -0.57735     -0.00000      1.21111
-8     0.00000      0.00000      0.48779
-Core hole lifetime is   0.008 eV.
-Your calculation:
-Once upon a time ...
-O L2 edge XANES using FSR corehole.
-Using:     * Debye-Waller factors   * Self-Consistent Field potentials
-Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT NLEG XANES RGRID EDGE SCF FMS ABSOLUTE REAL TARGET EGRID SETE CIF
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/atomic
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/pot
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/screen
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ldos
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/xsph
-Calculating cross-section and phases ...
-Fixing edge energy from Elam table:
-emu =     18.200 eV
-absorption cross section
-ihole, xinorm        3  8.72271E-01
-There may be convergence problems.
-Xinorm should be 1. If you set the RGRID, minor interpolation errors that will not affect final results may occur.
-phase shifts for unique potential    0
-Phase shift calculation is accurate to k=34
-See FEFF document to increase the range.
-phase shifts for unique potential    1
-Phase shift calculation is accurate to k=27
-See FEFF document to increase the range.
-phase shifts for unique potential    2
-Phase shift calculation is accurate to k=29
-See FEFF document to increase the range.
-phase shifts for unique potential    3
-Phase shift calculation is accurate to k=34
-See FEFF document to increase the range.
-Done with module: cross-section and phases (XSPH).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/fms
-FMS calculation of full Green's function ...
-FEFF-MPI using     1 parallel threads.
-Using   657 energy points.
-Applying Debye-Waller factors using a Correlated Debye model.
-xprep done
-total time          1.2475s          (communication time     0.0000E+00s)
-Done with module: FMS.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
-MKGTR: Tracing over Green's function ...
-Done with module: MKGTR.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/path
-Pathfinder: finding scattering paths...
-Preparing plane wave scattering amplitudes
-Searching for paths
-Rmax  3.8692  keep and heap limits   0.0000000   0.0000000
-Preparing neighbor table
-Paths found      141   (maxheap, maxscatt      35   3)
-Eliminating path degeneracies
-Unique paths     25,  total paths     141
-Done with module: pathfinder.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
-Calculating EXAFS parameters ...
-Done with module: EXAFS parameters (GENFMT).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
-Calculating XAS spectra ...
-Use all paths with cw amplitude ratio   4.00%
-S02  1.000  Temp  298.00  Debye temp  760.99  Global sig2  0.00000
-Applying Debye-Waller factors using a Correlated Debye model.
-electronic_temperature =    0.00000 (eV)
-Done with module: XAS spectra (FF2X: DW + final sum over paths).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/rdinp']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/rdinp
-Launching FEFF version FEFF 10.0
-RGRID, rgrd;   1.00000E-02
-Working in real space.
-CIF and ATOMS cards used: ATOMS card will be ignored.
-Taking crystal structure from .cif file.
-Warning - H-M name of space group possibly sloppy or incorrect.
-Using provided International Tables number for space group, and proceeding.
-International Tables space group number from cif file:          194
-This may correspond to H-M symbol P63/mmc
-The CIF file provided P6_3/mmc   (adjusted toP63/mmc   )
-If this is not what you intended, please edit the cif file to avoid ambiguity.
-E.g., it is possible to #comment out the line given the International Tables nu
-mber.
-:WARNING  POTENTIALS card contains different number of potentials than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-:WARNING   POTENTIALS card contains different atomic number than cif file.  Ignoring POTENTIALS card.
-Now making real-space atoms list from cif input.
-nats=            8  lattice=H nshift=            0
-using           17 x          17 x           3  unit cells or         6936
-atoms
-original list:
-1    -0.28868     -0.50000      0.84945
-2    -0.28868      0.50000     -0.36166
-3     0.00000      0.00000     -0.96721
-4    -0.57735     -0.00000      0.24389
-5     0.00000      0.00000      0.00000
-6    -0.57735     -0.00000     -0.72332
-7    -0.57735     -0.00000      1.21111
-8     0.00000      0.00000      0.48779
-Core hole lifetime is   0.008 eV.
-Your calculation:
-Once upon a time ...
-O L3 edge XANES using FSR corehole.
-Using:     * Debye-Waller factors   * Self-Consistent Field potentials
-Using cards:   ATOMS CONTROL EXCHANGE RPATH DEBYE PRINT NLEG XANES RGRID EDGE SCF FMS ABSOLUTE REAL TARGET EGRID SETE CIF
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/atomic']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/atomic
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/pot']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/pot
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/screen']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/screen
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ldos']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ldos
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/opconsat']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/opconsat
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/xsph']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/xsph
-Calculating cross-section and phases ...
-Fixing edge energy from Elam table:
-emu =     18.200 eV
-absorption cross section
-ihole, xinorm        4  8.77284E-01
-There may be convergence problems.
-Xinorm should be 1. If you set the RGRID, minor interpolation errors that will not affect final results may occur.
-phase shifts for unique potential    0
-Phase shift calculation is accurate to k=34
-See FEFF document to increase the range.
-phase shifts for unique potential    1
-Phase shift calculation is accurate to k=27
-See FEFF document to increase the range.
-phase shifts for unique potential    2
-Phase shift calculation is accurate to k=29
-See FEFF document to increase the range.
-phase shifts for unique potential    3
-Phase shift calculation is accurate to k=34
-See FEFF document to increase the range.
-Done with module: cross-section and phases (XSPH).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/fms']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/fms
-FMS calculation of full Green's function ...
-FEFF-MPI using     1 parallel threads.
-Using   657 energy points.
-Applying Debye-Waller factors using a Correlated Debye model.
-xprep done
-total time          1.3874s          (communication time     0.0000E+00s)
-Done with module: FMS.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/mkgtr']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/mkgtr
-MKGTR: Tracing over Green's function ...
-Done with module: MKGTR.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/path']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/path
-Pathfinder: finding scattering paths...
-Preparing plane wave scattering amplitudes
-Searching for paths
-Rmax  3.8692  keep and heap limits   0.0000000   0.0000000
-Preparing neighbor table
-Paths found      141   (maxheap, maxscatt      35   3)
-Eliminating path degeneracies
-Unique paths     25,  total paths     141
-Done with module: pathfinder.
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/genfmt']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/genfmt
-Calculating EXAFS parameters ...
-Done with module: EXAFS parameters (GENFMT).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/ff2x']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/ff2x
-Calculating XAS spectra ...
-Use all paths with cw amplitude ratio   4.00%
-S02  1.000  Temp  298.00  Debye temp  760.99  Global sig2  0.00000
-Applying Debye-Waller factors using a Correlated Debye model.
-electronic_temperature =    0.00000 (eV)
-Done with module: XAS spectra (FF2X: DW + final sum over paths).
-
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/sfconv']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/sfconv
---- FDV --- ['-np', '1', '-v', '/home/fdv/src/OpCons/feff10/bin/MPI/feff_timer']
-			Running executable: mpirun -np 1 -v /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
---------------------------------------------------------------------------
-mpirun was unable to launch the specified application as it could not access
-or execute an executable:
-
-Executable: /home/fdv/src/OpCons/feff10/bin/MPI/feff_timer
-Node: macchiato
-
-while attempting to start process rank 0.
---------------------------------------------------------------------------
-Join:  0
-Join:  1
-Join:  2
-Join:  3
-Join:  4
-Join:  5
-Join:  6
-Join:  7
-
-##########################################################
-       Component: Li1
-##########################################################
-
-	K
-		XANES
-Number density: [2, 2, 4]
-Edge and absorber: K 1
-LDOS file: ldos01.dat
-Angular momentum 0
-	L1
-		XANES
-Number density: [2, 2, 4]
-Edge and absorber: L1 1
-LDOS file: ldos01.dat
-Angular momentum 0
-Gap energy: 1.5093999999999994
-EFermi: -10.8176
-ETop: -10.0629
-EBottom: -11.5723
-E0: 5.300002928821677
-Gap energy: 1.5093999999999994
-EFermi: -10.8176
-ETop: -10.0629
-EBottom: -11.5723
-E0: 5.300002928821677
-
-
-##########################################################
-       Component: Li2
-##########################################################
-
-	K
-		XANES
-Number density: [2, 2, 4]
-Edge and absorber: K 2
-LDOS file: ldos02.dat
-Angular momentum 0
-	L1
-		XANES
-Number density: [2, 2, 4]
-Edge and absorber: L1 2
-LDOS file: ldos02.dat
-Angular momentum 0
-Gap energy: 1.5093999999999994
-EFermi: -10.8176
-ETop: -10.0629
-EBottom: -11.5723
-E0: 5.300003436721674
-Gap energy: 1.5093999999999994
-EFermi: -10.8176
-ETop: -10.0629
-EBottom: -11.5723
-E0: 5.300003436721674
-
-
-##########################################################
-       Component: O3
-##########################################################
-
-	K
-		XANES
-Number density: [2, 2, 4]
-Edge and absorber: K 3
-LDOS file: ldos03.dat
-Angular momentum 0
-	L1
-		XANES
-Number density: [2, 2, 4]
-Edge and absorber: L1 3
-LDOS file: ldos03.dat
-Angular momentum 0
-	L2
-		XANES
-Number density: [2, 2, 4]
-Edge and absorber: L2 3
-LDOS file: ldos03.dat
-Angular momentum 1
-Gap energy: 1.5093999999999994
-EFermi: -10.8176
-ETop: -10.0629
-EBottom: -11.5723
-E0: 18.20000672722167
-Gap energy: 1.5093999999999994
-EFermi: -10.8176
-ETop: -10.0629
-EBottom: -11.5723
-E0: 18.20000672722167
-	L3
-		XANES
-Number density: [2, 2, 4]
-Edge and absorber: L3 3
-LDOS file: ldos03.dat
-Angular momentum 1
-Gap energy: 1.5093999999999994
-EFermi: -10.8176
-ETop: -10.0629
-EBottom: -11.5723
-E0: 18.200007187421683
-Gap energy: 1.5093999999999994
-EFermi: -10.8176
-ETop: -10.0629
-EBottom: -11.5723
-E0: 18.200007187421683
-
-
-Performaing KK-transform of eps2:
-
-Number of points in eps2: 3511 3635
-10 %
-20 %
-30 %
-40 %
-50 %
-60 %
-70 %
-80 %
-90 %
-10 %
-20 %
-30 %
-40 %
-50 %
-60 %
-70 %
-80 %
-90 %
-10 %
-20 %
-30 %
-40 %
-50 %
-60 %
-70 %
-80 %
-90 %
-10 %
-20 %
-30 %
-40 %
-50 %
-60 %
-70 %
-80 %
-90 %
-formula [2. 2.] 2
-formula [1.33333333 1.33333333] 3
-formula [1. 1.] 4
-Number of Chemical Formula Units in Unit Cell:  4
-Number Densities: [2, 2, 4] 8
-Sumrule gives:  10.2628402385551
-Sumrule with convolution gives:  13.703872709497942
-Number Density:  0.008783961962215368
-Finished with calculation of optical constants.

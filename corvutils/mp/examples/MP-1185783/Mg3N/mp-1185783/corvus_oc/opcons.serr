@@ -1,2 +1,16 @@
 /home/fdv/.local/lib/python3.8/site-packages/pymatgen-2022.0.11-py3.8-linux-x86_64.egg/pymatgen/io/cif.py:1165: UserWarning: Issues encountered while parsing CIF: Some fractional co-ordinates rounded to ideal values to avoid issues with finite precision.
   warnings.warn("Issues encountered while parsing CIF: %s" % "\n".join(self.warnings))
+Traceback (most recent call last):
+  File "/home/fdv/.local/bin/run-corvus", line 7, in <module>
+    exec(compile(f.read(), __file__, 'exec'))
+  File "/home/fdv/src/OpCons/Corvus/bin/run-corvus", line 6, in <module>
+    corvus.controls.oneshot(sys.argv)
+  File "/home/fdv/src/OpCons/Corvus/corvus/controls.py", line 571, in oneshot
+    workflow.sequence[i].go(config, system)
+  File "/home/fdv/src/OpCons/Corvus/corvus/structures.py", line 100, in go
+    self.handler.exchange(config, system, returnedOutput)
+  File "/home/fdv/src/OpCons/Corvus/corvus/structures.py", line 248, in exchange
+    self.run(config, input, output)
+  File "/home/fdv/src/OpCons/Corvus/corvus/feff.py", line 1548, in run
+    dtmp[1:] = NumberDensity[ipot-1]*dtmp[1:] 
+IndexError: list index out of range

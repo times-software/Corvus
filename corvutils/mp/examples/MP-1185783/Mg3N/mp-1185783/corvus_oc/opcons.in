@@ -8,5 +8,5 @@ feff.fms{ 4.120890213515435 0 0 0.0 0.0 40.0 }
 # The lines below should set the parallel settings
 feff.MPI.SYS{openmpi}
 feff.MPI.SERFRAC{ 0.500000 }
-feff.MPI.NPTOT{ 10 }
-feff.MPI.OTHER{-v }
+feff.MPI.NPTOT{ 30 }
+feff.MPI.OTHER{-v --bind-to none }
