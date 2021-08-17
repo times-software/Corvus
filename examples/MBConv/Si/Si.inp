@@ -1,0 +1,12 @@
+# CORVUS input
+
+target_list { mbxanes }
+
+usehandlers { helper Feff PyMatGen Siesta phsf mbconv }
+siesta.MPI.CMD { mpirun }
+siesta.MPI.ARGS{ -n 4 }
+cif_input{ Si.cif }
+supercell.dimensions{4 4 4}
+absorbing_atom_type{ Si }
+siesta.PAO.BasisSize{ SZ }
+siesta.TD.NumberOfTimeSteps{ 200 }

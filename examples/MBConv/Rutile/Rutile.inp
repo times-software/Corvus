@@ -1,0 +1,20 @@
+# CORVUS input
+
+target_list { mbxanes }
+
+usehandlers { helper Feff PyMatGen Siesta phsf mbconv }
+siesta.MPI.CMD { mpirun }
+siesta.MPI.ARGS{ -n 4 }
+feff.MPI.CMD{ mpirun }
+feff.MPI.ARGS{ -n 6 }
+feff.edge{ L2 L3 }
+feff.tdlda{ 0 }
+feff.egrid{
+e_grid -10 10 0.05
+k_grid last 5 0.05 }
+cif_input{ Rutile.cif }
+supercell.dimensions{2 2 2}
+absorbing_atom_type{ Ti }
+siesta.PAO.BasisSize{ DZP }
+siesta.TD.NumberOfTimeSteps{ 200 }
+siesta.TD.TimeStep{ 0.5 }

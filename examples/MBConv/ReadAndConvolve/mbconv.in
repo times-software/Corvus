@@ -1,0 +1,5 @@
+# Set target to feffXANES (we will later change this to XANES.
+target_list { mbxanes }
+usehandlers { filereader mbconv }
+xanes_file{ xanes.dat }
+spectralFunction_file{ spfcn.dat }

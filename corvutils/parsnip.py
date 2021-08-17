@@ -530,7 +530,7 @@ def readInput(file):
         if duplicates:
             output = 'Parsnip Error: duplicate input entries detected...'
             for t in set(duplicates):
-                ouptut.append(str(duplicates.count(t)) + ' x ' + t)
+                output = output + str(duplicates.count(t)) + ' x ' + t
             raise LookupError(output)
         # Return parsed dictionary            
         return inputFile.parseString(cleanInput)

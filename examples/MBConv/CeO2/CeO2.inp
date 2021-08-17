@@ -1,0 +1,67 @@
+# General corvus input
+# 
+# Define the target property
+target_list { mbxanes }
+
+# Define which codes to use for this calculation.
+usehandlers { helper Feff PyMatGen Siesta phsf mbconv }
+
+# Define structure (cif + supercell)
+cif_input{ CeO2.cif }
+supercell.dimensions{2 3 4}
+
+# Define absorbing atom type
+absorbing_atom_type{ Ce }
+
+# Siesta input
+#
+# Define how to run in parallel
+siesta.MPI.CMD { mpirun }
+siesta.MPI.ARGS{ -n 4 }
+
+# SCF convergence parameters
+siesta.MaxSCFIterations{ 300 }
+
+siesta.TD.NumberOfTimeSteps{ 200 }
+siesta.TD.TimeStep{ 0.5 }
+
+# Define basis (DZP) + d states
+# for Ce.
+siesta.Block.PAO.Basis{
+O           2             
+ n=2   0   2             
+   3.305      2.479
+   1.000      1.000
+ n=2   1   2 P   1      
+   3.937      2.542
+   1.000      1.000
+Ce          3          
+ n=6   0   2 P   1    
+   8.286      8.183
+   1.000      1.000
+ n=4   2   2
+   0.0        0.0
+   1.0        1.0
+ n=4   3   2         
+   3.369      2.148
+   1.000      1.000
+}
+
+# Define broadening for spectral function.
+phsf.broadening{ 1.0 }
+
+# FEFF input
+# How to run in parallel
+feff.MPI.CMD{ mpirun }
+feff.MPI.ARGS{ -n 6 }
+
+# Which edges to calculate
+feff.edge{ M4 M5 }
+
+# Use no core-hole
+feff.corehole{ none }
+
+# Set energy grid
+feff.egrid{
+e_grid -10 10 0.05
+k_grid last 5 0.05 }
