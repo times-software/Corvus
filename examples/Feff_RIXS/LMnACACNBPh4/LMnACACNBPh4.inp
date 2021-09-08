@@ -2,7 +2,7 @@
 target_list{ feffRIXS }
 
 # Use feff to calculate
-usehandlers { Feff }
+#usehandlers { Feff }
 
 # Set mpi command and flags
 feff.MPI.CMD { mpirun }
@@ -16,6 +16,10 @@ spectral_broadening{ 0.7 }
 
 # Set absorbing atom
 absorbing_atom{ 1 }
+
+# Set FMS and SCF to small radii for faster calculation
+feff.fms{ 2.0 0 0 0.0 0.0 40.0 }
+feff.scf{ 2.0 0 30 0.1 0 }
 
 # Set cluster in xyz format (angstroms).
 cluster {

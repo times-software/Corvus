@@ -4,13 +4,13 @@
 target_list { fit }
 
 # Define what property we want to fit (XANES with FEFF).
-fit.target { feffXANES }
+fit.target { xanes }
 
 # Let lmfit know where the experimental data is.
 fit.datafile { exp.dat }
 
-feff.MPI.CMD{mpirun}
-feff.MPI.ARGS{-n 1}
+#feff.MPI.CMD{mpirun}
+#feff.MPI.ARGS{-n 1}
 
 # Define fit parameters.
 # Fit only an scaling factor (amplitude), 

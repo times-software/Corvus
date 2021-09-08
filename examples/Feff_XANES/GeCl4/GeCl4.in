@@ -1,12 +1,5 @@
 # Set target to feffXANES (we will later change this to XANES.
-target_list { feffXANES }
-
-# Make Corvus use FEFF for XANES.
-usehandlers { Feff }
-
-# Set the mpi command and flags for feff.
-feff.MPI.CMD { mpirun }
-feff.MPI.ARGS { -n 1 }
+target_list { xanes }
 
 # Set absorption edge.
 feff.edge{ K }

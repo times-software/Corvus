@@ -1,12 +1,12 @@
 # Set tartget for corvus
-target_list { feffXANES }
+target_list { xanes }
 
 # Make corvus use feff for calculation
-usehandlers { Feff }
+# usehandlers { Feff }
 
 # Set mpi command and flags.
-feff.MPI.CMD { mpirun }
-feff.MPI.ARGS { -n 6 }
+#feff.MPI.CMD { mpirun }
+#feff.MPI.ARGS { -n 6 }
 
 # Make feff run in reciprocal space like KKR.
 feff.reciprocal{ T }
@@ -25,11 +25,11 @@ spectral_broadening{ 0.1 }
 feff.target{ 1 }
 
 # Set cif file to use for this calculation.
-feff.cif{/home/jjkas/Programs/Corvus/examples/Feff_XANES/KSpace/Graphite.cif}
+cif_input{Graphite.cif}
 
 # Set kmesh - This puts ~1000 kpoints in the IBZ. You could also specify
 # points in each direction, i.e., 10 10 5 for example.
-feff.kmesh{1000}
+feff.kmesh{10}
 
 # Use the rpa core-hole - This is not essential. If you leave it out
 # feff will use the FSR core-hole, although I don't know exactly which way

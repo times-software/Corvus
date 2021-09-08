@@ -398,10 +398,13 @@ class Feff(Handler):
                 # Now combine energy grids, interpolate files, and sum.
                 wtot = np.unique(np.append(w_arr[0],w_arr[1:]))
                 xmutot = np.zeros_like(wtot)
+                xmuterp_arr = []
                 for i,xmu_elem in enumerate(xmu_arr):
+                    xmuterp_arr = xmuterp_arr + [np.interp(wtot,w_arr[i],xmu_elem)]
                     xmutot = xmutot + np.interp(wtot,w_arr[i],xmu_elem)
 
-                output[target] = [wtot,xmutot]
+                #output[target] = np.array([wtot,xmutot] + xmuterp_arr).tolist()
+                output[target] = np.array([wtot,xmutot]).tolist()
                 #print output[target]
 
 

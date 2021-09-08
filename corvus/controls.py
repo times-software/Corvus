@@ -251,26 +251,39 @@ def generateWorkflow(target, handlers, system, config, desc=''):
     # given list are to be run in parallel, while separate lists will be run sequentially.
     # This gives the user easy access to simple workflows, while still allowing the power 
     # of the underlying corvus machinery. 
+
+    # JK - Changing the operation of user defined handler list. Now we will prefer user defined handlers, but not
+    # require them. If a target cannot be produced by any of the user defined handlers, search for one that can produce
+    # that target. 
+    # First check what handlers can produce each target. There might be more than one for a 
+    # given target.
     for t in reversed(mainTargets):
        targets = set([t])
        while len(targets) > 0:
            noMatch = True
-           # JK - Make sure there is some handler that can produce each target.
-           #for target in targets:
-           #    handler_not_found = True
-           #    for h in availHandlers:
-           #        if h.canProduce(target):
-           #            handler_not_found = False
-           #    if handler_not_found:
-           #        print("No handler to produce target:", target)
-           #        print("Install the correct software if it exists.")
-           #        sys.exit()
 
-
-
-           for h in useHandlers: #availHandlers: JK - this should be useHandlers to restrict to handlers specified by user.
-               # In the below line we will want to check if target is a list, and if so, check
-               # if h can produce any elements of target. Optionally, we can check 
+           # Loop through all handlers that can produce target t and find all handlers that can produce the given target
+           #possibleHandlers = [ h for h
+           possibleHandlers = []
+           for target in targets:
+               found = False
+               # Loop through user supplied handlers first to see if we can find one that produces this target.
+               for h in useHandlers:
+                   if h.canProduce(target):
+                       possibleHandlers = possibleHandlers + [h]
+                       found = True
+                       break # For now just use the first handler available
+               if not found:
+                   # loop through all available handlers now since we didn't find one in the user
+                   # supplied list. For now, use the first handler available. In future, we might
+                   # want to have some other method of chosing which handler to use based on input
+                   # or cost etc. 
+                   for h in availHandlers:
+                        if h.canProduce(target):
+                            possibleHandlers = possibleHandlers + [h]
+                            break # For now just use the first handler available
+                   
+           for h in possibleHandlers:
                htargets = [target for target in targets if h.canProduce(target)]
                if htargets:
                    noMatch = False
@@ -285,8 +298,9 @@ def generateWorkflow(target, handlers, system, config, desc=''):
                            workflow.addExchangeAt(0, h.sequenceFor(l,system))
                            targets.difference_update(subset)  
                            targets.update(set(workflow.getRequiredInput()))
+                           #allTargets=allTargets | targets 
                            break
-
+               #print(targets)
            if noMatch:
                break
 
@@ -396,9 +410,10 @@ def generateAndRunWorkflow(config, system, targetList):
     if 'usehandlers' in list(system.keys()):
       handlerList = system['usehandlers'][0]
     else:
-      print('Provide the handler list to be used in this calculation')
-      exitOneshot()
-      return
+      #print('Provide the handler list to be used in this calculation')
+      #exitOneshot()
+      #return
+      handlerList = []
 
     autodesc = 'Calculate ' + ', '.join(targetList[0])
     workflow = generateWorkflow(targetList, handlerList, system, config, desc=autodesc)
@@ -550,9 +565,10 @@ def oneshot(argv,sys_exit=True):
     if 'usehandlers' in list(system.keys()):
       handlerList = system['usehandlers'][0]
     else:
-      print('Provide the handler list to be used in this calculation')
-      exitOneshot()
-      return
+      #print('Provide the handler list to be used in this calculation')
+      #exitOneshot()
+      #return
+      handlerList = []
 
 # Here we should probably add a check to see if the target list if empty, but
 # I don't think it can happen. Leaving for future

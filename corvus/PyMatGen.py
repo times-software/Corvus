@@ -117,7 +117,7 @@ class PyMatGen(Handler):
             structure = parser.get_structures()[0]
             sg_anal = SpacegroupAnalyzer(structure) 
             structure = sg_anal.get_symmetrized_structure()
-            print(input['absorbing_atom_type'])
+            #print(input['absorbing_atom_type'])
             if "absorbing_atom_type" in input: # Will set up calculation of all unique absorbers in unit cell.
                 absorber_types=[input["absorbing_atom_type"][0][0]]
             else:
@@ -132,7 +132,7 @@ class PyMatGen(Handler):
                     structure.sites[ind].properties['itype'] = ipot
                 ipot += 1
     
-            print(structure.sites)
+            #print(structure.sites)
             for inds in structure.equivalent_indices:
                 for abs_symbol in absorber_types:
                     if abs_symbol == structure.sites[inds[0]].species_string:
@@ -213,7 +213,7 @@ class PyMatGen(Handler):
                 red_coords = red_coords + [[s.species.elements[0].value] + list(s.frac_coords)]
                 #red_coords = red_coords + [[s.species] + s.frac_coords]
 
-            print(red_coords[0])
+            #print(red_coords[0])
             output['cell_struc_xyz_red'] = red_coords
             output['supercell']=[scaling_vector]
 

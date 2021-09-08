@@ -5,7 +5,7 @@ import os, sys, subprocess, shutil, resource
 import math
 import pprint
 import copy
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 
 #Define dictionary of implemented calculations
 implemented = {}
@@ -85,19 +85,22 @@ class helper(Handler):
 
     @staticmethod
     def run(config, input, output):
-        print('Inside helper')
+        #print('Inside helper')
         from corvus.controls import generateAndRunWorkflow
         dir = config['xcDir']
         for target in output:
-            print('Inside helper', output)
+            #print('Inside helper', output)
             if (target == 'xanes_cfavg'):
                 #Define the target of the average
                 targetList = [['xanes']]
 
                 cluster_array = input['cluster_array']
                 print("Number of absorbers:", len(cluster_array))
+                en = []
+                mu = []
+                step = 1.e30
                 for i,clust_elem in enumerate(cluster_array):
-                    print(i, clust_elem[0])
+                    #print(i, clust_elem[0])
                     input['absorbing_atom'] = [[clust_elem[0]]]
                     input['cluster'] = clust_elem[1]
                     # Make sure we are working with absolute units.
@@ -109,19 +112,33 @@ class helper(Handler):
                     generateAndRunWorkflow(config2, input, targetList)
             
                     # get results from input.
-                    en,mu=np.array(input['xanes'])
-                    plt.plot(en,mu)
-                    # If first run, make the common grid.
-                    if i == 0:
-                        egrid = en
-                        mu_total = mu
-                    else:
-                        # interpolate onto the common grid and add to total.
-                        mu_total = mu_total + np.interp(egrid, en, mu, left = 0.0, right = mu[-1])
+                    en0,mu0=np.array(input['xanes'])
+                    
+                    # Save in array of XANES output.
+                    en = en + [en0]
+                    step = min(step,np.amin(en0[1:]-en0[:-1]))
+                    mu = mu + [mu0]
+                    #plt.plot(en,mu)
 
-                print('plotting...')
-                plt.show()
-                output['xanes_cfavg'] = [egrid.tolist(),(mu_total/len(cluster_array)).tolist()]
+                en = np.array(en)
+                mu = np.array(mu)
+                # Make the common grid.
+                emin=np.amin(en)
+                emax=np.amax(en)
+                egrid = np.arange(emin,emax,step)
+
+                # Interpolate onto common grid.
+                mu_interp = []
+                for i,clust_elem in enumerate(cluster_array):
+                    # interpolate onto the common grid and add to total.
+                    mui = np.interp(egrid, en[i], mu[i], left = 0.0)
+                    mu_interp = mu_interp + [mui]
+
+                # Get average and standard deviation.
+                mu_avg = np.average(mu_interp,0)
+                mu_stdev = np.std(mu_interp,0)
+
+                output['xanes_cfavg'] = np.array([egrid,mu_avg,mu_stdev]).tolist()
 
     @staticmethod
     def cleanup(config):

@@ -2,7 +2,7 @@
 target_list { xanes_cfavg }
 
 # Make Corvus use FEFF for XANES.
-usehandlers { helper PyMatGen Feff }
+#usehandlers { helper PyMatGen Feff }
 absorbing_atom_type{ Co }
 
 cif_input{ CaCoO2_dist.cif }
@@ -11,6 +11,6 @@ cif_input{ CaCoO2_dist.cif }
 # Set absorption edge.
 feff.edge{ K }
 
+# These settings are not converged, but are fast.
 feff.fms{ 2.0 0 0 0.0 0.0 40.0 }
 feff.scf{ 2.0 0 30 0.1 0 }
-

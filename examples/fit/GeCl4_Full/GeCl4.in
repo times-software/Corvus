@@ -4,13 +4,16 @@
 target_list { fit }
 
 # Define what property we want to fit (XANES with FEFF).
-fit.target { feffXANES }
+fit.target { xanes }
 
 # Let lmfit know where the experimental data is.
 fit.datafile { exp.dat }
 
-feff.MPI.CMD{mpirun}
-feff.MPI.ARGS{-n 1}
+usehandlers { fit Feff }
+
+#feff.MPI.CMD{mpirun}
+#feff.MPI.ARGS{-n 1}
+
 feff.lfms1{ 2 }
 feff.lfms2{ 3 }
 
@@ -23,7 +26,6 @@ fit.parameters {
    expansion 1.0
 }
 
-usehandlers { Feff }
 feff.egrid{
 e_grid -40 -10 0.5
 e_grid -10 10 0.1
