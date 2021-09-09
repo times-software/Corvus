@@ -1,7 +1,7 @@
 from .structures import Handler, Exchange, Loop, Update
 import numpy as np
 import corvutils.pyparsing as pp
-import os, sys, subprocess, shutil, resource
+import os, sys, subprocess, shutil #, resource
 from lmfit import Minimizer, Parameters, report_fit, fit_report 
 import re
 import math
@@ -111,11 +111,15 @@ class fit(Handler):
         # Loop over parameters defined in input. Later, we might loop over
         # all possible parameters and set which ones vary instead.
         for param in input['fit.parameters']:
+            #minval = param[1]*0.5 if param[1] != 0 else -0.5
+            #maxval = param[1]*1.5 if param[1] != 0 else 0.5
+            #params.add(param[0],value=param[1],min=minval,max=maxval)
             params.add(param[0],value=param[1])
 
         #open('fitconvergence.dat', 'ab')
         # do fit, here with the default leastsq algorithm
         minner = Minimizer(Xanes2Min, params, fcn_args=(x, data, input, config, output))
+        #result = minner.minimize(epsfcn=0.0001,method='differential_evolution',workers=6)
         result = minner.minimize(epsfcn=0.0001)
         final  = data + result.residual
 

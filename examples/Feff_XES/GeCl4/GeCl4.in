@@ -8,8 +8,8 @@ usehandlers { Feff }
 absorbing_atom{ 2 }
 
 # Set mpi command and flags
-feff.MPI.CMD{ mpirun }
-feff.MPI.ARGS{ -n 1 }
+#feff.MPI.CMD{ mpirun }
+#feff.MPI.ARGS{ -n 1 }
 
 # Specify cluster of atoms (xyz type format in Angstroms)
 cluster {
