@@ -7,7 +7,7 @@
 
                   Property-driven Scientific Workflow Manager                   
 
-                                 Version: 0.9.0                                 
+                                  Version: 1.0                                  
 
                           Web: http://feffproject.org                           
                               E-mail: feff@uw.edu                               
@@ -18,7 +18,7 @@
 
 ================================================================================
 
-Copyright (c) 2018 S. Story, F. D. Vila, J. J. Kas, S. D. Pemmaraju, J. J. Rehr
+Copyright (c) 2021 S. Story, F. D. Vila, J. J. Kas, S. D. Pemmaraju, J. J. Rehr
 
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -262,13 +262,39 @@ Description:
 
 Format:
 absorbing_atom {
- Integer
+ Integer ...
 }
 
 Default:
-absorbing_atom {
-1
+None
+
+--------------------------------------------------------------------------------
+absorbing_atom_type:
+
+Description:
+ Symbol of atom you would like to calculate the XANES for. Will loop over symmetry unique sites.
+
+Format:
+absorbing_atom_type {
+ String ...
 }
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+cell_angles_abg:
+
+Description:
+ Scaling of the a, b an c axes of the simulation cell, in Angstroms.
+
+Format:
+cell_angles_abg {
+ Float Float Float
+}
+
+Default:
+None
 
 --------------------------------------------------------------------------------
 cell_scaling_abc:
@@ -367,6 +393,20 @@ charge {
 }
 
 --------------------------------------------------------------------------------
+cif_input:
+
+Description:
+ cif input file name.
+
+Format:
+cif_input {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
 cluster:
 
 Description:
@@ -399,353 +439,25 @@ True
 }
 
 --------------------------------------------------------------------------------
-ene_int:
+debyetemp:
 
 Description:
-No description available for this variable
-Please contact the code developers
+
+ debyetemp
+ {
+ temp
+
+ Specify the Debye Model temperature (in K) for the calculation of EXAFS DW
+ factors.
 
 Format:
-ene_int {
+debyetemp {
  Float
 }
 
 Default:
 None
 
---------------------------------------------------------------------------------
-ismetal:
-
-Description:
- Toggle whether the system should be treated as a metal or as an insulator.
-
-Format:
-ismetal {
- Boolean
-}
-
-Default:
-ismetal {
-False
-}
-
---------------------------------------------------------------------------------
-keep_symm:
-
-Description:
- Toggle the preservation of initial symmetry in optimizations.
-
-Format:
-keep_symm {
- Boolean
-}
-
-Default:
-keep_symm {
-True
-}
-
---------------------------------------------------------------------------------
-mac_diel_const:
-
-Description:
- Approximate value of the macroscopic dielectric constant of the system used in
- some methods to accelerate convergence of the SCF cycle.
-
-Format:
-mac_diel_const {
- Float
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-method:
-
-Description:
- Method used to compute the target. This variable is somewhat context-dependent
- and is ccurrently not fully implemented.
- Current possible values are:
-    dft, mp2, ccsd
-
-Format:
-method {
- String
-}
-
-Default:
-method {
-dft
-}
-
---------------------------------------------------------------------------------
-multiplicity:
-
-Description:
- Multiplicity of the system.
-
-Format:
-multiplicity {
- Integer
-}
-
-Default:
-multiplicity {
-0
-}
-
---------------------------------------------------------------------------------
-nkpoints:
-
-Description:
- Define the number of k-point in each direction of the grid for reciprocal
- space simulations.
-
-Format:
-nkpoints {
- Integer Integer Integer
-}
-
-Default:
-nkpoints {
-1 1 1
-}
-
---------------------------------------------------------------------------------
-nqpoints:
-
-Description:
- Define the number of q-point perturbations in each direction of the grid for
- density functional perturbation theory (DFPT) simulations.
-
-Format:
-nqpoints {
- Integer Integer Integer
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-pspfiles:
-
-Description:
- List of pseudopotentials for each atom in the system. Each line contains
- the label for the atoms (usually the element % name) and the name of the file
- with the pseudopotential. The required format for the files will depend on the
- Handler used.
-
-Format:
-pspfiles {
- String String
- ...
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-pw_encut:
-
-Description:
- Planwave energy cutoff for reciprocal space simulations, in au.
-
-Format:
-pw_encut {
- Float
-}
-
-Default:
-pw_encut {
-15.0
-}
-
---------------------------------------------------------------------------------
-scf_conv:
-
-Description:
- Convergence threshold for SCF cycles (HF, DFT, etc) in au. The value set by
- this variable might be internally overridden if the target requires tighter
- convergence settings.
-
-Format:
-scf_conv {
- Float
-}
-
-Default:
-scf_conv {
-1.0e-5
-}
-
---------------------------------------------------------------------------------
-scratch:
-
-Description:
- Directory for disk scratch for those Handlers that require large amounts of
- disk. If the directory is not present or it can not be created, Corvus reverts
- to the default.
- NOTE: This input variable is not fully implemented yet.
-
-Format:
-scratch {
- String ...
-}
-
-Default:
-scratch {
-.
-}
-
---------------------------------------------------------------------------------
-spectral_broadening:
-
-Description:
- Broadening used in some spectroscopic methods.
-
-Format:
-spectral_broadening {
- Float
-}
-
-Default:
-spectral_broadening {
-0.0
-}
-
---------------------------------------------------------------------------------
-target_list:
-
-Description:
- Space separated list with all the targets required for this calculation.
-
-Format:
-target_list {
- String ...
- ...
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-title:
-
-Description:
- Title of this calculation.
-
-Format:
-title {
- Pass
- ...
-}
-
-Default:
-title {
-This is a Corvus calculation
-}
-
---------------------------------------------------------------------------------
-usehandlers:
-
-Description:
- Explicitely declare what Handlers are to be used in the generation of the
- Workflow. This helps the current simple Workflow generator when a given target
- is provided by more than one Handler.
- Current possible values are:
-    Feff, FeffRixs, Dmdw, Abinit, Vasp, Nwchem, Orca
-
-Format:
-usehandlers {
- String ...
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-xc:
-
-Description:
- Exchange-correlation functional to use if the "method" selected is "dft".
- Current possible values are:
-    lda, pbe, b3lyp
-
-Format:
-xc {
- String
-}
-
-Default:
-xc {
-lda
-}
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
-                         Abinit Handler Input Variables                         
---------------------------------------------------------------------------------
-abinit.ng2qpt:
-
-Description:
- Equivalent to Abinit's (anaddb) ng2qpt input variable: Defines the number of
- q-point perturbations in each direction of the finer grid for density
- functional perturbation theory (DFPT) simulations. Please refer to the
- Abinit manual for further details.
-
-Format:
-abinit.ng2qpt {
- Integer Integer Integer
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-abinit.ngqpt:
-
-Description:
- Equivalent to Abinit's ngqpt input variable: Defines the number of q-point
- perturbations in each direction of the grid for density functional
- perturbation theory (DFPT) simulations, and is that equivalent to the general
- "nqpoints" Corvus input variable. Please refer to the Abinit manual for
- further details.
-
- NOTE: This code-specific input variable will be replaced by the general
- "nqpoints" variable in the future.
-
-Format:
-abinit.ngqpt {
- Integer Integer Integer
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-abinit.verbatim:
-
-Description:
- The content of this input variable is passed as is (i. e. "verbatim") into the
- input of all Abinit calculations, and it is meant to help with any Abinit
- input that is currently not implemented in Corvus. Thus, it should be used
- carfully to avoid inconsistencies with the automatically generated input.
- Users should refed to the Abinit manual for information on this extra input.
-
-Format:
-abinit.verbatim {
- Pass
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
-                          Dmdw Handler Input Variables                          
 --------------------------------------------------------------------------------
 dmdw.ioflag:
 
@@ -868,9 +580,523 @@ Default:
 None
 
 --------------------------------------------------------------------------------
+dmdw_nlanczos:
+
+Description:
+
+ dmdw_nlanczos
+ {
+ nLanczos_Interations
+
+ Specify the number of Lanczos iterations to be done for the calculation of
+ EXAFS DW factors with the dynamical matrix method.
+
+Format:
+dmdw_nlanczos {
+ Integer
+}
+
+Default:
+dmdw_nlanczos {
+6
+}
+
+--------------------------------------------------------------------------------
+ene_int:
+
+Description:
+No description available for this variable
+Please contact the code developers
+
+Format:
+ene_int {
+ Float
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+fermi_shift:
+
+Description:
+ Shift of the fermi-energy in eV.
+
+Format:
+fermi_shift {
+ Float
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+ismetal:
+
+Description:
+ Toggle whether the system should be treated as a metal or as an insulator.
+
+Format:
+ismetal {
+ Boolean
+}
+
+Default:
+ismetal {
+False
+}
+
+--------------------------------------------------------------------------------
+keep_symm:
+
+Description:
+ Toggle the preservation of initial symmetry in optimizations.
+
+Format:
+keep_symm {
+ Boolean
+}
+
+Default:
+keep_symm {
+True
+}
+
+--------------------------------------------------------------------------------
+mac_diel_const:
+
+Description:
+ Approximate value of the macroscopic dielectric constant of the system used in
+ some methods to accelerate convergence of the SCF cycle.
+
+Format:
+mac_diel_const {
+ Float
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+method:
+
+Description:
+ Method used to compute the target. This variable is somewhat context-dependent
+ and is ccurrently not fully implemented.
+ Current possible values are:
+    dft, mp2, ccsd
+
+Format:
+method {
+ String
+}
+
+Default:
+method {
+dft
+}
+
+--------------------------------------------------------------------------------
+multiplicity:
+
+Description:
+ Multiplicity of the system.
+
+Format:
+multiplicity {
+ Integer
+}
+
+Default:
+multiplicity {
+0
+}
+
+--------------------------------------------------------------------------------
+nkpoints:
+
+Description:
+ Define the number of k-point in each direction of the grid for reciprocal
+ space simulations.
+
+Format:
+nkpoints {
+ Integer Integer Integer
+}
+
+Default:
+nkpoints {
+1 1 1
+}
+
+--------------------------------------------------------------------------------
+nqpoints:
+
+Description:
+ Define the number of q-point perturbations in each direction of the grid for
+ density functional perturbation theory (DFPT) simulations.
+
+Format:
+nqpoints {
+ Integer Integer Integer
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+nuctemp:
+
+Description:
+
+ nuctemp
+ {
+ temp
+
+ Specify the temperature (in K) for the nuclear motion (DW factors).
+
+Format:
+nuctemp {
+ Float
+}
+
+Default:
+nuctemp {
+300.0
+}
+
+--------------------------------------------------------------------------------
+number_of_atoms:
+
+Description:
+ Number of atoms in the system
+
+Format:
+number_of_atoms {
+ Integer
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+opcons.usesaved:
+
+Description:
+ feff.opcons{ }
+ Calculate loss function using an atomic approximation.
+
+Format:
+opcons.usesaved {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+pspfiles:
+
+Description:
+ List of pseudopotentials for each atom in the system. Each line contains
+ the label for the atoms (usually the element % name) and the name of the file
+ with the pseudopotential. The required format for the files will depend on the
+ Handler used.
+
+Format:
+pspfiles {
+ String String
+ ...
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+pw_encut:
+
+Description:
+ Planwave energy cutoff for reciprocal space simulations, in au.
+
+Format:
+pw_encut {
+ Float
+}
+
+Default:
+pw_encut {
+15.0
+}
+
+--------------------------------------------------------------------------------
+scf_conv:
+
+Description:
+ Convergence threshold for SCF cycles (HF, DFT, etc) in au. The value set by
+ this variable might be internally overridden if the target requires tighter
+ convergence settings.
+
+Format:
+scf_conv {
+ Float
+}
+
+Default:
+scf_conv {
+1.0e-5
+}
+
+--------------------------------------------------------------------------------
+scratch:
+
+Description:
+ Directory for disk scratch for those Handlers that require large amounts of
+ disk. If the directory is not present or it can not be created, Corvus reverts
+ to the default.
+ NOTE: This input variable is not fully implemented yet.
+
+Format:
+scratch {
+ String ...
+}
+
+Default:
+scratch {
+.
+}
+
+--------------------------------------------------------------------------------
+species:
+
+Description:
+ chemical species and number of each species
+
+Format:
+species {
+ String Integer
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+spectralFunction_file:
+
+Description:
+ file to read spectral function from - 2 column file
+
+Format:
+spectralFunction_file {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+spectral_broadening:
+
+Description:
+ Broadening used in some spectroscopic methods.
+
+Format:
+spectral_broadening {
+ Float
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+supercell.dimensions:
+
+Description:
+ supercell dimensions (number of cells in each direction).
+
+Format:
+supercell.dimensions {
+ Integer Integer Integer
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+target_list:
+
+Description:
+ Space separated list with all the targets required for this calculation.
+
+Format:
+target_list {
+ String ...
+ ...
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+title:
+
+Description:
+ Title of this calculation.
+
+Format:
+title {
+ Pass
+ ...
+}
+
+Default:
+title {
+This is a Corvus calculation
+}
+
+--------------------------------------------------------------------------------
+usehandlers:
+
+Description:
+ Explicitely declare what Handlers are to be used in the generation of the
+ Workflow. This helps the current simple Workflow generator when a given target
+ is provided by more than one Handler.
+ Current possible values are:
+    Feff, FeffRixs, Dmdw, Abinit, Vasp, Nwchem, Orca
+
+Format:
+usehandlers {
+ String ...
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+xanes_file:
+
+Description:
+ file to read xanes from - 2 column file
+
+Format:
+xanes_file {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+xc:
+
+Description:
+ Exchange-correlation functional to use if the "method" selected is "dft".
+ Current possible values are:
+    lda, pbe, b3lyp
+
+Format:
+xc {
+ String
+}
+
+Default:
+xc {
+lda
+}
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+                         Abinit Handler Input Variables                         
+--------------------------------------------------------------------------------
+abinit.ng2qpt:
+
+Description:
+ Equivalent to Abinit's (anaddb) ng2qpt input variable: Defines the number of
+ q-point perturbations in each direction of the finer grid for density
+ functional perturbation theory (DFPT) simulations. Please refer to the
+ Abinit manual for further details.
+
+Format:
+abinit.ng2qpt {
+ Integer Integer Integer
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+abinit.ngqpt:
+
+Description:
+ Equivalent to Abinit's ngqpt input variable: Defines the number of q-point
+ perturbations in each direction of the grid for density functional
+ perturbation theory (DFPT) simulations, and is that equivalent to the general
+ "nqpoints" Corvus input variable. Please refer to the Abinit manual for
+ further details.
+
+ NOTE: This code-specific input variable will be replaced by the general
+ "nqpoints" variable in the future.
+
+Format:
+abinit.ngqpt {
+ Integer Integer Integer
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+abinit.verbatim:
+
+Description:
+ The content of this input variable is passed as is (i. e. "verbatim") into the
+ input of all Abinit calculations, and it is meant to help with any Abinit
+ input that is currently not implemented in Corvus. Thus, it should be used
+ carfully to avoid inconsistencies with the automatically generated input.
+ Users should refed to the Abinit manual for information on this extra input.
+
+Format:
+abinit.verbatim {
+ Pass
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
                           Feff Handler Input Variables                          
+--------------------------------------------------------------------------------
+feff.MPI.ARGS:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Feff manual
+
+Format:
+feff.MPI.ARGS {
+ String ...
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+feff.MPI.CMD:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Feff manual
+
+Format:
+feff.MPI.CMD {
+ String
+}
+
+Default:
+None
+
 --------------------------------------------------------------------------------
 feff.absolute:
 
@@ -1202,7 +1428,7 @@ Description:
 
 Format:
 feff.debye {
- Float Float Integer
+ String
 }
 
 Default:
@@ -1271,7 +1497,7 @@ Description:
 
 Format:
 feff.edge {
- String
+ String ...
 }
 
 Default:
@@ -1301,7 +1527,7 @@ Please review the equivalent variable in the Feff manual
 
 Format:
 feff.egrid {
- String Float Float Float
+ String String Float Float
  ...
 }
 
@@ -1657,7 +1883,7 @@ Please review the equivalent variable in the Feff manual
 
 Format:
 feff.kmesh {
- Float ...
+ Integer ...
 }
 
 Default:
@@ -1712,6 +1938,38 @@ feff.ldos {
 
 Default:
 None
+
+--------------------------------------------------------------------------------
+feff.lfms1:
+
+Description:
+ set maximum angular momentum to use in potentials
+
+Format:
+feff.lfms1 {
+ Integer
+}
+
+Default:
+feff.lfms1 {
+-1
+}
+
+--------------------------------------------------------------------------------
+feff.lfms2:
+
+Description:
+ set maximum angular momentum to use in FMS
+
+Format:
+feff.lfms2 {
+ Integer
+}
+
+Default:
+feff.lfms2 {
+-1
+}
 
 --------------------------------------------------------------------------------
 feff.ljmax:
@@ -1876,21 +2134,6 @@ Format:
 feff.numdens {
  Integer Float
  ...
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-feff.opcons:
-
-Description:
- feff.opcons{ CalculateLossFunction }
- Calculate loss function using an atomic approximation.
-
-Format:
-feff.opcons {
- Boolean
 }
 
 Default:
@@ -2509,7 +2752,7 @@ Please review the equivalent variable in the Feff manual
 
 Format:
 feff.target {
- Float
+ Integer
 }
 
 Default:
@@ -2630,10 +2873,6 @@ feff.xmcd {
 Default:
 None
 
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
-                        FeffRixs Handler Input Variables                        
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
@@ -2904,6 +3143,102 @@ None
 
                           Orca Handler Input Variables                          
 --------------------------------------------------------------------------------
+orca.basis.basis:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.basis.basis {
+ String
+}
+
+Default:
+orca.basis.basis {
+def2-TZVP
+}
+
+--------------------------------------------------------------------------------
+orca.basis.decontract:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.basis.decontract {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.ci:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.ci {
+ Boolean
+}
+
+Default:
+orca.ci {
+F
+}
+
+--------------------------------------------------------------------------------
+orca.citype:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.citype {
+ String
+}
+
+Default:
+orca.citype {
+CCSD
+}
+
+--------------------------------------------------------------------------------
+orca.coords.units:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.coords.units {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.cpcm:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.cpcm {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
 orca.expert:
 
 Description:
@@ -2919,8 +3254,1175 @@ Default:
 None
 
 --------------------------------------------------------------------------------
+orca.geom.optimizationquality:
 
-THIS FILE SHOULD CONTAIN THE CORVUS EXAMPLES
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
 
-Leaving blank for now, need to fill later
+Format:
+orca.geom.optimizationquality {
+ String
+}
 
+Default:
+orca.geom.optimizationquality {
+TIGHTOPT
+}
+
+--------------------------------------------------------------------------------
+orca.method.allowrhf:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.method.allowrhf {
+ Boolean
+}
+
+Default:
+orca.method.allowrhf {
+F
+}
+
+--------------------------------------------------------------------------------
+orca.method.amass:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.method.amass {
+ String
+}
+
+Default:
+orca.method.amass {
+Mass2016
+}
+
+--------------------------------------------------------------------------------
+orca.method.frozencore:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.method.frozencore {
+ Boolean
+}
+
+Default:
+orca.method.frozencore {
+F
+}
+
+--------------------------------------------------------------------------------
+orca.method.grid:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.method.grid {
+ String
+}
+
+Default:
+orca.method.grid {
+GRID4
+}
+
+--------------------------------------------------------------------------------
+orca.method.gridx:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.method.gridx {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.method.method:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.method.method {
+ String
+}
+
+Default:
+orca.method.method {
+B3LYP
+}
+
+--------------------------------------------------------------------------------
+orca.method.ri:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.method.ri {
+ Boolean
+}
+
+Default:
+orca.method.ri {
+F
+}
+
+--------------------------------------------------------------------------------
+orca.method.runtype:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.method.runtype {
+ String
+}
+
+Default:
+orca.method.runtype {
+OPT
+}
+
+--------------------------------------------------------------------------------
+orca.method.usesymm:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.method.usesymm {
+ Boolean
+}
+
+Default:
+orca.method.usesymm {
+F
+}
+
+--------------------------------------------------------------------------------
+orca.mp2:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.mp2 {
+ Boolean
+}
+
+Default:
+orca.mp2 {
+F
+}
+
+--------------------------------------------------------------------------------
+orca.mp2type:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.mp2type {
+ String
+}
+
+Default:
+orca.mp2type {
+MP2
+}
+
+--------------------------------------------------------------------------------
+orca.output.pdbfile:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.output.pdbfile {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.output.print:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.output.print {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.output.printlevel:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.output.printlevel {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.output.xyzfile:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.output.xyzfile {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.rel.method:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.rel.method {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.rel.soctype:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.rel.soctype {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.autostart:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.autostart {
+ Boolean
+}
+
+Default:
+orca.scf.autostart {
+T
+}
+
+--------------------------------------------------------------------------------
+orca.scf.cnvdamp:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.cnvdamp {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.cnvshift:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.cnvshift {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.convergence:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.convergence {
+ String
+}
+
+Default:
+orca.scf.convergence {
+NORMALSCF
+}
+
+--------------------------------------------------------------------------------
+orca.scf.convergencestrategy:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.convergencestrategy {
+ String
+}
+
+Default:
+orca.scf.convergencestrategy {
+NormalConv
+}
+
+--------------------------------------------------------------------------------
+orca.scf.diis:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.diis {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.fracocc:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.fracocc {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.guess:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.guess {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.hftyp:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.hftyp {
+ String
+}
+
+Default:
+orca.scf.hftyp {
+RHF
+}
+
+--------------------------------------------------------------------------------
+orca.scf.jmatrix:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.jmatrix {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.kdiis:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.kdiis {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.keepdens:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.keepdens {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.keepints:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.keepints {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.kmatrix:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.kmatrix {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.maxiter:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.maxiter {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.nr:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.nr {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.readints:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.readints {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.scfmode:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.scfmode {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.smeartemp:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.smeartemp {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.soscf:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.soscf {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.uno:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.uno {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.usecheapints:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.usecheapints {
+ Boolean
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.scf.valformat:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.scf.valformat {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.tole:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.tole {
+ Float
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.tolmaxg:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.tolmaxg {
+ Float
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.tolrmaxd:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.tolrmaxd {
+ Float
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.tolrmsd:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.tolrmsd {
+ Float
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+orca.tolrmsg:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Orca manual
+
+Format:
+orca.tolrmsg {
+ Float
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+                        PyMatGen Handler Input Variables                        
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+                         Siesta Handler Input Variables                         
+--------------------------------------------------------------------------------
+siesta.AtomicCoordinatesFormat:
+
+Description:
+ Specify units and format of atomic coordinates.
+ Borh            - cartesian in Bohr.
+ Ang             - cartesian in Angstrom.
+ ScaledCartesian - cartesian scaled by lattice constant.
+ Fractional      - coordinates are given in units of the lattice vectors.
+
+Format:
+siesta.AtomicCoordinatesFormat {
+ String
+}
+
+Default:
+siesta.AtomicCoordinatesFormat {
+Fractional
+}
+
+--------------------------------------------------------------------------------
+siesta.Beta.Broadening:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Siesta manual
+
+Format:
+siesta.Beta.Broadening {
+ Float
+}
+
+Default:
+siesta.Beta.Broadening {
+0.1
+}
+
+--------------------------------------------------------------------------------
+siesta.Block.AtomicCoordinatesAndAtomicSpecies:
+
+Description:
+ Specify coordinates of each atom as well as the species index.
+ x1 y1 z1 SpeciesIndex1
+ x2 y2 z2 SpeciesIndex2
+ ...
+
+Format:
+siesta.Block.AtomicCoordinatesAndAtomicSpecies {
+ Float Float Float Integer
+ ...
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+siesta.Block.ChemicalSpeciesLabel:
+
+Description:
+ Indicate the different chemical species in the unit cell.
+ Format:
+ SpeciesIndex1 AtomicNumber1 AtomicSymbol1
+ SpeciesIndex2 AtomicNumber2 AtomicSymbol2
+ ...
+
+Format:
+siesta.Block.ChemicalSpeciesLabel {
+ Integer Integer String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+siesta.Block.LatticeParameters:
+
+Description:
+ Set lattice parameters, i.e.,
+ a b c alpha beta gamma
+
+Format:
+siesta.Block.LatticeParameters {
+ Float Float Float Float Float Float
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+siesta.Block.PAO.Basis:
+
+Description:
+ Set siesta basis manually
+
+Format:
+siesta.Block.PAO.Basis {
+ String ...
+ ...
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+siesta.Coreresponse.Broadening:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Siesta manual
+
+Format:
+siesta.Coreresponse.Broadening {
+ Float
+}
+
+Default:
+siesta.Coreresponse.Broadening {
+0.5
+}
+
+--------------------------------------------------------------------------------
+siesta.DM.MixingWeight:
+
+Description:
+ Mixing weight for the density matrix.
+
+Format:
+siesta.DM.MixingWeight {
+ Float
+}
+
+Default:
+siesta.DM.MixingWeight {
+0.10
+}
+
+--------------------------------------------------------------------------------
+siesta.DM.NumberBroyden:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Siesta manual
+
+Format:
+siesta.DM.NumberBroyden {
+ Integer
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+siesta.DM.NumberPulay:
+
+Description:
+ Set number of Pulay steps
+
+Format:
+siesta.DM.NumberPulay {
+ Integer
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+siesta.DM.Tolerance:
+
+Description:
+ Convergence tolerance for elements of the density matrix
+
+Format:
+siesta.DM.Tolerance {
+ Float
+}
+
+Default:
+siesta.DM.Tolerance {
+1.0e-4
+}
+
+--------------------------------------------------------------------------------
+siesta.Diag.DivideAndConquer:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Siesta manual
+
+Format:
+siesta.Diag.DivideAndConquer {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+siesta.ElectronicTemperature:
+
+Description:
+ Set electronic teperature used to define occupation numbers during SCF.
+
+Format:
+siesta.ElectronicTemperature {
+ Float String
+}
+
+Default:
+siesta.ElectronicTemperature {
+1.0 K
+}
+
+--------------------------------------------------------------------------------
+siesta.LatticeConstant:
+
+Description:
+ Set an overall multiplicative constant for the lattice parameters.
+
+Format:
+siesta.LatticeConstant {
+ Float String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+siesta.LongOutput:
+
+Description:
+ Output lots of info.
+
+Format:
+siesta.LongOutput {
+ Boolean
+}
+
+Default:
+siesta.LongOutput {
+T
+}
+
+--------------------------------------------------------------------------------
+siesta.MPI.ARGS:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Siesta manual
+
+Format:
+siesta.MPI.ARGS {
+ String ...
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+siesta.MPI.CMD:
+
+Description:
+No description available for this variable
+Please review the equivalent variable in the Siesta manual
+
+Format:
+siesta.MPI.CMD {
+ String
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+siesta.MaxSCFIterations:
+
+Description:
+ Max number of SCF iterations allowed.
+
+Format:
+siesta.MaxSCFIterations {
+ Integer
+}
+
+Default:
+siesta.MaxSCFIterations {
+100
+}
+
+--------------------------------------------------------------------------------
+siesta.MeshCutoff:
+
+Description:
+ Energy that defines the real-space grid. Point spacing scales as 1/sqrt(E_c).
+
+Format:
+siesta.MeshCutoff {
+ Float String
+}
+
+Default:
+siesta.MeshCutoff {
+120.0 Ry
+}
+
+--------------------------------------------------------------------------------
+siesta.NumberOfAtoms:
+
+Description:
+ Indicate number of atoms in unit cell.
+
+Format:
+siesta.NumberOfAtoms {
+ Integer
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+siesta.NumberOfSpecies:
+
+Description:
+ Indicate number of species in unit cell.
+
+Format:
+siesta.NumberOfSpecies {
+ Integer
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+siesta.PAO.BasisSize:
+
+Description:
+ Define basis size. Can be SZ, DZ, SZP, DZP.
+
+Format:
+siesta.PAO.BasisSize {
+ String
+}
+
+Default:
+siesta.PAO.BasisSize {
+DZP
+}
+
+--------------------------------------------------------------------------------
+siesta.PAO.BasisType:
+
+Description:
+ Define basis type
+ split: Split-valence scheme for multiple-zeta. The split is based on different radii.
+ splitgauss: Same as split but using Gaussian functions.
+ nodes: Generalized PAO’s.
+ nonodes: The original PAO’s are used, multiple-zeta is generated by changing the
+ scale-factors, instead of using the excited orbitals.
+ filteret: Use the filterets as a systematic basis set. The size of the basis set is
+ controlled by the filter cut-off for the orbitals.
+
+Format:
+siesta.PAO.BasisType {
+ String
+}
+
+Default:
+siesta.PAO.BasisType {
+split
+}
+
+--------------------------------------------------------------------------------
+siesta.SolutionMethod:
+
+Description:
+ Method for solving the eigenvalue problem.
+
+Format:
+siesta.SolutionMethod {
+ String
+}
+
+Default:
+siesta.SolutionMethod {
+diagon
+}
+
+--------------------------------------------------------------------------------
+siesta.TD.CoreExcitedAtom:
+
+Description:
+ Set which atom will be the absorbing atom, i.e., which atoms the
+ core-hole will be centered on
+
+Format:
+siesta.TD.CoreExcitedAtom {
+ Integer
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+siesta.TD.CorePerturbationCharge:
+
+Description:
+ Set the core-hole charge.
+
+Format:
+siesta.TD.CorePerturbationCharge {
+ Float
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+siesta.TD.NumberOfTimeSteps:
+
+Description:
+ Specify number of time steps for RT-TDDFT run.
+
+Format:
+siesta.TD.NumberOfTimeSteps {
+ Integer
+}
+
+Default:
+None
+
+--------------------------------------------------------------------------------
+siesta.TD.ShapeOfEfield:
+
+Description:
+ Specify the shape of the field for the RT-TDDFT run.
+ Options are:
+ step     - Turn off dipole field at time 0.
+ halfstep - Dipole field changes from full strength to 1/2
+            strength at time 0.
+ delta    - Dipole field with time dependence delta(t).
+ const    - Turn on dipole field at time 0.
+ sine     - Dipole field with damped sine wave time dependence,
+            with optional Gaussian envelope to create quasi-harmonic
+            wave packet.
+ core     - turn on core-hole potential at time 0.

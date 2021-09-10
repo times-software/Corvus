@@ -1,4 +1,4 @@
-Copyright (c) 2018 S. Story, F. D. Vila, J. J. Kas, S. D. Pemmaraju, J. J. Rehr
+Copyright (c) 2021 S. Story, F. D. Vila, J. J. Kas, S. D. Pemmaraju, J. J. Rehr
 
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:

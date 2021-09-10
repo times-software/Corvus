@@ -114,7 +114,8 @@ def Print_Doc_Header():
 
 # For now, we get a minimal amount of information from the Corvus package setup
   corvus_pkg = get_distribution('corvus')
-  corvus_metadata = corvus_pkg.get_metadata('PKG-INFO').encode('ascii','ignore')
+# JK - added decode because python 3.7 > doesn't like parsing bytes.
+  corvus_metadata = corvus_pkg.get_metadata('PKG-INFO').encode('ascii','ignore').decode('utf-8')
   corvus_info = pnip.parseMetaData(corvus_metadata)
 
 # Debug: FDV
@@ -254,7 +255,8 @@ if __name__=='__main__':
 
 # For now, we get a minimal amount of information from the Corvus package setup
   corvus_pkg = get_distribution('corvus')
-  corvus_metadata = corvus_pkg.get_metadata('PKG-INFO').encode('ascii','ignore')
+# JK - added decode because python 3.7 > doesn't like parsing bytes.
+  corvus_metadata = corvus_pkg.get_metadata('PKG-INFO').encode('ascii','ignore').decode('utf-8')
   corvus_info = pnip.parseMetaData(corvus_metadata)
 
 # Redirect all output to the manual file
