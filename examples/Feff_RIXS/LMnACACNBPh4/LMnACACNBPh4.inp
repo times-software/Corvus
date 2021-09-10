@@ -5,8 +5,8 @@ target_list{ feffRIXS }
 #usehandlers { Feff }
 
 # Set mpi command and flags
-feff.MPI.CMD { mpirun }
-feff.MPI.ARGS { -n 6 }
+#feff.MPI.CMD { mpirun }
+#feff.MPI.ARGS { -n 6 }
 
 # Set excitation edge and de-excitation edge
 feff.edge{ K VAL }

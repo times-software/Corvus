@@ -1,6 +1,6 @@
 from corvus.structures import Handler, Exchange, Loop, Update
 import corvutils.pyparsing as pp
-import os, sys, subprocess, shutil, resource
+import os, sys, subprocess, shutil #, resource
 import re
 from scipy.interpolate import CubicSpline
 from scipy.integrate import quad
