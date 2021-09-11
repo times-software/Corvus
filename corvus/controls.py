@@ -97,6 +97,122 @@ def configure(config):
     #configFile = os.path.join(os.path.dirname(config['bin']), 'corvus','config')
     configFile = os.path.join(config['bin'], 'corvus.conf')
 
+
+    # JJK: Make configuration file if it isn't already there. To start we will just 
+    # search for feff10. Move definition of execs up here so that we can search for 
+    # all of them.
+    Execs_Dict = { 'feff'  :['atomic','compton','crpa','dmdw','eels',
+                             'ff2x','fms','genfmt','ldos',
+                             'mkgtr','opconsat','path','pot','rdinp','rhorrp',
+                             'rixs','screen','sfconv','xsph'],
+                   'dmdw'  :['dmdw'],
+                   'orca'  :['orca'],
+                   'abinit':['abinit','anaddb','mrgddb','mrggkk'],
+                   'vasp'  :['vasp_gam','vasp_std'],
+                   'nwchem':['nwchem'], 
+                   'siesta':['siesta'],
+                   'phsf'  :['phsf'],
+                   'ocean' :['ocean.pl'],
+                   'cif2cell':['cif2cell']}
+
+    # If corvus.config doen't exist, try to find executables and write
+    # config file.
+    if not Path(configFile).is_file():
+        print('\n\n\n')
+        print('  Configuration file not found. Will search for feff10. ')
+        # Try to find feff10
+        if system() == 'Linux':
+            search_paths=[Path.home() / Path('JFEFF_FEFF10/feff10/linux/')]
+            ext=''
+        elif system() == 'Darwin':
+            search_paths=[Path.home() / Path('JFEFF_FEFF10/feff10/bin/')]
+            ext=''
+        elif system() == 'Windows':
+            search_paths=[Path.home() / Path('JFEFF_FEFF10/feff10/bin/'),Path('C:/Program Files (x86)/JFEFF_FEFF10/feff10/bin/'),Path('C:/Program Files/JFEFF_FEFF10/feff10/bin/')]
+            ext='.exe'
+        else:
+            print('')
+            print('')
+            print('')
+            print('')
+            print('')
+            print('')
+            print('############################################################################')
+            print('############################################################################')
+            print('##              Unknown operating system: Exiting                         ##')
+            print('############################################################################')
+            print('############################################################################')
+            sys.exit()
+            
+        print('  System:', system())
+        # Check if rdinp exists in any of the search paths
+        feff_found = False
+
+        for pth in search_paths:
+            print('  Checking path:', pth)
+            for exe in Execs_Dict['feff']:
+                checkFile = pth / Path(exe + ext)
+                print(checkFile)
+                if checkFile.is_file():
+                    allExecs = True
+                    print(exe + ext, 'found.')
+                else:
+                    allExecs = False
+                    print(exe + ext, 'not found.')
+                    break
+            print(allExecs)
+            if allExecs:
+                feff_found = True
+                feff_path = pth
+                break
+
+        if not feff_found:
+            print('')
+            print('')
+            print('')
+            print('')
+            print('')
+            print('')
+            print('############################################################################')
+            print('############################################################################')
+            print('##    Feff10 was not found on this system.                                ##')
+            print('##    Please register for feff10 and install it                           ##')
+            print('##    before installing corvus.                                           ##')
+            print('##                                                                        ##')
+            print('##    Alternatively, create the corvus.config file from                   ##')
+            print('##    covus.config.template and insert the correct path to feff10.        ##')
+            print('############################################################################')
+            print('############################################################################')
+            sys.exit()
+
+        else:
+            # Feff was found. Write the config file
+            print('Writing corvus.conf')
+            f = open(configFile, "w")
+            
+            f.write("[Executables]\n")
+            f.write("dmdw     :\n")
+            f.write("feff     : " + str(feff_path) + "\n")
+            f.write("abinit   :\n")
+            f.write("nwchem   :\n")
+            f.write("orca     :\n")
+            f.write("gaussian :\n")
+            f.write("vasp     :\n")
+            f.write("siesta   :\n")
+            f.write("ocean    :\n")
+            f.write("cif2cell :\n")
+            f.write("phsf     :\n")
+            f.write(" \n")
+            f.write("[Defaults]\n")
+            f.write("prefix      : Corvus\n")
+            f.write("inputsuffix : .inp\n")
+            f.write("savesuffix  : .nest\n")
+            f.write("checkpoints : off\n")
+            f.write("parallelrun :\n")
+            
+            f.close()
+
+
     if configFile not in rcp.read(configFile):
         printAndExit('Error reading corvus.conf')
     config['pathprefix'] = rcp.get('Defaults', 'prefix')
@@ -115,19 +231,19 @@ def configure(config):
 # executables have a ".exe" extension. We also define all the different
 # executables in one spot to make things more clear, and generalize the code.
 
-    Execs_Dict = { 'feff'  :['atomic','band','compton','crpa','dmdw','eels',
-                             'ff2x','fms','fullspectrum','genfmt','ldos',
-                             'mkgtr','opconsat','path','pot','rdinp','rhorrp',
-                             'rixs','screen','sfconv','xsph'],
-                   'dmdw'  :['dmdw'],
-                   'orca'  :['orca'],
-                   'abinit':['abinit','anaddb','mrgddb','mrggkk'],
-                   'vasp'  :['vasp_gam','vasp_std'],
-                   'nwchem':['nwchem'], 
-                   'siesta':['siesta'],
-                   'phsf'  :['phsf'],
-                   'ocean' :['ocean.pl'],
-                   'cif2cell':['cif2cell']}
+    #Execs_Dict = { 'feff'  :['atomic','compton','crpa','dmdw','eels',
+    #                         'ff2x','fms','genfmt','ldos',
+    #                         'mkgtr','opconsat','path','pot','rdinp','rhorrp',
+    #                         'rixs','screen','sfconv','xsph'],
+    #               'dmdw'  :['dmdw'],
+    #               'orca'  :['orca'],
+    #               'abinit':['abinit','anaddb','mrgddb','mrggkk'],
+    #               'vasp'  :['vasp_gam','vasp_std'],
+    #               'nwchem':['nwchem'], 
+    #               'siesta':['siesta'],
+    #               'phsf'  :['phsf'],
+    #               'ocean' :['ocean.pl'],
+    #               'cif2cell':['cif2cell']}
 
 
     exe_ext = ''
