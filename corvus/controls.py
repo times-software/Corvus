@@ -152,21 +152,41 @@ def configure(config):
             print('  Checking path:', pth)
             for exe in Execs_Dict['feff']:
                 checkFile = pth / Path(exe + ext)
-                print(checkFile)
                 if checkFile.is_file():
                     allExecs = True
-                    print(exe + ext, 'found.')
                 else:
                     allExecs = False
-                    print(exe + ext, 'not found.')
                     break
-            print(allExecs)
             if allExecs:
                 feff_found = True
                 feff_path = pth
                 break
 
         if not feff_found:
+            print('Writing empty corvus.conf')
+            f = open(configFile, "w")
+            
+            f.write("[Executables]\n")
+            f.write("dmdw     :\n")
+            f.write("feff     :path_to_feff\n")
+            f.write("abinit   :\n")
+            f.write("nwchem   :\n")
+            f.write("orca     :\n")
+            f.write("gaussian :\n")
+            f.write("vasp     :\n")
+            f.write("siesta   :\n")
+            f.write("ocean    :\n")
+            f.write("cif2cell :\n")
+            f.write("phsf     :\n")
+            f.write(" \n")
+            f.write("[Defaults]\n")
+            f.write("prefix      : Corvus\n")
+            f.write("inputsuffix : .inp\n")
+            f.write("savesuffix  : .nest\n")
+            f.write("checkpoints : off\n")
+            f.write("parallelrun :\n")
+            
+            f.close()
             print('')
             print('')
             print('')
@@ -179,8 +199,9 @@ def configure(config):
             print('##    Please register for feff10 and install it                           ##')
             print('##    before installing corvus.                                           ##')
             print('##                                                                        ##')
-            print('##    Alternatively, create the corvus.config file from                   ##')
-            print('##    covus.config.template and insert the correct path to feff10.        ##')
+            print('##    Alternatively, edit the file                                        ##')
+            print('##      ', configFile, '                                             ##')
+            print('##    and insert the correct path to feff10.                              ##')
             print('############################################################################')
             print('############################################################################')
             sys.exit()
