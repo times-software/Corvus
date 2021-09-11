@@ -13,35 +13,41 @@ config_pth = Path.home() / ".Corvus"
 config_pth.mkdir(exist_ok=True)
 util_pth = config_pth / "corvutils" 
 util_pth.mkdir(exist_ok=True)
-try:
+# Still copy corvus.conf if one exists. Just don't do anything
+# if it doesn't exist. We will search for programs on first
+# run if the program doesn't find $HOME/.Corvus/corvus.conf.
+if Path('corvus.conf').is_file():
     # J. Kas - now going to copy all data files to ~/.Corvus
     copy('corvus.conf',str(config_pth))
     copy(str(Path('./corvutils/parsnip.corvus.config')),str(util_pth))
-except:
-    print('')
-    print('')
-    print('')
-    print('')
-    print('')
-    print('')
-    print('############################################################################')
-    print('############################################################################')
-    print('#        Corvus has not been configured. Please make corvus.conf file.     #')
-    print('#        You can start from corvus.conf.template for reference.            #')
-    print('############################################################################')
-    print('############################################################################')
-    sys.exit('')
-# J. Kas - Don't copy examples. We don't need them in the python path.
-#Examples_Data = []
-#for root, dirs, files in walk(Examples_Dir):
-#  for file in files:
-#    Examples_Data.append((root,[root+'/'+file]))
-
-# Debug: FDV
-#print Examples_Data
-#print [('doc',['doc/Corvus_Manual.txt'])]+Examples_Data
-#sys.exit()
-
+#else:
+    #print('Writing corvus.conf')
+    #f = open("corvus.conf", "w")
+    #print(os.getcwd())
+    #f.write("[Executables]\n")
+    #f.write("dmdw     :\n")
+    #f.write("feff     : " + str(feff_path) + "\n") 
+    #f.write("abinit   :\n")
+    #f.write("nwchem   :\n")
+    #f.write("orca     :\n")
+    #f.write("gaussian :\n")
+    #f.write("vasp     :\n")
+    #f.write("siesta   :\n")
+    #f.write("ocean    :\n")
+    #f.write("cif2cell :\n")
+    #f.write("phsf     :\n")
+    #f.write(" \n")
+    #f.write("[Defaults]\n")
+    #f.write("prefix      : Corvus\n")
+    #f.write("inputsuffix : .inp\n")
+    #f.write("savesuffix  : .nest\n")
+    #f.write("checkpoints : off\n")
+    #f.write("parallelrun :\n")
+#
+    #f.close()
+    #copy('corvus.conf',str(config_pth))
+    #copy(str(Path('./corvutils/parsnip.corvus.config')),str(util_pth))
+#
 setuptools.setup(name='corvus',
       version='1.0',
       description='Property-driven Scientific Workflow Manager',
