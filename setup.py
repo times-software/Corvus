@@ -50,7 +50,7 @@ setuptools.setup(name='corvus',
       maintainer='F. D. Vila, J. J. Kas, S. D. Pemmaraju, J. J. Rehr',
       maintainer_email='feff@uw.edu',
       url='http://feffproject.org',
-      scripts=['bin/run-corvus'],
+      #scripts=['bin/run-corvus'],
       packages=setuptools.find_packages(),
       # J Kas - Moved corvus.conf to corvus/config since pip/setuptools don't like names that start with the module name?
       package_data={'corvutils':['parsnip.corvus.config','parsnip.corvus.formats'],'corvus':['config']},

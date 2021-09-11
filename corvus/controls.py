@@ -444,10 +444,19 @@ def generateAndRunWorkflow(config, system, targetList):
         i += 1
 
 # Handles command line arguments and runs through workflow
-def oneshot(argv,sys_exit=True):
-    import getopt, pickle
 
-    setExit(sys_exit)
+# JK change to use of argparse in place of passing argv
+def oneshot(): 
+#def oneshot(argv,sys_exit=True):
+    import getopt, pickle, argparse
+
+    # JJK - argv used to be passed to oneshot. Now we get the arguements
+    #       directly here. Should change so that oneshot can be called
+    #       as a function as well, but later. 
+    argv = sys.argv
+    setExit(True) # JJK - No arguments should be passed to oneshot,
+                  # so setting sys_exit to True here.
+
 # Debug:FDV
 # Test the writeDict function in abinit
 #   from abinit import writeDict
@@ -459,12 +468,9 @@ def oneshot(argv,sys_exit=True):
 # Modified by FDV:
 # Removing the target option from the cli. From now on we do it through the
 # input.
-#   shortopts = 'crt:i:w:s:j:'
-#   longopts = ['target=','input=','workflow=','checkpoints','resume','save=',
-#               'jump=','prefix=','parallelrun=']
-    shortopts = 'cr:i:w:s:j:'
-    longopts = ['input=','workflow=','checkpoints','resume','save=',
-                'jump=','prefix=','parallelrun=']
+    shortopts = 'crt:i:w:s:j:'
+    longopts = ['target=','input=','workflow=','checkpoints','resume','save=',
+               'jump=','prefix=','parallelrun=']
     try:
         opts, args = getopt.getopt(argv[1:], shortopts, longopts)
     except getopt.GetoptError as err:
