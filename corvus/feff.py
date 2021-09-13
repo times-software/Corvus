@@ -965,7 +965,7 @@ class Feff(Handler):
                     # JJK - Write a new cif file, since pymatgen does not keep the atoms in order when reading,
                     #       and FEFF needs them in order by line number to set the taget correctly. The writer
                     #       seems to keep the ordering. I'm just going to overwrite the initial cif for now.
-                    cifwr = CifWriter(Sys_Str)
+                    cifwr = CifWriter(Sys_Str_Sym,symprec=0.01)
                     cifwr.write_file('CIF_symm.cif')
 
 
@@ -1545,6 +1545,7 @@ class Feff(Handler):
                                dos_tot = np.sum(dos_array[ipot][1:],0)
                             else:
                                dtmp = np.loadtxt(os.path.join(dos_dir,ldos_files[ipot])).T
+                               print(ipot,npot,len(NumberDensity))
                                dtmp[1:] = NumberDensity[ipot-1]*dtmp[1:] 
                                dos_array = dos_array + [dtmp]
                                dos_tot = dos_tot + np.sum(dos_array[ipot][1:],0)
