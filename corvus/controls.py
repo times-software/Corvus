@@ -125,7 +125,7 @@ def configure(config):
             search_paths=[Path.home() / Path('JFEFF_FEFF10/feff10/linux/')]
             ext=''
         elif system() == 'Darwin':
-            search_paths=[Path.home() / Path('jfeff.app/Contents/Resources/JFEFF/feff10/mac/')]
+            search_paths=[Path.home() / Path('jfeff10.app/Contents/Resources/JFEFF/feff10/mac/')]
             ext=''
         elif system() == 'Windows':
             search_paths=[Path.home() / Path('JFEFF_FEFF10/feff10/bin/'),Path('C:/Program Files (x86)/JFEFF_FEFF10/feff10/bin/'),Path('C:/Program Files/JFEFF_FEFF10/feff10/bin/')]
