@@ -19,7 +19,8 @@ util_pth.mkdir(exist_ok=True)
 if Path('corvus.conf').is_file():
     # J. Kas - now going to copy all data files to ~/.Corvus
     copy('corvus.conf',str(config_pth))
-    copy(str(Path('./corvutils/parsnip.corvus.config')),str(util_pth))
+# always copy parsnip.corvus.config
+copy(str(Path('./corvutils/parsnip.corvus.config')),str(util_pth))
 #else:
     #print('Writing corvus.conf')
     #f = open("corvus.conf", "w")
