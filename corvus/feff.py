@@ -1185,20 +1185,30 @@ def runExecutable(execDir,workDir,executable, args,out,err):
     # Modified by JJK to use os.path.join (even safer than above).
     execList = [os.path.join(execDir,executable[0])] + args
     print("Working in directory:", workDir)
+    
+    # JJK - subprocess hangs when capturing output with a pipe. Have to do something else.
+    #       There are 2 possibilities here: 
+    #       1) Don't capture output. This seems to send output to the screen in
+    #          real-time. This to me is the right way to go for feff for example.
+    #       2) Send output directly to a file. This also works, but you can't see what the 
+    #          subprocess is doing. For a long-running process, this is not very satisfactory. 
+    #       For now, I will go with 1)
+    p = subprocess.Popen(execList, cwd=workDir, encoding='utf8')
+    p.wait()
     #p = subprocess.run(execList, cwd=workDir, capture_output=True, encoding='utf8')
-    p = subprocess.Popen(execList, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf8')
-    while True:
-        output = p.stdout.readline()
-        error = p.stderr.readline()
-        if output == '' and p.poll() is not None:
-            break
-        if output:
-            print(output.strip())
-            out.write(output.strip() + os.linesep)
-        if error:
-            print(error.strip())
-            err.write(error.strip() + os.linesep)
-    rc = p.poll()
+    #p = subprocess.Popen(execList, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf8')
+    #while True:
+    #    output = p.stdout.readline()
+    #    error = p.stderr.readline()
+    #    if output == '' and p.poll() is not None:
+    #        break
+    #    if output:
+    #        print(output.strip())
+    #        out.write(output.strip() + os.linesep)
+    #    if error:
+    #        print(error.strip())
+    #        err.write(error.strip() + os.linesep)
+    #rc = p.poll()
     #while True:
     #    pout = p.stdout.readline()
     #    if pout == '' and p.poll() is not None:
