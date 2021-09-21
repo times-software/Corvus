@@ -165,6 +165,44 @@ visible throughout the system.
 
 ================================================================================
 
+
+How to run corvus:
+
+To run corvus, you can type the following into the command line
+
+   run-corvus -i input_file
+
+where input_file is the name of your input file. For input
+file command and format, see the instructions below.
+
+The other way to run corvus is in help mode, where documentation
+can be accessed for keywords, i.e., 
+
+   run-corvus -h help_term [-i input_file]
+
+where help_term can be any keyword that is recognized by corvus. 
+In addition, help_term can be "all" to list all keywords available, i.e.,
+
+   run-corvus -h all
+
+help_term can also be a filter, such that documentation
+for all keywords that start with help_term will be produced,
+
+   run-corvus -h feff
+
+will produce all keywords that start with feff.
+
+Finally, help_term can also be one of the properties that Corvus
+can produce, e.g., xanes, OptimizedStructure, or xanes_cfavg.
+
+    run-corvus -h xanes
+
+In this case, corvus will show the workflow that would have been
+run, along with a list of the required inputs, with documentation
+for each.
+
+================================================================================
+
 Input Structure
 
 The input of Corvus is very simple: All input variables (i.e. tokens) have the
@@ -207,9 +245,80 @@ Auto:    This type indicates that Corvus will attempt to determine the type of
 Pass:    The data is passed to the Handlers "as is" (i.e. as a string with
 	 exactly the same formatting that is put between the curly brackets).
 
+Below you can find a description of all of the available input tokens in Corvus.
 
-The following are all the currently available input variables in Corvus.
+--------------------------------------------------------------------------------
+                               Target Properties                                
+--------------------------------------------------------------------------------
 
+One special token is called "target_list", which contains a space 
+separated list of the properties that the user would like Corvus to calculate. The 
+format is as follows:
+
+target_list {
+ String ...
+ ...
+}
+
+for example, if the user would like to calculated the optimized structure, 
+then the XANES, they would use:
+
+target_list{ OptimizedStructure xanes }
+
+Below is a list of the target properties that can be calculated using corvus, 
+along with the main code that is associated with them. Note that other
+codes may also be required to produce the property. Running
+
+    run-corvus -h property
+
+will give more information on which codes and inputs are required 
+to obtain the property. 
+
+
+##################################################################
+Property                      : code
+##################################################################
+qptlist                       : abinit
+aopt                          : abinit
+acell-grid                    : abinit
+eint                          : abinit
+cell_structure                : Cif2Cell
+s2                            : dmdw
+u2                            : dmdw
+vfe                           : dmdw
+feffAtomicData                : feff
+feffSCFPotentials             : feff
+feffCrossSectionsAndPhases    : feff
+feffGreensFunction            : feff
+feffPaths                     : feff
+feffFMatrices                 : feff
+xanes                         : feff
+feffXES                       : feff
+feffRIXS                      : feff
+opcons                        : feff
+opt_dynmat_s2_exafs           : feff
+feffRIXS                      : feffrixs
+xanes                         : filereader
+spectralFunction              : filereader
+fit                           : fit
+xanes_cfavg                   : helper
+mbxanes                       : mbconv
+xas_avg                       : nwchem
+opt_qmd                       : nwchem
+opt_xas                       : nwchem
+opt_xasavg                    : nwchem
+user_xasavg                   : nwchem
+OceanXANES                    : ocean
+OptimizedStructure            : orca
+spectralFunction              : phsf
+cluster_array                 : PyMatGen
+supercell                     : PyMatGen
+siestaCoreResponse            : siesta
+siestaFourierTransform        : siesta
+siestaBetaofOmega             : siesta
+siestaDOS                     : siesta
+
+--------------------------------------------------------------------------------
                             General Input Variables                             
 --------------------------------------------------------------------------------
 absorbing_atom:
@@ -4202,209 +4311,3 @@ siesta.MPI.CMD:
 Description:
 No description available for this variable
 Please review the equivalent variable in the Siesta manual
-
-Format:
-siesta.MPI.CMD {
- String
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-siesta.MaxSCFIterations:
-
-Description:
- Max number of SCF iterations allowed.
-
-Format:
-siesta.MaxSCFIterations {
- Integer
-}
-
-Default:
-siesta.MaxSCFIterations {
-100
-}
-
---------------------------------------------------------------------------------
-siesta.MeshCutoff:
-
-Description:
- Energy that defines the real-space grid. Point spacing scales as 1/sqrt(E_c).
-
-Format:
-siesta.MeshCutoff {
- Float String
-}
-
-Default:
-siesta.MeshCutoff {
-120.0 Ry
-}
-
---------------------------------------------------------------------------------
-siesta.NumberOfAtoms:
-
-Description:
- Indicate number of atoms in unit cell.
-
-Format:
-siesta.NumberOfAtoms {
- Integer
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-siesta.NumberOfSpecies:
-
-Description:
- Indicate number of species in unit cell.
-
-Format:
-siesta.NumberOfSpecies {
- Integer
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-siesta.PAO.BasisSize:
-
-Description:
- Define basis size. Can be SZ, DZ, SZP, DZP.
-
-Format:
-siesta.PAO.BasisSize {
- String
-}
-
-Default:
-siesta.PAO.BasisSize {
-DZP
-}
-
---------------------------------------------------------------------------------
-siesta.PAO.BasisType:
-
-Description:
- Define basis type
- split: Split-valence scheme for multiple-zeta. The split is based on different radii.
- splitgauss: Same as split but using Gaussian functions.
- nodes: Generalized PAO’s.
- nonodes: The original PAO’s are used, multiple-zeta is generated by changing the
- scale-factors, instead of using the excited orbitals.
- filteret: Use the filterets as a systematic basis set. The size of the basis set is
- controlled by the filter cut-off for the orbitals.
-
-Format:
-siesta.PAO.BasisType {
- String
-}
-
-Default:
-siesta.PAO.BasisType {
-split
-}
-
---------------------------------------------------------------------------------
-siesta.SolutionMethod:
-
-Description:
- Method for solving the eigenvalue problem.
-
-Format:
-siesta.SolutionMethod {
- String
-}
-
-Default:
-siesta.SolutionMethod {
-diagon
-}
-
---------------------------------------------------------------------------------
-siesta.TD.CoreExcitedAtom:
-
-Description:
- Set which atom will be the absorbing atom, i.e., which atoms the
- core-hole will be centered on
-
-Format:
-siesta.TD.CoreExcitedAtom {
- Integer
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-siesta.TD.CorePerturbationCharge:
-
-Description:
- Set the core-hole charge.
-
-Format:
-siesta.TD.CorePerturbationCharge {
- Float
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-siesta.TD.NumberOfTimeSteps:
-
-Description:
- Specify number of time steps for RT-TDDFT run.
-
-Format:
-siesta.TD.NumberOfTimeSteps {
- Integer
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-siesta.TD.ShapeOfEfield:
-
-Description:
- Specify the shape of the field for the RT-TDDFT run.
- Options are:
- step     - Turn off dipole field at time 0.
- halfstep - Dipole field changes from full strength to 1/2
-            strength at time 0.
- delta    - Dipole field with time dependence delta(t).
- const    - Turn on dipole field at time 0.
- sine     - Dipole field with damped sine wave time dependence,
-            with optional Gaussian envelope to create quasi-harmonic
-            wave packet.
- core     - turn on core-hole potential at time 0.
-
-Format:
-siesta.TD.ShapeOfEfield {
- String
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------
-siesta.TD.TimeStep:
-
-Description:
- Specify the time step for RT-TDDFT run.
-
-Format:
-siesta.TD.TimeStep {
- Float
-}
-
-Default:
-None
-
---------------------------------------------------------------------------------

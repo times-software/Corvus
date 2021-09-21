@@ -1,0 +1,66 @@
+One special token is called "target_list", which contains a space 
+separated list of the properties that the user would like Corvus to calculate. The 
+format is as follows:
+
+target_list {
+ String ...
+ ...
+}
+
+for example, if the user would like to calculated the optimized structure, 
+then the XANES, they would use:
+
+target_list{ OptimizedStructure xanes }
+
+Below is a list of the target properties that can be calculated using corvus, 
+along with the main code that is associated with them. Note that other
+codes may also be required to produce the property. Running
+
+    run-corvus -h property
+
+will give more information on which codes and inputs are required 
+to obtain the property. 
+
+
+##################################################################
+Property                      : code
+##################################################################
+qptlist                       : abinit
+aopt                          : abinit
+acell-grid                    : abinit
+eint                          : abinit
+cell_structure                : Cif2Cell
+s2                            : dmdw
+u2                            : dmdw
+vfe                           : dmdw
+feffAtomicData                : feff
+feffSCFPotentials             : feff
+feffCrossSectionsAndPhases    : feff
+feffGreensFunction            : feff
+feffPaths                     : feff
+feffFMatrices                 : feff
+xanes                         : feff
+feffXES                       : feff
+feffRIXS                      : feff
+opcons                        : feff
+opt_dynmat_s2_exafs           : feff
+feffRIXS                      : feffrixs
+xanes                         : filereader
+spectralFunction              : filereader
+fit                           : fit
+xanes_cfavg                   : helper
+mbxanes                       : mbconv
+xas_avg                       : nwchem
+opt_qmd                       : nwchem
+opt_xas                       : nwchem
+opt_xasavg                    : nwchem
+user_xasavg                   : nwchem
+OceanXANES                    : ocean
+OptimizedStructure            : orca
+spectralFunction              : phsf
+cluster_array                 : PyMatGen
+supercell                     : PyMatGen
+siestaCoreResponse            : siesta
+siestaFourierTransform        : siesta
+siestaBetaofOmega             : siesta
+siestaDOS                     : siesta

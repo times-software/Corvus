@@ -305,7 +305,11 @@ def initializeSystem(config, system, doc):
 
 
     with open(conf, 'r') as conf_file:
-        doc.update(corvutils.parsnip.readConfig_for_Doc(conf_file).asDict())
+        doc2=corvutils.parsnip.readConfig_for_Doc(conf_file).asDict()
+    
+    doc2 =  {k.lower(): v for k, v in doc2.items()}
+    doc.update(doc2)
+    
 
 # Debug: FDV
 #   pp_debug.pprint(system)
@@ -741,33 +745,60 @@ def oneshot():
         # Create Workflow
         autodesc = 'Calculate ' + ', '.join(targetList[0])
         workflow = generateWorkflow(targetList, handlerList, system, config, desc=autodesc)
-        print('')
-        print('')
-        print('#########################')
-        print('    WORKFLOW')
-        print('#########################')
-        print(workflow)
-        print('#########################')
-        print('  END WORKFLOW')
-        print('#########################')
-        print('')
-        print('')
+        if len(workflow.getRequiredInput()) > 1:
+            print('')
+            print('')
+            print('#########################')
+            print('    WORKFLOW')
+            print('#########################')
+            print(workflow)
+            print('#########################')
+            print('  END WORKFLOW')
+            print('#########################')
+            print('')
+            print('')
 
     # JJK add help by keyword. Print help for keyword and also for all requirements.
     if helpOnly:
         # print doc for each missing required input
         required = workflow.getRequiredInput()
-        if required:
+        if len(required) > 1:
             for target in targetList[0]:
-               if target not in doc:
+               if target.lower() not in doc:
                   print('Help for requested propery ' +  target + '.')
                   print('Required input is as follows:')
-            for req in required:
+            for key in required:
+               req = key.lower()
                if req in doc:
                   print('   ' + req + ':')
                   for i,line in enumerate(doc[req]):
                       if line == '%':
                           print('      ' + doc[req][i+1])
+        elif len(required) == 1:
+            if required[0].lower() == 'all':
+                for key in doc:
+                    print('\n\n   ' + key + ':')
+                    for i,line in enumerate(doc[key]):
+                        if line == '%':
+                            print('      ' + doc[key][i+1])
+            elif required[0].lower() in doc:
+                print('\n\n   ' + required[0] + ':')
+                for i,line in enumerate(doc[required[0].lower()]):
+                    if line == '%':
+                            print('      ' + doc[required[0].lower()][i+1])
+            else:
+                noHelp = True
+                for key in doc:
+                    if key.startswith(required[0].lower()):
+                        noHelp = False
+                        print('\n\n   ' + key + ':')
+                        for i,line in enumerate(doc[key]):
+                            if line == '%':
+                                print('      ' + doc[key][i+1])
+
+                if noHelp: 
+                    print('No help found for keywords: ' + targetList[0][0]) 
+
         sys.exit()
 # Debug: FDV
 #Krsna uncommented line below

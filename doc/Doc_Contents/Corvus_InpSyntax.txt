@@ -40,5 +40,4 @@ Auto:    This type indicates that Corvus will attempt to determine the type of
 Pass:    The data is passed to the Handlers "as is" (i.e. as a string with
 	 exactly the same formatting that is put between the curly brackets).
 
-
-The following are all the currently available input variables in Corvus.
+Below you can find a description of all of the available input tokens in Corvus.

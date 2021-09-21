@@ -17,6 +17,8 @@ Desc_Filename = Doc_Contents_Dir+'/'+'Corvus_Description.txt'
 InstInst_Filename = Doc_Contents_Dir+'/'+'Corvus_Install.txt'
 Examples_Filename = Doc_Contents_Dir+'/'+'Corvus_Examples.txt'
 InpSyntax_Filename = Doc_Contents_Dir+'/'+'Corvus_InpSyntax.txt'
+Run_Filename = Doc_Contents_Dir+'/'+'Corvus_Run.txt'
+Implemented_Filename = Doc_Contents_Dir+'/'+'Corvus_Implemented.txt'
 Blank_line = '\n'
 Separator1_char = '='
 Separator2_char = '-'
@@ -157,6 +159,19 @@ def Print_Doc_Header():
   print("{0}".format(open(InstInst_Filename).read()),end='')
   print("{0}".format(1*Blank_line),end='')
 
+
+def Print_Run_Instructions():
+# Read the run instructions and print
+  print("{0}".format(1*Blank_line),end='')
+  print("{0}".format(open(Run_Filename).read()),end='')
+  print("{0}".format(1*Blank_line),end='')
+
+def Print_Implemented_Properties():
+# Read the run instructions and print
+  print("{0}".format(1*Blank_line),end='')
+  print("{0}".format(open(Implemented_Filename).read()),end='')
+  print("{0}".format(1*Blank_line),end='')
+
 def Print_Doc_Examples():
 
 # Read the examples and print
@@ -209,11 +224,23 @@ if __name__=='__main__':
 
 # Process the generic input tokens
 
+# Print run instructions
+  print("{0}".format(Separator1))
+  print("{0}".format(1*Blank_line),end='')
+  Print_Run_Instructions()
+
 # Print a header for the generic tokens
   print("{0}".format(Separator1))
   print("{0}".format(1*Blank_line),end='')
   print("{0}".format(open(InpSyntax_Filename).read()),end='')
   print("{0}".format(1*Blank_line),end='')
+
+  print("{0}".format(Separator2))
+  print("{0}".format('Target Properties'.center(Page_width),end=''))
+  print("{0}".format(Separator2))
+  Print_Implemented_Properties()
+
+  print("{0}".format(Separator2))
   print("{0}".format('General Input Variables'.center(Page_width),end=''))
   print("{0}".format(Separator2))
 
