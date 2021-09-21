@@ -613,9 +613,9 @@ def oneshot():
 # Modified by FDV:
 # Removing the target option from the cli. From now on we do it through the
 # input.
-    shortopts = 'crt:i:w:s:j:h:'
+    shortopts = 'vcrt:i:w:s:j:h:'
     longopts = ['target=','input=','workflow=','checkpoints','resume','save=',
-               'jump=','prefix=','parallelrun=','--help']
+               'jump=','prefix=','parallelrun=','help','version']
     try:
         opts, args = getopt.getopt(argv[1:], shortopts, longopts)
     except getopt.GetoptError as err:
@@ -648,6 +648,9 @@ def oneshot():
             saveFile = checkFile(arg)
         elif opt in ('-r', '--resume'):
             resume = True
+        elif opt in ('-v', '--version'):
+            print_version()
+            sys.exit()
         elif opt in ('-h', '--help'):
             # Print workflow and requirements for this target and exit.
             helpOnly = True
@@ -848,3 +851,9 @@ def oneshot():
         else: 
             printAndExit('Error: target [' + token + '] not produced')
 
+def print_version():
+    print('#####################################################')
+    print('#                                                   #')
+    print('#          Corvus version 1.0.7                     #')
+    print('#                                                   #')
+    print('#####################################################')
