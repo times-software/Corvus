@@ -72,6 +72,11 @@ def parse(configFile, inputFile, mode=defaultMode):
     with open(inputFile, 'r') as input:
         inputDict = readInput(input).asDict()
 
+    # JJK - make all keys lowercase so that input is case insensitive.
+    #     - Do we also need to lower .inp.key?
+    configDict =  {k.lower(): v for k, v in configDict.items()}
+    inputDict  =  {k.lower(): v for k, v in inputDict.items()}
+
 # Testing: FDV
 # The values that come out in the dictionaries have type pyparsing.ParseResults,
 # which is probably ok, but can be pretty confusing when you print the data to
