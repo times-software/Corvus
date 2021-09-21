@@ -605,9 +605,9 @@ def oneshot():
 # Modified by FDV:
 # Removing the target option from the cli. From now on we do it through the
 # input.
-    shortopts = 'crt:i:w:s:j:'
+    shortopts = 'crt:i:w:s:j:h:'
     longopts = ['target=','input=','workflow=','checkpoints','resume','save=',
-               'jump=','prefix=','parallelrun=']
+               'jump=','prefix=','parallelrun=','--help']
     try:
         opts, args = getopt.getopt(argv[1:], shortopts, longopts)
     except getopt.GetoptError as err:
@@ -623,13 +623,14 @@ def oneshot():
 # Removing the target option from the cli. From now on we do it through the
 # input.
 #   inputFile = saveFile = workflowFile = targetList = pathPrefix = parallelRun = None
+    helpOnly = False
     inputFile = saveFile = workflowFile = pathPrefix = parallelRun = None
     for opt, arg in opts:
-#       if opt in ('-t', '--target'):
-#           targetList = arg.split(',')
+        if opt in ('-t', '--target'):
+            targetList = arg.split(',')
 #       elif opt in ('-i', '--input'):
 #           inputFile = checkFile(arg)
-        if opt in ('-i', '--input'):
+        elif opt in ('-i', '--input'):
             inputFile = checkFile(arg)
         elif opt in ('-w', '--workflow'):
             workflowFile = checkFile(arg) 
@@ -639,6 +640,10 @@ def oneshot():
             saveFile = checkFile(arg)
         elif opt in ('-r', '--resume'):
             resume = True
+        elif opt in ('-h', '--help'):
+            # Print workflow and requirements for this target and exit.
+            helpOnly = True
+            targetList = [arg.split(',')]
         elif opt in ('-j', '--jump'):
             if not arg.isdigit():
                 printAndExit('Resume index should be a positive integer.')
@@ -695,12 +700,14 @@ def oneshot():
 # Added by FDV
 # At this point we set the target list based on the content of the input file,
 # rather than the command line.
-    if 'target_list' in list(system.keys()):
-      targetList = system['target_list']
-    else:
-      print('Provide target properties or Workflow')
-      exitOneshot()
-      return
+    if not helpOnly:
+       if 'target_list' in list(system.keys()):
+         targetList = system['target_list']
+       else:
+         print('Provide target properties or Workflow')
+         exitOneshot()
+         return
+   
 
 # Added by FDV
 # At this point we set the handler list to make the workflow generator work more
