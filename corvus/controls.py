@@ -290,7 +290,7 @@ def configure(config):
     path2phsf = rcp.get('Executables', 'phsf')
     config['phsf'] = path2phsf
 # Initialize system with user input
-def initializeSystem(config, system):
+def initializeSystem(config, system, doc):
     import corvutils.parsnip
 
     conf    = checkFile(config['parsnipConf'])
@@ -302,6 +302,10 @@ def initializeSystem(config, system):
 
     if os.path.exists(inp):
         system.update(corvutils.parsnip.parse(conf, inp, mode=['read','UseDefaults']))
+
+
+    with open(conf, 'r') as conf_file:
+        doc.update(corvutils.parsnip.readConfig_for_Doc(conf_file).asDict())
 
 # Debug: FDV
 #   pp_debug.pprint(system)
@@ -626,11 +630,11 @@ def oneshot():
     helpOnly = False
     inputFile = saveFile = workflowFile = pathPrefix = parallelRun = None
     for opt, arg in opts:
-        if opt in ('-t', '--target'):
-            targetList = arg.split(',')
+        #if opt in ('-t', '--target'):
+        #    targetList = arg.split(',')
 #       elif opt in ('-i', '--input'):
 #           inputFile = checkFile(arg)
-        elif opt in ('-i', '--input'):
+        if opt in ('-i', '--input'):
             inputFile = checkFile(arg)
         elif opt in ('-w', '--workflow'):
             workflowFile = checkFile(arg) 
@@ -678,6 +682,7 @@ def oneshot():
 #   sys.exit()
 
     system = {}
+    doc = {}
     workflowStart = 0
 
     # Read in saved state if restarting calculation midway
@@ -688,7 +693,7 @@ def oneshot():
         workflowStart = saveState['index']
 
     # Update System with any user input
-    initializeSystem(config, system)
+    initializeSystem(config, system, doc)
     #print(system)
 #DASb
     #print 'system = ', system
@@ -749,6 +754,21 @@ def oneshot():
         print('')
         print('')
 
+    # JJK add help by keyword. Print help for keyword and also for all requirements.
+    if helpOnly:
+        # print doc for each missing required input
+        required = workflow.getRequiredInput()
+        for target in targetList[0]:
+           if target not in doc:
+              print('Help for requested propery ' +  target + '.')
+              print('Required input is as follows:')
+        for req in required:
+           if req in doc:
+              print('   ' + req + ':')
+              for i,line in enumerate(doc[req]):
+                  if line == '%':
+                      print('      ' + doc[req][i+1])
+        sys.exit()
 # Debug: FDV
 #Krsna uncommented line below
 #   print workflow
@@ -766,7 +786,7 @@ def oneshot():
 #   sys.exit()
 
     # Skip to specified Workflow step (developer option)
-    if jumpPoint is not 0:
+    if jumpPoint != 0:
         workflowStart = jumpPoint - 1
 
     # Save intial state
