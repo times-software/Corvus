@@ -705,13 +705,12 @@ def oneshot():
 # Added by FDV
 # At this point we set the target list based on the content of the input file,
 # rather than the command line.
-    if not helpOnly:
-       if 'target_list' in list(system.keys()):
-         targetList = system['target_list']
-       else:
-         print('Provide target properties or Workflow')
-         exitOneshot()
-         return
+    if 'target_list' in list(system.keys()):
+      targetList = system['target_list']
+    elif not helpOnly:
+      print('Provide target properties or Workflow')
+      exitOneshot()
+      return
    
 
 # Added by FDV
@@ -758,16 +757,17 @@ def oneshot():
     if helpOnly:
         # print doc for each missing required input
         required = workflow.getRequiredInput()
-        for target in targetList[0]:
-           if target not in doc:
-              print('Help for requested propery ' +  target + '.')
-              print('Required input is as follows:')
-        for req in required:
-           if req in doc:
-              print('   ' + req + ':')
-              for i,line in enumerate(doc[req]):
-                  if line == '%':
-                      print('      ' + doc[req][i+1])
+        if required:
+            for target in targetList[0]:
+               if target not in doc:
+                  print('Help for requested propery ' +  target + '.')
+                  print('Required input is as follows:')
+            for req in required:
+               if req in doc:
+                  print('   ' + req + ':')
+                  for i,line in enumerate(doc[req]):
+                      if line == '%':
+                          print('      ' + doc[req][i+1])
         sys.exit()
 # Debug: FDV
 #Krsna uncommented line below
