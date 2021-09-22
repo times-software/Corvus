@@ -67,9 +67,9 @@ leadingWhiteGrammar.setParseAction(replaceWith(''))
 def parse(configFile, inputFile, mode=defaultMode):
 # Modified by FDV
     # Make sure we can open files
-    with open(configFile, 'r') as config:
+    with open(configFile, 'r', encoding="utf8") as config:
         configDict = readConfig(config).asDict()
-    with open(inputFile, 'r') as input:
+    with open(inputFile, 'r', encoding="utf8") as input:
         inputDict = readInput(input).asDict()
 
     # JJK - make all keys lowercase so that input is case insensitive.

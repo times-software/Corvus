@@ -304,7 +304,7 @@ def initializeSystem(config, system, doc):
         system.update(corvutils.parsnip.parse(conf, inp, mode=['read','UseDefaults']))
 
 
-    with open(conf, 'r') as conf_file:
+    with open(conf, 'r',encoding="utf8") as conf_file:
         doc2=corvutils.parsnip.readConfig_for_Doc(conf_file).asDict()
     
     doc2 =  {k.lower(): v for k, v in doc2.items()}
