@@ -134,6 +134,7 @@ class PyMatGen(Handler):
     
             #print(structure.sites)
             for inds in structure.equivalent_indices:
+                weight = len(inds)
                 for abs_symbol in absorber_types:
                     if abs_symbol == structure.sites[inds[0]].species_string:
 
@@ -144,8 +145,9 @@ class PyMatGen(Handler):
                         for site in site_cluster:
                             cluster = cluster + [[site.species_string] + site.coords.tolist() + [ site.properties['itype'] ]]
 
-                        # cluster_array is a list of tuples, each with absorbing atom and associated cluster.
-                        cluster_array = cluster_array + [(1,cluster)]
+                        # cluster_array is a list of tuples, each with absorbing atom, associated cluster, and 
+                        # weighting (stoichiometry for example).
+                        cluster_array = cluster_array + [(1,weight,cluster)]
                         
             print("Number of absorbers:", len(cluster_array))
             output['cluster_array'] = cluster_array

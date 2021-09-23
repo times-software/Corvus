@@ -99,10 +99,13 @@ class helper(Handler):
                 en = []
                 mu = []
                 step = 1.e30
+                totalWeight = 0.0
                 for i,clust_elem in enumerate(cluster_array):
                     #print(i, clust_elem[0])
                     input['absorbing_atom'] = [[clust_elem[0]]]
-                    input['cluster'] = clust_elem[1]
+                    weight = clust_elem[1]
+                    print('weight=',weight)
+                    input['cluster'] = clust_elem[2]
                     # Make sure we are working with absolute units.
                     input['feff.absolute'] = [[True]]
                     config2 = copy.deepcopy(config)
@@ -113,6 +116,8 @@ class helper(Handler):
             
                     # get results from input.
                     en0,mu0=np.array(input['xanes'])
+                    mu0 = mu0*weight
+                    totalWeight = totalWeight + weight
                     
                     # Save in array of XANES output.
                     en = en + [en0]
@@ -135,8 +140,8 @@ class helper(Handler):
                     mu_interp = mu_interp + [mui]
 
                 # Get average and standard deviation.
-                mu_avg = np.average(mu_interp,0)
-                mu_stdev = np.std(mu_interp,0)
+                mu_avg = np.average(mu_interp,0)/totalWeight*len(cluster_array)
+                mu_stdev = np.std(mu_interp,0)/totalWeight*len(cluster_array)
 
                 output['xanes_cfavg'] = np.array([egrid,mu_avg,mu_stdev]).tolist()
 
