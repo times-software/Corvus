@@ -854,6 +854,6 @@ def oneshot():
 def print_version():
     print('#####################################################')
     print('#                                                   #')
-    print('#          Corvus version 1.0.7                     #')
+    print('#          Corvus version 1.0.8')
     print('#                                                   #')
     print('#####################################################')
