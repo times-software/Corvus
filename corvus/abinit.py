@@ -85,7 +85,7 @@ class Abinit(Handler):
         if key not in implemented:
             raise LookupError('Corvus cannot currently produce ' + key + ' using ABINIT')
         f = lambda subkey:implemented[key][subkey]
-        if f('type') is 'Exchange':
+        if f('type') == 'Exchange':
             return Exchange(Abinit, f('req'), f('out'), cost=f('cost'), desc=f('desc'))
         
     @staticmethod
@@ -200,11 +200,11 @@ def expandedList(string, length=3):
     expanded = []
     num = 1
     for x in numList.parseString(string).asList():
-        if num is not 1:
+        if num != 1:
             expanded.extend([x]*num)
             num = 1
         elif '*' in x:
-            if x[:-1] is '':
+            if x[:-1] == '':
                 num = length
             else:
                 num = int(x[:-1])
@@ -595,7 +595,7 @@ def ifc2dym(file, input):
             clusterAtom['dist'] = math.sqrt(sum(a*a for a in clusterAtom['coord']))
             clusterAtom['Z'] = znucl[iAt]
             clusterAtom['mass'] = amu[znucl[iAt]]
-            if all(i is 0 for i in ijk):
+            if all(i == 0 for i in ijk):
                 clusterAtom['central'] = True
             cluster.append(clusterAtom)
     ru8 = lambda x: Decimal(x).quantize(Decimal('0.12345678'),rounding=ROUND_UP)

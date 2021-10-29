@@ -80,7 +80,7 @@ class Vasp(Handler):
         if key not in implemented:
             raise LookupError('Corvus cannot currently produce ' + key + ' using VASP')
         f = lambda subkey:implemented[key][subkey]
-        if f('type') is 'Exchange':
+        if f('type') == 'Exchange':
             return Exchange(Vasp, f('req'), f('out'), cost=f('cost'), desc=f('desc'))
         
     @staticmethod

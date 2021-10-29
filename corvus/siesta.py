@@ -72,7 +72,7 @@ class Siesta(Handler):
         if key not in implemented:
             raise LookupError('Corvus cannot currently produce ' + key + ' using FEFF')
         f = lambda subkey : implemented[key][subkey]
-        if f('type') is 'Exchange':
+        if f('type') == 'Exchange':
             return Exchange(Siesta, f('req'), f('out'), cost=f('cost'), desc=f('desc'))
 
     @staticmethod
@@ -107,19 +107,19 @@ class Siesta(Handler):
         # so we want to keep the original input intact.
         siestaInput = {key:input[key] for key in input if key.startswith('siesta.')}
        
-        siestaInput['siesta.TD.NumberOfTimeSteps'] = input.get('siesta.TD.NumberOfTimeSteps',[[500]])
-        siestaInput['siesta.TD.TimeStep'] = input.get('siesta.TD.TimeStep',[[0.5]])
-        siestaInput['siesta.TD.ShapeOfEField'] = input.get('siesta.TD.ShapeOfField',[['core']])
-        siestaInput['siesta.TD.CorePerturbationCharge'] = input.get('siesta.TD.CorePerturbationCharge',[[0.02]])
-        siestaInput['siesta.TD.mxPC'] = input.get('siesta.TD.mxPC',[[2]])
-        siestaInput['siesta.SolutionMethod'] = [[ 'diagon' ]]
+        siestaInput['siesta.td.numberoftimesteps'] = input.get('siesta.td.numberoftimesteps',[[500]])
+        siestaInput['siesta.td.timestep'] = input.get('siesta.td.timestep',[[0.5]])
+        siestaInput['siesta.td.shapeofefield'] = input.get('siesta.td.Shapeofefield',[['core']])
+        siestaInput['siesta.td.coreperturbationcharge'] = input.get('siesta.td.coreperturbationcharge',[[0.02]])
+        siestaInput['siesta.td.mxpc'] = input.get('siesta.td.mxpc',[[2]])
+        siestaInput['siesta.solutionmethod'] = [[ 'diagon' ]]
         # Now get siesta inputs from general input.
         if 'absorbing_atom' in input:
-            siestaInput['siesta.TD.CoreExcitedAtom'] = input['absorbing_atom']
-        if 'siesta.Block.AtomicCoordinatesAndAtomicSpecies' not in input:
-            siestaInput['siesta.AtomicCoordinatesFormat'] = [['Fractional']]
-            siestaInput['siesta.NumberOfAtoms'] = input['number_of_atoms']
-            siestaInput['siesta.NumberOfSpecies'] = input['number_of_species']
+            siestaInput['siesta.td.coreexcitedAtom'] = input['absorbing_atom']
+        if 'siesta.block.atomiccoordinatesandatomicspecies' not in input:
+            siestaInput['siesta.atomiccoordinatesformat'] = [['Fractional']]
+            siestaInput['siesta.numberofatoms'] = input['number_of_atoms']
+            siestaInput['siesta.numberofspecies'] = input['number_of_species']
             species_label = []
             for i,s in enumerate(input['species']):
                 species_label = species_label + [[i+1, s[0], s[1]]]
@@ -131,10 +131,10 @@ class Siesta(Handler):
                     if site[0] == s[1]:
                         sites = sites + [[site[1],site[2],site[3],i+1]]
 
-            siestaInput['siesta.Block.ChemicalSpeciesLabel'] = species_label
-            siestaInput['siesta.LatticeConstant'] = [[1.0, 'Ang']]
-            siestaInput['siesta.Block.ATomicCoordinatesAndAtomicSpecies'] = sites
-            siestaInput['siesta.Block.LatticeParameters'] = [input['cell_scaling_abc'][0] + input['cell_angles_abg'][0]]
+            siestaInput['siesta.block.chemicalspecieslabel'] = species_label
+            siestaInput['siesta.latticeconstant'] = [[1.0, 'Ang']]
+            siestaInput['siesta.block.atomiccoordinatesandatomicspecies'] = sites
+            siestaInput['siesta.block.latticeparameters'] = [input['cell_scaling_abc'][0] + input['cell_angles_abg'][0]]
             
 
         # Generate any data that is needed from generic input and populate siestaInput with
@@ -161,7 +161,7 @@ class Siesta(Handler):
                 CoreResponse[1] = np.subtract(CoreResponse[1], tmp_avg)	
                 
                 # Broadening the coreresponse, default 0.5
-                broadfactor = input['siesta.Coreresponse.Broadening'][0][0]
+                broadfactor = input['siesta.coreresponse.broadening'][0][0]
                 print('broadfactor=',broadfactor)
                 CoreResponse[1] = CoreResponse[1]*np.exp(-(broadfactor/27.21*CoreResponse[0]/0.02418884326505)**2)
                 
@@ -339,8 +339,8 @@ class Siesta(Handler):
 
                     # Loop over executables: This is specific to feff. Other codes
                     # will more likely have only one executable.
-                    executables = siestaInput.get('siesta.MPI.CMD',[['mpirun']])[0]
-                    args = siestaInput.get('siesta.MPI.ARGS',[['-n 4']])[0] + [os.path.join(siestadir,'siesta')]
+                    executables = siestaInput.get('siesta.mpi.cmd',[['mpirun']])[0]
+                    args = siestaInput.get('siesta.mpi.args',[['-n 4']])[0] + [os.path.join(siestadir,'siesta')]
                     iExec = 0
                     for executable in executables:
 
@@ -387,9 +387,9 @@ def getInpLines(input,token):
     block=False
     endblock=' '
     key = token[len('siesta.'):]
-    if key.startswith('Block.'):
+    if key.startswith('block.'):
         block=True
-        key = key[len('Block.'):]
+        key = key[len('block.'):]
         lines = lines + ['%block ' + key.upper()]
         endblock = '%endblock ' + key.upper()
 

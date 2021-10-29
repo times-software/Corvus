@@ -14,7 +14,6 @@ strlistkey = lambda L:','.join(sorted(L))
 implemented['xanes_cfavg'] = {'type':'Exchange','out':['xanes_cfavg'],'cost':1,'req':['cluster_array'],
 'desc':'Average over an array of clusters and absorbing atoms.'}
 
-
 class helper(Handler):
     def __str__(self):
         return 'helper Handler'
@@ -80,7 +79,7 @@ class helper(Handler):
         f = lambda subkey : implemented[key][subkey]
         required = f('req')
         
-        if f('type') is 'Exchange':
+        if f('type') == 'Exchange':
             return Exchange(helper, required, f('out'), cost=f('cost'), desc=f('desc'))
 
     @staticmethod
@@ -100,6 +99,7 @@ class helper(Handler):
                 mu = []
                 step = 1.e30
                 totalWeight = 0.0
+                weights = []
                 for i,clust_elem in enumerate(cluster_array):
                     #print(i, clust_elem[0])
                     input['absorbing_atom'] = [[clust_elem[0]]]
@@ -112,11 +112,13 @@ class helper(Handler):
                     config2['cwd'] = config['xcDir']
                     config2['xcIndexStart'] = i+1
                     targetList = [['xanes']]
+
                     generateAndRunWorkflow(config2, input, targetList)
             
                     # get results from input.
                     en0,mu0=np.array(input['xanes'])
-                    mu0 = mu0*weight
+                    weights = weights + [weight]
+                    mu0 = mu0
                     totalWeight = totalWeight + weight
                     
                     # Save in array of XANES output.
@@ -127,6 +129,7 @@ class helper(Handler):
 
                 en = np.array(en)
                 mu = np.array(mu)
+                weights = np.array(weights)
                 # Make the common grid.
                 emin=np.amin(en)
                 emax=np.amax(en)
@@ -140,8 +143,9 @@ class helper(Handler):
                     mu_interp = mu_interp + [mui]
 
                 # Get average and standard deviation.
-                mu_avg = np.average(mu_interp,0)/totalWeight*len(cluster_array)
-                mu_stdev = np.std(mu_interp,0)/totalWeight*len(cluster_array)
+                mu_avg,mu_stdev = weighted_avg_and_std(mu_interp, weights)
+                #mu_avg,mu_stdev = weighted_avg_and_std(mu_interp)
+                #mu_stdev = np.std(mu_interp,0)/totalWeight*len(cluster_array)
 
                 output['xanes_cfavg'] = np.array([egrid,mu_avg,mu_stdev]).tolist()
 
@@ -150,3 +154,13 @@ class helper(Handler):
         pass
 
 
+def weighted_avg_and_std(values, weights):
+    """
+        Return the weighted average and standard deviation.
+    
+        values, weights -- Numpy ndarrays with the same shape.
+        """
+    average = np.average(values, axis=0, weights=weights)
+    # Fast and numerically precise:
+    variance = np.average((values-average)**2, axis=0, weights=weights)
+    return (average, np.sqrt(variance))

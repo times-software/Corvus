@@ -83,7 +83,7 @@ class fit(Handler):
             print("Missing user input: fit.target is required to run a fit.")
             sys.exit()
         
-        if f('type') is 'Exchange':
+        if f('type') == 'Exchange':
             return Exchange(fit, required, f('out'), cost=f('cost'), desc=f('desc'))
 
     @staticmethod

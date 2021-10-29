@@ -80,7 +80,7 @@ class filereader(Handler):
         if key not in implemented:
             raise LookupError('Corvus cannot currently produce ' + key + ' using FEFF')
         f = lambda subkey : implemented[key][subkey]
-        if f('type') is 'Exchange':
+        if f('type') == 'Exchange':
             return Exchange(filereader, f('req'), f('out'), cost=f('cost'), desc=f('desc'))
 
     @staticmethod
@@ -108,7 +108,7 @@ class filereader(Handler):
             output['xanes'] = [w, mu0]
 
         if 'spectralFunction' in output:
-            fl = input['spectralFunction_file'][0][0]
+            fl = input['spectralfunction_file'][0][0]
             w, spfcn = np.loadtxt(fl,usecols = (0,1)).T
             output['spectralFunction'] = [w, spfcn]
             

@@ -67,7 +67,7 @@ class phsf(Handler):
         if key not in implemented:
             raise LookupError('Corvus cannot currently produce ' + key + ' using FEFF')
         f = lambda subkey : implemented[key][subkey]
-        if f('type') is 'Exchange':
+        if f('type') == 'Exchange':
             return Exchange(phsf, f('req'), f('out'), cost=f('cost'), desc=f('desc'))
 
     @staticmethod
@@ -185,9 +185,9 @@ def getInpLines(input,token):
     block=False
     endblock=' '
     key = token[len('phsf.'):]
-    if key.startswith('Block.'):
+    if key.startswith('block.'):
         block=True
-        key = key[len('Block.'):]
+        key = key[len('block.'):]
 
     if token in input:
         # If the first element is not a boolean, this contains values

@@ -70,7 +70,7 @@ class Ocean(Handler):
         if key not in implemented:
             raise LookupError('Corvus cannot currently produce ' + key + ' using FEFF')
         f = lambda subkey : implemented[key][subkey]
-        if f('type') is 'Exchange':
+        if f('type') == 'Exchange':
             return Exchange(Ocean, f('req'), f('out'), cost=f('cost'), desc=f('desc'))
 
     @staticmethod

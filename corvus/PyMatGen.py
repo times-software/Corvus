@@ -17,12 +17,12 @@ pp_debug = pprint.PrettyPrinter(indent=4)
 implemented = {}
 strlistkey = lambda L:','.join(sorted(L))
 subs = lambda L:[{L[j] for j in range(len(L)) if 1<<j&k} for k in range(1,1<<len(L))]
-#for s in subs(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc', 'number_density']):
-#    key = strlistkey(s)
-#    autodesc = 'Get ' + ', '.join(s) + ' using cif2cell'
-#    cost = 10
-#    implemented[key] = {'type':'Exchange','out':list(s),'req':['cif_input'],
-#                        'desc':autodesc,'cost':cost}
+for s in subs(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc', 'number_density']):
+    key = strlistkey(s)
+    autodesc = 'Get ' + ', '.join(s) + ' using cif2cell'
+    cost = 10
+    implemented[key] = {'type':'Exchange','out':list(s),'req':['cif_input'],
+                        'desc':autodesc,'cost':cost}
 
 #implemented['cell_structure'] = {'type':'Exchange','out':['cell_structure'],'cost':0,
 #                        'req':['cell_vectors','cell_struct_xyz_red','cell_scaling_iso','cell_scaling_abc'],'desc':'Calculate cell structure from cif file using cif2cell.'}
@@ -90,7 +90,7 @@ class PyMatGen(Handler):
         if key not in implemented:
             raise LookupError('Corvus cannot currently produce ' + key + ' using FEFF')
         f = lambda subkey : implemented[key][subkey]
-        if f('type') is 'Exchange':
+        if f('type') == 'Exchange':
             return Exchange(PyMatGen, f('req'), f('out'), cost=f('cost'), desc=f('desc'))
 
     @staticmethod
@@ -124,35 +124,97 @@ class PyMatGen(Handler):
                 # Use all elements in crystal
                 absorber_types=structure.symbol_set
 
-            print("Absorber types:", absorber_types)
+            #print("Absorber types:", absorber_types)
+            disordered_structure = False
             ipot = 1
+            n_disord = 1
             cluster_array = []
             for inds in structure.equivalent_indices:
+                xnat = len(inds)
+                
                 for ind in inds:
-                    structure.sites[ind].properties['itype'] = ipot
+                    structure.sites[ind].properties['itype'] = []
+                    structure.sites[ind].properties['xnat']  = []
+
+                    #print(structure.sites[ind].species.as_dict().values())
+                    i_spec=0
+                    for occ in  structure.sites[ind].species.as_dict().values():
+                        structure.sites[ind].properties['itype'] += [ipot+i_spec]
+                        structure.sites[ind].properties['xnat'] += [xnat*occ]
+
+                        if occ != 1.0:
+                            disordered_structure = True
+                            n_disord = input['numberofconfigurations'][0][0]
+                        i_spec += 1
+                       
                 ipot += 1
+
+
     
-            #print(structure.sites)
-            for inds in structure.equivalent_indices:
-                weight = len(inds)
-                for abs_symbol in absorber_types:
-                    if abs_symbol == structure.sites[inds[0]].species_string:
+            #print(dir(structure.sites[0].species))
+            #print(structure.sites[0].species.as_dict())
+            i_disord = 1
+            cluster_radius = input['clusterradius'][0][0]
+            while i_disord <= n_disord:
+                for inds in structure.equivalent_indices:
+                    weight = len(inds)
+                    #print(structure.sites[inds[0]].species_string)
+                    for abs_symbol in absorber_types:
+                        if abs_symbol in structure.sites[inds[0]].species.as_dict():
 
-                        # Make a cluster around this absorber
-                        site_cluster = structure.get_neighbors(structure.sites[inds[0]],12.0)            
-                        site_cluster = [structure.sites[inds[0]]] + site_cluster
-                        cluster = []
-                        for site in site_cluster:
-                            cluster = cluster + [[site.species_string] + site.coords.tolist() + [ site.properties['itype'] ]]
-
-                        # cluster_array is a list of tuples, each with absorbing atom, associated cluster, and 
-                        # weighting (stoichiometry for example).
-                        cluster_array = cluster_array + [(1,weight,cluster)]
-                        
+                            # Make a cluster around this absorber
+                            site_cluster = structure.get_neighbors(structure.sites[inds[0]],cluster_radius)            
+                            site_cluster = [structure.sites[inds[0]]] + site_cluster
+                            cluster = []
+                         
+                            iclust = 0
+                            for site in site_cluster:
+                                # Loop over all species at this site
+                                nspec = len(site.species.as_dict().keys())
+                                # Get total occupancy.
+                                tot_occ = 0.0
+                                #print(site)
+                                #print(site.properties)
+                                for occ in site.species.as_dict().values():
+                                    # Always put the absorbing atom in the cluster
+                                    if iclust == 0:
+                                        weight = weight*occ
+                                   
+                                        tot_occ = tot_occ + occ
+                                        if tot_occ > 1.0:
+                                            print('Total occupation in cif file for one site is greater than 1')
+                              
+                                occ_sum = 0.0
+                                rnd = np.random.uniform()
+                                i_spec = 0
+                                
+                                for spec_str,occ in site.species.as_dict().items():
+                                    #print(iclust,rnd,spec_str,occ_sum)
+                                    #print(site)
+                                    # Always put the absorbing atom in the cluster
+                                    if spec_str == abs_symbol and iclust == 0:
+                                        cluster = cluster + [[spec_str] + site.coords.tolist() + [ site.properties['itype'] ] + [site.properties['xnat']]]
+                                        break
+                                    elif occ_sum < rnd <= occ + occ_sum:
+                                        cluster = cluster + [[spec_str] + site.coords.tolist() + [ site.properties['itype'][i_spec] ] + [site.properties['xnat'][i_spec]]]
+                                        #print(site.properties)
+                                        #print(cluster[-1])
+                                        #sys.stdin.readline()
+                                        
+                                    occ_sum = occ_sum + occ
+                                    i_spec += 1
+                            
+                                iclust = iclust + 1
+                                
+                            # cluster_array is a list of tuples, each with absorbing atom, associated cluster, and 
+                            # weighting (stoichiometry for example).
+                            cluster_array = cluster_array + [(1,weight,cluster)]
+                i_disord = i_disord + 1        
             print("Number of absorbers:", len(cluster_array))
             output['cluster_array'] = cluster_array
 
-        elif 'supercell' in output:
+        elif set(output.keys()).issubset(set(['supercell', 'cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc', 'number_density'])):
+        #elif 'supercell' in output:
             parser = CifParser(input.get("cif_input")[0][0])
             structure = parser.get_structures()[0]
             sg_anal = SpacegroupAnalyzer(structure) 
@@ -228,5 +290,31 @@ class PyMatGen(Handler):
 
 
 
+# def getSymmetryUniqueAtoms(structure):
+#     ''' input  - structure of cell 
+#         output - modified structure with site properties labeled by number and type of nearest neighbors.   
+#     '''
+#     # Loop over equivalent sets of atoms
+#     for inds in structure.equivalent_indices:
+#         # Get number of atoms of given type
+#         xnat = len(inds)
+                
+#         for ind in inds:
+#             structure.sites[ind].properties['itype'] = []
+#             structure.sites[ind].properties['xnat']  = []
 
-
+#             # get number and type of nearest neighbors. 
+#             #print(structure.sites[ind].species.as_dict().values())
+#             i_spec=0
+#             for occ in  structure.sites[ind].species.as_dict().values():
+#                 structure.sites[ind].properties['itype'] += [ipot+i_spec]
+#                 structure.sites[ind].properties['xnat'] += [xnat*occ]
+                
+#                 if occ != 1.0:
+#                     disordered_structure = True
+#                     n_disord = input['numberofconfigurations'][0][0]
+#                     i_spec += 1
+                        
+#         ipot += 1
+        
+#         return 1

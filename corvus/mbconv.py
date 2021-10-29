@@ -85,7 +85,7 @@ class mbconv(Handler):
         if 'mbconv' in list(inp.keys()):
             required.extend()
 
-        if f('type') is 'Exchange':
+        if f('type') == 'Exchange':
             return Exchange(mbconv, f('req'), f('out'), cost=f('cost'), desc=f('desc'))
 
     @staticmethod
