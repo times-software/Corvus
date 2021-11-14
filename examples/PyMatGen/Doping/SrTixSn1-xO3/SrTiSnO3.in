@@ -1,0 +1,25 @@
+# Set target to feffXANES (we will later change this to XANES.
+target_list { xanes_cfavg }
+
+# Make Corvus use FEFF for XANES.
+#usehandlers { helper PyMatGen Feff }
+absorbing_atom_type{ Ti }
+
+ClusterRadius{ 15.0 }
+NumberOfConfigurations{ 30 }
+
+cif_input{ SrTiO3.cif }
+# Set the mpi command and flags for feff.
+
+# Set absorption edge.
+feff.edge{ K }
+feff.lfms1{ 2 }
+feff.lfms2{ 2 }
+feff.MPI.CMD{ mpirun }
+feff.MPI.ARGS{ -n 6 }
+
+feff.unfreezef{ True }
+
+# These settings are not converged, but are fast.
+feff.fms{ 2.0 0 0 0.0 0.0 40.0 }
+feff.scf{ 2.0 0 30 0.1 0 }
