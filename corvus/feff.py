@@ -169,6 +169,7 @@ class Feff(Handler):
                 
                 if 'feff.reciprocal' not in input:
                     feffInput['feff.real'] = [[True]]
+                
 
         if 'cluster' in input:
             atoms = getFeffAtomsFromCluster(input)
@@ -366,7 +367,7 @@ class Feff(Handler):
                     feffInput['feff.edge'] = [[edge]]
                     # Set output and error files
                     outFile=os.path.join(dir,'xmu.dat')
-                    if not (os.path.exists(outFile) and input['usesaved']):
+                    if not (os.path.exists(outFile) and input['usesaved'][0][0]):
                         with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
                     
                             # Write input file for FEFF.
@@ -1311,7 +1312,6 @@ for i in range(nElem):
 
 def getFeffAtomsFromCluster(input):
     if 'absorbing_atom' in input:
-        print(input['absorbing_atom'][0][0])
         absorber = input['absorbing_atom'][0][0] - 1
         atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
         if len(atoms[0]) >= 5:
@@ -1350,7 +1350,7 @@ def getFeffPotentialsFromCluster(input):
     lfms2 = input.get('feff.lfms2')[0][0]
 
     # stoichiometry and unique atoms set by crystal structure.
-    print(atoms[0])
+    #print(atoms[0])
     if len(atoms[0]) >= 6:
         uniqueAtoms = sorted(list(set([ (x[0],x[4],x[5]) for x in atoms ])),key=lambda x: x[1])
         feffPots = [[]]

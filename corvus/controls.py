@@ -828,7 +828,7 @@ def oneshot():
     # Run Workflow
     i = max(0, workflowStart)
     #print workflow.sequence
-    print('Length of sequence', len(workflow.sequence))
+    #print('Length of sequence', len(workflow.sequence))
     while i < len(workflow.sequence):
         if config['checkpoints']:
             saveState['system'] = system
