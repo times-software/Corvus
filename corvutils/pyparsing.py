@@ -682,7 +682,7 @@ class ParseResults(object):
     def __dir__(self):
         return dir(super(ParseResults,self)) + list(self.keys())
 
-collections.MutableMapping.register(ParseResults)
+collections.abc.MutableMapping.register(ParseResults)
 
 def col (loc,strg):
     """Returns current column within a string, counting newlines as line separators.
@@ -2225,7 +2225,7 @@ class ParseExpression(ParserElement):
 
         if isinstance( exprs, str ):
             self.exprs = [ Literal( exprs ) ]
-        elif isinstance( exprs, collections.Sequence ):
+        elif isinstance( exprs, collections.abc.Sequence ):
             # if sequence of strings provided, wrap with Literal
             if all(isinstance(expr, str) for expr in exprs):
                 exprs = list(map(Literal, exprs))
@@ -3230,7 +3230,7 @@ def oneOf( strs, caseless=False, useRegex=True ):
 
     if isinstance(strs,str):
         symbols = strs.split()
-    elif isinstance(strs, collections.Sequence):
+    elif isinstance(strs, collections.abc.Sequence):
         symbols = list(strs[:])
     elif isinstance(strs, _generatorType):
         symbols = list(strs)

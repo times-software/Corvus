@@ -214,9 +214,9 @@ class Feff(Handler):
 
                     execs = ['rdinp','atomic','screen']
                     for exe in execs:
-                        if 'feff.mpi.cmd' in feffInput:
-                            executable = [feffInput.get('feff.mpi.cmd')[0] + win_exe]
-                            args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe) + win_exe]
+                        if 'feff.mpi.cmd' in input:
+                            executable = [input.get('feff.mpi.cmd')[0] + win_exe]
+                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe) + win_exe]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -242,9 +242,9 @@ class Feff(Handler):
                     # Run rdinp and atomic part of calculation
                     execs = ['rdinp','atomic', 'pot', 'screen']
                     for exe in execs:
-                        if 'feff.mpi.cmd' in feffInput:
-                            executable = feffInput.get('feff.mpi.cmd')[0]
-                            args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                        if 'feff.mpi.cmd' in input:
+                            executable = input.get('feff.mpi.cmd')[0]
+                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -269,9 +269,9 @@ class Feff(Handler):
                     # Run rdinp and atomic part of calculation
                     execs = ['rdinp','atomic','screen', 'pot', 'xsph']
                     for exe in execs:
-                        if 'feff.mpi.cmd' in feffInput:
-                            executable = feffInput.get('feff.mpi.cmd')[0]
-                            args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                        if 'feff.mpi.cmd' in input:
+                            executable = input.get('feff.mpi.cmd')[0]
+                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -295,9 +295,9 @@ class Feff(Handler):
 
                     execs = ['rdinp','atomic','pot','screen','xsph','fms','mkgtr']
                     for exe in execs:
-                        if 'feff.mpi.cmd' in feffInput:
-                            executable = feffInput.get('feff.mpi.cmd')[0]
-                            args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                        if 'feff.mpi.cmd' in input:
+                            executable = input.get('feff.mpi.cmd')[0]
+                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -323,9 +323,9 @@ class Feff(Handler):
 
                     execs = ['rdinp','atomic','pot','screen','xsph','fms','mkgtr','path']
                     for exe in execs:
-                        if 'feff.mpi.cmd' in feffInput:
-                            executable = feffInput.get('feff.mpi.cmd')[0]
-                            args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                        if 'feff.mpi.cmd' in input:
+                            executable = input.get('feff.mpi.cmd')[0]
+                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -350,9 +350,9 @@ class Feff(Handler):
 
                     execs = ['rdinp','atomic','pot','screen','xsph','fms','mkgtr','path','genfmt']
                     for exe in execs:
-                        if 'feff.mpi.cmd' in feffInput:
-                            executable = feffInput.get('feff.mpi.cmd')[0]
-                            args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                        if 'feff.mpi.cmd' in input:
+                            executable = input.get('feff.mpi.cmd')[0]
+                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -380,9 +380,9 @@ class Feff(Handler):
                             execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                         
                             for exe in execs:
-                                if 'feff.mpi.cmd' in feffInput:
-                                    executable = [feffInput.get('feff.mpi.cmd')[0][0] + win_exe]
-                                    args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe) + win_exe]
+                                if 'feff.mpi.cmd' in input:
+                                    executable = [input.get('feff.mpi.cmd')[0][0] + win_exe]
+                                    args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe) + win_exe]
                                 else:
                                     executable = [os.path.join(feffdir,exe)]
                                     args = ['']
@@ -423,9 +423,9 @@ class Feff(Handler):
                     # will more likely have only one executable. 
                     execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                     for exe in execs:
-                        if 'feff.mpi.cmd' in feffInput:
-                            executable = feffInput.get('feff.mpi.cmd')[0]
-                            args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                        if 'feff.mpi.cmd' in input:
+                            executable = input.get('feff.mpi.cmd')[0]
+                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -559,9 +559,9 @@ class Feff(Handler):
                         with open(os.path.join(xesdir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(xesdir, 'corvus.FEFF.stderr'), 'w') as err:
                             execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                             for exe in execs:
-                                if 'feff.mpi.cmd' in feffInput:
-                                    executable = feffInput.get('feff.mpi.cmd')[0]
-                                    args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                                if 'feff.mpi.cmd' in input:
+                                    executable = input.get('feff.mpi.cmd')[0]
+                                    args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                                 else:
                                     executable = [os.path.join(feffdir,exe)]
                                     args = ['']
@@ -601,9 +601,9 @@ class Feff(Handler):
                     with open(os.path.join(dirname, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dirname, 'corvus.FEFF.stderr'), 'w') as err:
                         execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                         for exe in execs:
-                            if 'feff.mpi.cmd' in feffInput:
-                                executable = feffInput.get('feff.mpi.cmd')[0]
-                                args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                            if 'feff.mpi.cmd' in input:
+                                executable = input.get('feff.mpi.cmd')[0]
+                                args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                             else:
                                 executable = [os.path.join(feffdir,exe)]
                                 args = ['']
@@ -643,9 +643,9 @@ class Feff(Handler):
                 with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
                     execs = ['rdinp','atomic','rixs']
                     for exe in execs:
-                        if 'feff.mpi.cmd' in feffInput:
-                            executable = feffInput.get('feff.mpi.cmd')[0]
-                            args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                        if 'feff.mpi.cmd' in input:
+                            executable = input.get('feff.mpi.cmd')[0]
+                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -1088,9 +1088,9 @@ class Feff(Handler):
 # Run rdinp and atomic part of calculation
                   execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                   for exe in execs:
-                    if 'feff.mpi.cmd' in feffInput:
-                        executable = feffInput.get('feff.mpi.cmd')[0]
-                        args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                    if 'feff.mpi.cmd' in input:
+                        executable = input.get('feff.mpi.cmd')[0]
+                        args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                     else:
                         executable = [os.path.join(feffdir,exe)]
                         args = ['']
