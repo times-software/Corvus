@@ -113,9 +113,15 @@ class PyMatGen(Handler):
         # Loop over targets in output.
         #print("Inside PyMatGen")
         if 'cluster_array' in output:
-            parser = CifParser(input.get("cif_input")[0][0])
+            site_tol = 1.0e-6
+            parser = CifParser(input.get("cif_input")[0][0],site_tolerance=site_tol)
             structure = parser.get_structures()[0]
-            sg_anal = SpacegroupAnalyzer(structure) 
+            #symprec=input['pymatgen.symprec'][0][0]
+            symprec=1.0e-6
+            print('Structure read from cif file.')
+            #angle_tolerance=input['pymatgen.angle_tolerance'][0][0]
+            #sg_anal = SpacegroupAnalyzer(structure,symprec=symprec, angle_tolerance=angle_tolerance) 
+            sg_anal = SpacegroupAnalyzer(structure,symprec=symprec) 
             structure = sg_anal.get_symmetrized_structure()
             #print(input['absorbing_atom_type'])
             if "absorbing_atom_type" in input: # Will set up calculation of all unique absorbers in unit cell.
@@ -147,6 +153,7 @@ class PyMatGen(Handler):
                             n_disord = input['numberofconfigurations'][0][0]
                         i_spec += 1
                        
+                #print(ipot,structure.sites[ind].properties['itype'])
                 ipot += 1
 
 

@@ -43,7 +43,7 @@ implemented['feffFMatrices'] = {'type':'Exchange','out':['feffFMatrices'],'cost'
 implemented['xanes'] = {'type':'Exchange','out':['xanes'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
 
-implemented['feffXES'] = {'type':'Exchange','out':['feffXES'],'cost':1,
+implemented['xes'] = {'type':'Exchange','out':['xes'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
 
 implemented['feffRIXS'] = {'type':'Exchange','out':['feffRIXS'],'cost':1,
@@ -214,9 +214,9 @@ class Feff(Handler):
 
                     execs = ['rdinp','atomic','screen']
                     for exe in execs:
-                        if 'feff.mpi.cmd' in feffInput:
-                            executable = [feffInput.get('feff.mpi.cmd')[0] + win_exe]
-                            args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe) + win_exe]
+                        if 'feff.mpi.cmd' in input:
+                            executable = [input.get('feff.mpi.cmd')[0] + win_exe]
+                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe) + win_exe]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -242,9 +242,9 @@ class Feff(Handler):
                     # Run rdinp and atomic part of calculation
                     execs = ['rdinp','atomic', 'pot', 'screen']
                     for exe in execs:
-                        if 'feff.mpi.cmd' in feffInput:
-                            executable = feffInput.get('feff.mpi.cmd')[0]
-                            args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                        if 'feff.mpi.cmd' in input:
+                            executable = input.get('feff.mpi.cmd')[0]
+                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -269,9 +269,9 @@ class Feff(Handler):
                     # Run rdinp and atomic part of calculation
                     execs = ['rdinp','atomic','screen', 'pot', 'xsph']
                     for exe in execs:
-                        if 'feff.mpi.cmd' in feffInput:
-                            executable = feffInput.get('feff.mpi.cmd')[0]
-                            args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                        if 'feff.mpi.cmd' in input:
+                            executable = input.get('feff.mpi.cmd')[0]
+                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -295,9 +295,9 @@ class Feff(Handler):
 
                     execs = ['rdinp','atomic','pot','screen','xsph','fms','mkgtr']
                     for exe in execs:
-                        if 'feff.mpi.cmd' in feffInput:
-                            executable = feffInput.get('feff.mpi.cmd')[0]
-                            args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                        if 'feff.mpi.cmd' in input:
+                            executable = input.get('feff.mpi.cmd')[0]
+                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -323,9 +323,9 @@ class Feff(Handler):
 
                     execs = ['rdinp','atomic','pot','screen','xsph','fms','mkgtr','path']
                     for exe in execs:
-                        if 'feff.mpi.cmd' in feffInput:
-                            executable = feffInput.get('feff.mpi.cmd')[0]
-                            args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                        if 'feff.mpi.cmd' in input:
+                            executable = input.get('feff.mpi.cmd')[0]
+                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -350,9 +350,9 @@ class Feff(Handler):
 
                     execs = ['rdinp','atomic','pot','screen','xsph','fms','mkgtr','path','genfmt']
                     for exe in execs:
-                        if 'feff.mpi.cmd' in feffInput:
-                            executable = feffInput.get('feff.mpi.cmd')[0]
-                            args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                        if 'feff.mpi.cmd' in input:
+                            executable = input.get('feff.mpi.cmd')[0]
+                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -380,9 +380,11 @@ class Feff(Handler):
                             execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                         
                             for exe in execs:
-                                if 'feff.mpi.cmd' in feffInput:
-                                    executable = [feffInput.get('feff.mpi.cmd')[0][0] + win_exe]
-                                    args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe) + win_exe]
+                                if 'feff.mpi.cmd' in input:
+                                    print(input['feff.mpi.cmd'])
+                                    print(input['feff.mpi.args'])
+                                    executable = [input.get('feff.mpi.cmd')[0][0] + win_exe]
+                                    args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe) + win_exe]
                                 else:
                                     executable = [os.path.join(feffdir,exe)]
                                     args = ['']
@@ -412,7 +414,7 @@ class Feff(Handler):
                 #print output[target]
 
 
-            elif (target == 'feffXES'):
+            elif (target == 'xes'):
                 # Set output and error files
                 with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
 
@@ -423,9 +425,9 @@ class Feff(Handler):
                     # will more likely have only one executable. 
                     execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                     for exe in execs:
-                        if 'feff.mpi.cmd' in feffInput:
-                            executable = feffInput.get('feff.mpi.cmd')[0]
-                            args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                        if 'feff.mpi.cmd' in input:
+                            executable = input.get('feff.mpi.cmd')[0]
+                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -559,9 +561,9 @@ class Feff(Handler):
                         with open(os.path.join(xesdir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(xesdir, 'corvus.FEFF.stderr'), 'w') as err:
                             execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                             for exe in execs:
-                                if 'feff.mpi.cmd' in feffInput:
-                                    executable = feffInput.get('feff.mpi.cmd')[0]
-                                    args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                                if 'feff.mpi.cmd' in input:
+                                    executable = input.get('feff.mpi.cmd')[0]
+                                    args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                                 else:
                                     executable = [os.path.join(feffdir,exe)]
                                     args = ['']
@@ -601,9 +603,9 @@ class Feff(Handler):
                     with open(os.path.join(dirname, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dirname, 'corvus.FEFF.stderr'), 'w') as err:
                         execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                         for exe in execs:
-                            if 'feff.mpi.cmd' in feffInput:
-                                executable = feffInput.get('feff.mpi.cmd')[0]
-                                args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                            if 'feff.mpi.cmd' in input:
+                                executable = input.get('feff.mpi.cmd')[0]
+                                args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                             else:
                                 executable = [os.path.join(feffdir,exe)]
                                 args = ['']
@@ -643,9 +645,9 @@ class Feff(Handler):
                 with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
                     execs = ['rdinp','atomic','rixs']
                     for exe in execs:
-                        if 'feff.mpi.cmd' in feffInput:
-                            executable = feffInput.get('feff.mpi.cmd')[0]
-                            args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                        if 'feff.mpi.cmd' in input:
+                            executable = input.get('feff.mpi.cmd')[0]
+                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                         else:
                             executable = [os.path.join(feffdir,exe)]
                             args = ['']
@@ -1088,9 +1090,9 @@ class Feff(Handler):
 # Run rdinp and atomic part of calculation
                   execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                   for exe in execs:
-                    if 'feff.mpi.cmd' in feffInput:
-                        executable = feffInput.get('feff.mpi.cmd')[0]
-                        args = feffInput.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                    if 'feff.mpi.cmd' in input:
+                        executable = input.get('feff.mpi.cmd')[0]
+                        args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
                     else:
                         executable = [os.path.join(feffdir,exe)]
                         args = ['']
@@ -1314,7 +1316,8 @@ def getFeffAtomsFromCluster(input):
     if 'absorbing_atom' in input:
         absorber = input['absorbing_atom'][0][0] - 1
         atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
-        if len(atoms[0]) >= 5:
+        equivalence = input.get('feff.equivalence')[0][0]
+        if len(atoms[0]) >= 5 and equivalence == 1:
             # Use itype from user
             feffAtoms = []
             feffAtoms.append([0.0, 0.0, 0.0, 0])
@@ -1348,10 +1351,11 @@ def getFeffPotentialsFromCluster(input):
 
     lfms1 = input.get('feff.lfms1')[0][0]
     lfms2 = input.get('feff.lfms2')[0][0]
+    equivalence = input.get('feff.equivalence')[0][0]
 
     # stoichiometry and unique atoms set by crystal structure.
     #print(atoms[0])
-    if len(atoms[0]) >= 6:
+    if len(atoms[0]) >= 6 and equivalence == 1:
         uniqueAtoms = sorted(list(set([ (x[0],x[4],x[5]) for x in atoms ])),key=lambda x: x[1])
         feffPots = [[]]
         feffPots[0] = [0, ptable[input['cluster'][absorber][0]]['number'], input['cluster'][absorber][0], lfms1, lfms2, 0.01 ]
@@ -1361,7 +1365,7 @@ def getFeffPotentialsFromCluster(input):
             feffPots.append([i+1, int(ptable[atm[0]]['number']), atm[0], lfms1, lfms2, xnat ])
 
     # Unique atoms set by crystal structure, stoichiometry will be set by # of atoms in cluster.
-    elif len(atoms[0]) >= 5:
+    elif len(atoms[0]) >= 5 and equivalence == 1:
         uniqueAtoms = sorted(list(set([ (x[0],x[4]) for x in atoms ])),key=lambda x: x[1])
         feffPots = [[]]
         feffPots[0] = [0, ptable[input['cluster'][absorber][0]]['number'], input['cluster'][absorber][0], lfms1, lfms2, 1.0 ]
