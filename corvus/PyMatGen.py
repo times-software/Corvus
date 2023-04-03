@@ -141,23 +141,27 @@ class PyMatGen(Handler):
                 for ind in inds:
                     structure.sites[ind].properties['itype'] = []
                     structure.sites[ind].properties['xnat']  = []
-
-                    #print(structure.sites[ind].species.as_dict().values())
+                    
                     i_spec=0
                     for occ in  structure.sites[ind].species.as_dict().values():
+                        #print(structure.sites[ind])
+                        #print('occ', occ)
                         structure.sites[ind].properties['itype'] += [ipot+i_spec]
                         structure.sites[ind].properties['xnat'] += [xnat*occ]
+                        #print(structure.sites[ind].properties['itype'])
 
                         if occ != 1.0:
                             disordered_structure = True
                             n_disord = input['numberofconfigurations'][0][0]
                         i_spec += 1
+                    #print(structure.sites[ind],structure.sites[ind].properties)
                        
                 #print(ipot,structure.sites[ind].properties['itype'])
-                ipot += 1
+                ipot = ipot + i_spec
+                #print('ipot',ipot)
 
 
-    
+            #exit() 
             #print(dir(structure.sites[0].species))
             #print(structure.sites[0].species.as_dict())
             i_disord = 1
@@ -166,7 +170,12 @@ class PyMatGen(Handler):
                 for inds in structure.equivalent_indices:
                     weight = len(inds)
                     #print(structure.sites[inds[0]].species_string)
+                    species = {}
                     for abs_symbol in absorber_types:
+                        # remove alphabetical characters from keys in the dictionary.
+                        #for key,value in structure.sites[inds[0]].species.as_dict().items():
+                        #    species[re.sub('[^a-zA-Z]','',key)] = value
+
                         if abs_symbol in structure.sites[inds[0]].species.as_dict():
 
                             # Make a cluster around this absorber
@@ -194,7 +203,6 @@ class PyMatGen(Handler):
                                 occ_sum = 0.0
                                 rnd = np.random.uniform()
                                 i_spec = 0
-                                
                                 for spec_str,occ in site.species.as_dict().items():
                                     #print(iclust,rnd,spec_str,occ_sum)
                                     #print(site)
@@ -218,6 +226,10 @@ class PyMatGen(Handler):
                             cluster_array = cluster_array + [(1,weight,cluster)]
                 i_disord = i_disord + 1        
             print("Number of absorbers:", len(cluster_array))
+            if(len(cluster_array) == 0):
+               print("No absorbing atoms of types", absorber_types)
+               print("found.")
+               exit() 
             output['cluster_array'] = cluster_array
 
         elif set(output.keys()).issubset(set(['supercell', 'cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc', 'number_density'])):

@@ -1322,6 +1322,7 @@ def getFeffAtomsFromCluster(input):
             feffAtoms = []
             feffAtoms.append([0.0, 0.0, 0.0, 0])
             for atm in atoms:
+                print(atm)
                 feffAtom = atm[1:3]
                 feffAtom = [ e - float(input['cluster'][absorber][i+1]) for i,e in enumerate(atm[1:4]) ]
                 feffAtom.append(atm[4])
@@ -1348,6 +1349,7 @@ def getFeffAtomsFromCluster(input):
 def getFeffPotentialsFromCluster(input):
     absorber = input['absorbing_atom'][0][0] - 1
     atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
+    abs_symb = re.sub('[^a-zA-Z]','',input['cluster'][absorber][0])
 
     lfms1 = input.get('feff.lfms1')[0][0]
     lfms2 = input.get('feff.lfms2')[0][0]
@@ -1358,30 +1360,33 @@ def getFeffPotentialsFromCluster(input):
     if len(atoms[0]) >= 6 and equivalence == 1:
         uniqueAtoms = sorted(list(set([ (x[0],x[4],x[5]) for x in atoms ])),key=lambda x: x[1])
         feffPots = [[]]
-        feffPots[0] = [0, ptable[input['cluster'][absorber][0]]['number'], input['cluster'][absorber][0], lfms1, lfms2, 0.01 ]
+        feffPots[0] = [0, ptable[abs_symb]['number'], input['cluster'][absorber][0], lfms1, lfms2, 0.01 ]
         for i,atm in enumerate(uniqueAtoms):
+            atm_symb=re.sub('[^a-zA-Z]','',atm[0])
             xnat = atm[2]
             #feffPots.append([atm[1], int(ptable[atm[0]]['number']), atm[0], lfms1, lfms2, xnat ])
-            feffPots.append([i+1, int(ptable[atm[0]]['number']), atm[0], lfms1, lfms2, xnat ])
+            feffPots.append([i+1, int(ptable[atm_symb]['number']), atm[0], lfms1, lfms2, xnat ])
 
     # Unique atoms set by crystal structure, stoichiometry will be set by # of atoms in cluster.
     elif len(atoms[0]) >= 5 and equivalence == 1:
         uniqueAtoms = sorted(list(set([ (x[0],x[4]) for x in atoms ])),key=lambda x: x[1])
         feffPots = [[]]
-        feffPots[0] = [0, ptable[input['cluster'][absorber][0]]['number'], input['cluster'][absorber][0], lfms1, lfms2, 1.0 ]
+        feffPots[0] = [0, ptable[abs_symb]['number'], input['cluster'][absorber][0], lfms1, lfms2, 1.0 ]
         for i,atm in enumerate(uniqueAtoms):
+            atm_symb=re.sub('[^a-zA-Z]','',atm[0])
             xnat = [ x[4] for x in input['cluster'] ].count(atm[1])
             #feffPots.append([atm[1], int(ptable[atm[0]]['number']), atm[0], lfms1, lfms2, xnat ])
-            feffPots.append([i+1, int(ptable[atm[0]]['number']), atm[0], lfms1, lfms2, xnat ])
+            feffPots.append([i+1, int(ptable[atm_symb]['number']), atm[0], lfms1, lfms2, xnat ])
     
     # Unique atoms set by cluster (only includes one unique atom per element).
     else:       
         uniqueAtoms = list(set([ x[0] for x in atoms]))
         feffPots = [[]]
-        feffPots[0] = [0, ptable[input['cluster'][absorber][0]]['number'], input['cluster'][absorber][0], lfms1, lfms2, 1.0 ]
+        feffPots[0] = [0, ptable[abs_symb]['number'], input['cluster'][absorber][0], lfms1, lfms2, 1.0 ]
         for i,atm in enumerate(uniqueAtoms):
+            atm_symb=re.sub('[^a-zA-Z]','',atm[0])
             xnat = [ x[0] for x in input['cluster'] ].count(atm)
-            feffPots.append([i+1, int(ptable[atm]['number']), atm, lfms1, lfms2, xnat ])
+            feffPots.append([i+1, int(ptable[atm_symb]['number']), atm[0], lfms1, lfms2, xnat ])
 
     return feffPots
 

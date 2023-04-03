@@ -5,6 +5,10 @@ import os, sys, subprocess, shutil #, resource
 import math
 import pprint
 import copy
+#import mltp
+#try:
+#    import ray.util.multiprocessing as mltp
+#except ImportError:
 import multiprocessing as mltp
 
 #from matplotlib import pyplot as plt
@@ -15,6 +19,10 @@ strlistkey = lambda L:','.join(sorted(L))
 
 implemented['cfavg'] = {'type':'Exchange','out':['cfavg'],'cost':1,'req':['cluster_array'],
 'desc':'Average over an array of clusters and absorbing atoms.'}
+
+#implemented['spectrum_set'] = {'type':'Exchange','out':['scan'],'cost':1,'req':['parameter_scan'],
+#'desc':'Calculate an array of spectra from an array of input parameters, absorbing atoms, and inputs.'}
+
 
 class helper(Handler):
     def __str__(self):
@@ -108,7 +116,7 @@ class helper(Handler):
                 
 
                 # Set total number of processes
-                totprocs = max(len(cluster_array),30)
+                totprocs = len(cluster_array)
                 outputs = []
                 numdone=0
                 while totprocs > 0:
@@ -186,6 +194,22 @@ class helper(Handler):
                 #mu_stdev = np.std(mu_interp,0)/totalWeight*len(cluster_array)
 
                 output['cfavg'] = np.array([egrid,mu_avg,mu_stdev]).tolist()
+
+            #elif(target == 'spectrum_set'):
+                # Loop through set of parameters, create and run the
+                # Set the target of spectrum_set - XANES, XES, RIXS, ...
+                #targetList = input['spectrum_set.target']
+
+                #parameter_set = input['parameter_set']
+                #en = []
+                #mu = []
+                #step = 1.e30
+                #totalWeight = 0.0
+                #weights = []
+                #dirs=[]
+
+
+
 
     @staticmethod
     def cleanup(config):
