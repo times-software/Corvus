@@ -97,7 +97,12 @@ class helper(Handler):
         #print('Inside helper')
         from corvus.controls import generateAndRunWorkflow
         dir = config['xcDir']
-        print("Number of cpu : ", mltp.cpu_count())
+        if "multiprocessing.ncpu" in input:
+           ncpu = input["multiprocessing.ncpu"][0][0]
+        else:
+           ncpu = mltp.cpu_count()
+
+        print("Number of cpu for multiprocessing: ", ncpu)
         for target in output:
             #print('Inside helper', output)
             if (target == 'cfavg'):
@@ -120,7 +125,7 @@ class helper(Handler):
                 outputs = []
                 numdone=0
                 while totprocs > 0:
-                    poolSize = min(mltp.cpu_count(),totprocs)
+                    poolSize = min(ncpu,totprocs)
                     print("Pool size: ", poolSize)
                     print("processes left to run: ", totprocs)
                     inputs = []
