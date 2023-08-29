@@ -5,14 +5,24 @@ import os, sys, subprocess, shutil #, resource
 import math
 import pprint
 import copy
+#import mltp
+#try:
+#    import ray.util.multiprocessing as mltp
+#except ImportError:
+import multiprocessing as mltp
+
 #from matplotlib import pyplot as plt
 
 #Define dictionary of implemented calculations
 implemented = {}
 strlistkey = lambda L:','.join(sorted(L))
 
-implemented['xanes_cfavg'] = {'type':'Exchange','out':['xanes_cfavg'],'cost':1,'req':['cluster_array'],
+implemented['cfavg'] = {'type':'Exchange','out':['cfavg'],'cost':1,'req':['cluster_array'],
 'desc':'Average over an array of clusters and absorbing atoms.'}
+
+#implemented['spectrum_set'] = {'type':'Exchange','out':['scan'],'cost':1,'req':['parameter_scan'],
+#'desc':'Calculate an array of spectra from an array of input parameters, absorbing atoms, and inputs.'}
+
 
 class helper(Handler):
     def __str__(self):
@@ -87,11 +97,17 @@ class helper(Handler):
         #print('Inside helper')
         from corvus.controls import generateAndRunWorkflow
         dir = config['xcDir']
+        if "multiprocessing.ncpu" in input:
+           ncpu = input["multiprocessing.ncpu"][0][0]
+        else:
+           ncpu = mltp.cpu_count()
+
+        print("Number of cpu for multiprocessing: ", ncpu)
         for target in output:
             #print('Inside helper', output)
-            if (target == 'xanes_cfavg'):
+            if (target == 'cfavg'):
                 #Define the target of the average
-                targetList = [['xanes']]
+                targetList = input['cfavg.target']
 
                 cluster_array = input['cluster_array']
                 print("Number of absorbers:", len(cluster_array))
@@ -100,25 +116,60 @@ class helper(Handler):
                 step = 1.e30
                 totalWeight = 0.0
                 weights = []
-                for i,clust_elem in enumerate(cluster_array):
-                    #print(i, clust_elem[0])
-                    input['absorbing_atom'] = [[clust_elem[0]]]
-                    weight = clust_elem[1]
-                    print('weight=',weight)
-                    input['cluster'] = clust_elem[2]
-                    # Make sure we are working with absolute units.
-                    input['feff.absolute'] = [[True]]
-                    config2 = copy.deepcopy(config)
-                    config2['cwd'] = config['xcDir']
-                    config2['xcIndexStart'] = i+1
-                    targetList = [['xanes']]
+                dirs=[]
+                
+                
 
-                    generateAndRunWorkflow(config2, input, targetList)
-            
-                    # get results from input.
-                    en0,mu0=np.array(input['xanes'])
+                # Set total number of processes
+                totprocs = len(cluster_array)
+                outputs = []
+                numdone=0
+                while totprocs > 0:
+                    poolSize = min(ncpu,totprocs)
+                    print("Pool size: ", poolSize)
+                    print("processes left to run: ", totprocs)
+                    inputs = []
+                    configs = []
+                    tLists = []
+                    arguments = []
+                    for i,clust_elem in enumerate(cluster_array[numdone:numdone+poolSize]):
+                        inputs = inputs + [copy.copy(input)]
+                        inputs[i]['absorbing_atom'] = [[clust_elem[0]]]
+                        inputs[i]['cluster'] = clust_elem[2]
+                        # Make sure we are working with absolute units.
+                        inputs[i]['feff.absolute'] = [[True]]
+                        configs = configs + [copy.copy(config)]
+                        configs[i]['cwd'] = config['xcDir']
+                        configs[i]['xcIndexStart'] = i+numdone+1
+                        tLists = tLists + [targetList]
+                        arguments = arguments + [(configs[i],inputs[i],targetList)]
+                        #targetList = [['xanes']]
+                    pool = mltp.Pool(processes=poolSize)
+                    outputs = outputs + pool.starmap(multiproc_genAndRun,arguments)
+                    numdone = numdone + poolSize
+                   
+                    #print('Check: ', len(outputs), poolSize, totprocs)
+                    pool.close()
+                    totprocs = totprocs - poolSize
+
+                #print(len(outputs),len(cluster_array))
+                    #generateAndRunWorkflow(config2, input, targetList)
+                    
+                    #Prcs = mltp.Process(target=generateAndRunWorkflow,args=(config2,inputs[i],targetList))
+                    #Prcs.start()
+                    #tasks.append(Prcs)
+
+                #for Prcss in tasks:
+                #    Prcss.join()
+
+                for i,clust_elem in enumerate(cluster_array):
+                    # get results from inputs.
+                    #print(targetList[0][0])
+                    #print(inputs[i])
+                    en0,mu0=np.array(outputs[i][targetList[0][0]])
+                    weight = clust_elem[1]
                     weights = weights + [weight]
-                    mu0 = mu0
+                    #mu0 = mu0
                     totalWeight = totalWeight + weight
                     
                     # Save in array of XANES output.
@@ -147,12 +198,32 @@ class helper(Handler):
                 #mu_avg,mu_stdev = weighted_avg_and_std(mu_interp)
                 #mu_stdev = np.std(mu_interp,0)/totalWeight*len(cluster_array)
 
-                output['xanes_cfavg'] = np.array([egrid,mu_avg,mu_stdev]).tolist()
+                output['cfavg'] = np.array([egrid,mu_avg,mu_stdev]).tolist()
+
+            #elif(target == 'spectrum_set'):
+                # Loop through set of parameters, create and run the
+                # Set the target of spectrum_set - XANES, XES, RIXS, ...
+                #targetList = input['spectrum_set.target']
+
+                #parameter_set = input['parameter_set']
+                #en = []
+                #mu = []
+                #step = 1.e30
+                #totalWeight = 0.0
+                #weights = []
+                #dirs=[]
+
+
+
 
     @staticmethod
     def cleanup(config):
         pass
 
+def multiproc_genAndRun(conf,inp,tList):
+    from corvus.controls import generateAndRunWorkflow
+    generateAndRunWorkflow(conf, inp, tList)
+    return inp
 
 def weighted_avg_and_std(values, weights):
     """

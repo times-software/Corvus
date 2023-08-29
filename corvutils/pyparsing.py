@@ -68,7 +68,7 @@ import sys
 import warnings
 import re
 import sre_constants
-import collections
+import collections.abc as collections
 import pprint
 #~ sys.stderr.write( "testing pyparsing module, version %s, %s\n" % (__version__,__versionTime__ ) )
 
