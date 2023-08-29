@@ -158,7 +158,9 @@ class Feff(Handler):
         
         # Copy feff related input to feffinput here. Later we will be overriding some settings,
         # so we want to keep the original input intact.
-        feffInput = {key:input[key] for key in input if (key.startswith('feff.') and (not key.startswith('feff.mpi')))}
+        # Input specific to FEFF that are not FEFF keywords.
+        non_feff_cards = ["feff.mpi", "feff.potentials.spin"]
+        feffInput = {key:input[key] for key in input if (key.startswith('feff.') and (not key.startswith(tuple(non_feff_cards))))}
         
         # Generate any data that is needed from generic input and populate feffInput with
         # global data (needed for all feff runs.)
@@ -176,6 +178,25 @@ class Feff(Handler):
             setInput(feffInput,'feff.atoms',atoms)
             potentials = getFeffPotentialsFromCluster(input)
             setInput(feffInput,'feff.potentials',potentials)
+           
+         
+        # Give potentials extra field if spins are defined
+        if "feff.potentials.spin" in input:
+            for ipot,pot in enumerate(feffInput["feff.potentials"]):
+                for jpot,spin in enumerate(input["feff.potentials.spin"]):
+                    if ipot == jpot:
+                       feffInput["feff.potentials"][ipot].append(spin[1])
+        elif "spin_moment" in input:
+            for ipot,pot in enumerate(feffInput["feff.potentials"]):
+                for isp,spinmom in enumerate(input["spin_moment"]):
+                    if pot[1] == spinmom[0]:
+                       feffInput["feff.potentials"][ipot].append(spinmom[1])
+                       
+
+                
+        for ipot,pot in enumerate(feffInput["feff.potentials"]):
+            if len(pot) < 7:
+                feffInput["feff.potentials"][ipot].append(0.0)
             
         debyeOpts = getFeffDebyeOptions(input)
         
@@ -1387,6 +1408,7 @@ def getFeffPotentialsFromCluster(input):
             atm_symb=re.sub('[^a-zA-Z]','',atm[0])
             xnat = [ x[0] for x in input['cluster'] ].count(atm)
             feffPots.append([i+1, int(ptable[atm_symb]['number']), atm[0], lfms1, lfms2, xnat ])
+    
 
     return feffPots
 
