@@ -6,7 +6,8 @@ import numpy as np
 # Debug: FDV
 import pprint
 
-from pymatgen.io.cif import CifParser
+from mp_api.client import MPRester
+from pymatgen.io.cif import CifParser,CifWriter
 from pymatgen.core import structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
@@ -21,7 +22,7 @@ for s in subs(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_
     key = strlistkey(s)
     autodesc = 'Get ' + ', '.join(s) + ' using cif2cell'
     cost = 10
-    implemented[key] = {'type':'Exchange','out':list(s),'req':['cif_input'],
+    implemented[key] = {'type':'Exchange','out':list(s),'req':['mp.structure'],
                         'desc':autodesc,'cost':cost}
 
 #implemented['cell_structure'] = {'type':'Exchange','out':['cell_structure'],'cost':0,
@@ -31,11 +32,12 @@ for s in subs(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_
 #implemented['cell_structure'] = {'type':'Exchange','out':['cell_structure','cell_struc_xyz','cell_scaling_abc','cell_scaling_iso'],'cost':0,
 #                        'req':['cif_input'],'desc':'Calculate cell structure from cif file using cif2cell.'}
 
-
+implemented['mp.structure'] = {'type':'Exchange','out':['mp.structure'],'cost':0,
+                        'req':['mp.id|cif_input'],'desc':'Get cif file from material project id.'}
 implemented['cluster_array'] = {'type':'Exchange','out':['cluster_array'],'cost':0,
-                        'req':['cif_input'],'desc':'Calculate cluster from cif using pymatgen.'}
+                        'req':['mp.structure'],'desc':'Calculate cluster from cif using pymatgen.'}
 implemented['supercell'] = {'type':'Exchange','out':['supercell'],'cost':0,
-                        'req':['cif_input'],'desc':'Calculate supercell from cif input using pymatgen.'}
+                        'req':['mp.structure'],'desc':'Calculate supercell from cif input using pymatgen.'}
 
 
 
@@ -46,14 +48,37 @@ class PyMatGen(Handler):
     @staticmethod
     def canProduce(output):
         if isinstance(output, list) and output and isinstance(output[0], str):
-            return strlistkey(output) in implemented
+            if len(output) > 1:
+                return strlistkey(output) in implemented
+            else:
+                out = []
+                canProduce = False
+                for o in output[0].split('|'):
+                    if o in implemented:
+                       out.append(o)
+                       canProduce = True
+                       break
+                if canProduce: output = out
+                #print(output)
+                return canProduce 
         elif isinstance(output, str):
-            return output in implemented
+            canProduce = False
+            for o in output.split('|'):
+                if o in implemented:
+                   out = o
+                   canProduce = True
+                   break
+            if canProduce: output = out
+            print(output)
+            return canProduce 
+            # JK - Add support for logical or in requirements, i.e., 'req':['cif_input', 'mp_id|mp_query'
+            # Split output by | and check if any are implemented.
         else:
             raise TypeError('Output should be token or list of tokens')
 
     @staticmethod
     def requiredInputFor(output):
+        #print("output:",output)
         if isinstance(output, list) and output and isinstance(output[0], str):
             unresolved = {o for o in output if not PyMatGen.canProduce(o)}
             canProduce = (o for o in output if PyMatGen.canProduce(o))
@@ -76,7 +101,7 @@ class PyMatGen(Handler):
         else:
             raise TypeError('Output should be token or list of tokens')
         if key not in implemented:
-            raise LookupError('Corvus cannot currently produce ' + key + ' using FEFF')
+            raise LookupError('Corvus cannot currently produce ' + key + ' using PyMatGen')
         return implemented[key]['cost']
 
     @staticmethod
@@ -88,7 +113,7 @@ class PyMatGen(Handler):
         else:
             raise TypeError('Output should be token of list of tokens')
         if key not in implemented:
-            raise LookupError('Corvus cannot currently produce ' + key + ' using FEFF')
+            raise LookupError('Corvus cannot currently produce ' + key + ' using PyMatGen')
         f = lambda subkey : implemented[key][subkey]
         if f('type') == 'Exchange':
             return Exchange(PyMatGen, f('req'), f('out'), cost=f('cost'), desc=f('desc'))
@@ -112,17 +137,20 @@ class PyMatGen(Handler):
 
         # Loop over targets in output.
         #print("Inside PyMatGen")
+        site_tol = 1.0e-6
         if 'cluster_array' in output:
-            site_tol = 1.0e-6
-            parser = CifParser(input.get("cif_input")[0][0],site_tolerance=site_tol)
-            structure = parser.get_structures()[0]
+            #parser = CifParser(input.get("cif_input")[0][0],site_tolerance=site_tol)
+            #structure = parser.get_structures()[0]
+            structure = input['mp.structure']
             #symprec=input['pymatgen.symprec'][0][0]
             symprec=1.0e-6
-            print('Structure read from cif file.')
             #angle_tolerance=input['pymatgen.angle_tolerance'][0][0]
             #sg_anal = SpacegroupAnalyzer(structure,symprec=symprec, angle_tolerance=angle_tolerance) 
             sg_anal = SpacegroupAnalyzer(structure,symprec=symprec) 
             structure = sg_anal.get_symmetrized_structure()
+            #print(structure)
+            #print(structure.equivalent_indices)
+
             #print(input['absorbing_atom_type'])
             if "absorbing_atom_type" in input: # Will set up calculation of all unique absorbers in unit cell.
                 absorber_types=[input["absorbing_atom_type"][0][0]]
@@ -135,37 +163,52 @@ class PyMatGen(Handler):
             ipot = 1
             n_disord = 1
             cluster_array = []
+            abstype = []
             for inds in structure.equivalent_indices:
                 xnat = len(inds)
-                
+                # Here, redefine the absorber_types using regex. Take all species
+                # That start with the chemical symbols given in the input.
+                for key in structure.sites[inds[0]].species.as_dict().keys():
+                    for absorber in absorber_types:
+                        if absorber == re.sub('[^a-zA-Z]','',key): abstype.append(key)
+
                 for ind in inds:
+                    mag = 'magmom' in structure.sites[ind].properties
                     structure.sites[ind].properties['itype'] = []
                     structure.sites[ind].properties['xnat']  = []
-                    
+                    magmom = []
                     i_spec=0
                     for occ in  structure.sites[ind].species.as_dict().values():
                         #print(structure.sites[ind])
                         #print('occ', occ)
                         structure.sites[ind].properties['itype'] += [ipot+i_spec]
                         structure.sites[ind].properties['xnat'] += [xnat*occ]
+                        if not mag: 
+                            magmom += [0.0]
+                        else:
+                            magmom += [structure.sites[ind].properties['magmom']]
                         #print(structure.sites[ind].properties['itype'])
 
                         if occ != 1.0:
                             disordered_structure = True
                             n_disord = input['numberofconfigurations'][0][0]
                         i_spec += 1
+
+                    structure.sites[ind].properties['magmom'] = magmom
                     #print(structure.sites[ind],structure.sites[ind].properties)
                        
                 #print(ipot,structure.sites[ind].properties['itype'])
                 ipot = ipot + i_spec
                 #print('ipot',ipot)
-
-
+            
+            absorber_types = set(abstype)
+            #print(absorber_types)
             #exit() 
             #print(dir(structure.sites[0].species))
             #print(structure.sites[0].species.as_dict())
             i_disord = 1
             cluster_radius = input['clusterradius'][0][0]
+            #print('n_disord:', n_disord)
             while i_disord <= n_disord:
                 for inds in structure.equivalent_indices:
                     weight = len(inds)
@@ -175,8 +218,9 @@ class PyMatGen(Handler):
                         # remove alphabetical characters from keys in the dictionary.
                         #for key,value in structure.sites[inds[0]].species.as_dict().items():
                         #    species[re.sub('[^a-zA-Z]','',key)] = value
-
-                        if abs_symbol in structure.sites[inds[0]].species.as_dict():
+                        print(structure.sites[inds[0]].species.as_dict())
+                        if any(abs_symbol in spec for spec in structure.sites[inds[0]].species.as_dict().keys()):
+                        #if abs_symbol in structure.sites[inds[0]].species.as_dict():
 
                             # Make a cluster around this absorber
                             site_cluster = structure.get_neighbors(structure.sites[inds[0]],cluster_radius)            
@@ -208,10 +252,11 @@ class PyMatGen(Handler):
                                     #print(site)
                                     # Always put the absorbing atom in the cluster
                                     if spec_str == abs_symbol and iclust == 0:
-                                        cluster = cluster + [[spec_str] + site.coords.tolist() + [ site.properties['itype'] ] + [site.properties['xnat']]]
+                                        cluster = cluster + [[re.sub('[^a-zA-Z]','',spec_str)] + site.coords.tolist() + [ site.properties['itype'] ] + [site.properties['xnat']] + [site.properties.get('magmom')[0]]]
                                         break
                                     elif occ_sum < rnd <= occ + occ_sum:
-                                        cluster = cluster + [[spec_str] + site.coords.tolist() + [ site.properties['itype'][i_spec] ] + [site.properties['xnat'][i_spec]]]
+                                        #print(site.properties)
+                                        cluster = cluster + [[re.sub('[^a-zA-Z]','',spec_str)] + site.coords.tolist() + [ site.properties['itype'][i_spec] ] + [site.properties['xnat'][i_spec]] + [site.properties.get('magmom')[i_spec]]]
                                         #print(site.properties)
                                         #print(cluster[-1])
                                         #sys.stdin.readline()
@@ -234,8 +279,6 @@ class PyMatGen(Handler):
 
         elif set(output.keys()).issubset(set(['supercell', 'cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc', 'number_density'])):
         #elif 'supercell' in output:
-            parser = CifParser(input.get("cif_input")[0][0])
-            structure = parser.get_structures()[0]
             sg_anal = SpacegroupAnalyzer(structure) 
             structure = sg_anal.get_symmetrized_structure()
             if "absorbing_atom_type" in input: # Will set up calculation of all unique absorbers in unit cell.
@@ -299,6 +342,22 @@ class PyMatGen(Handler):
             #print(red_coords[0])
             output['cell_struc_xyz_red'] = red_coords
             output['supercell']=[scaling_vector]
+
+        elif 'mp.structure' in output: 
+            # Note: Right now, we are using mp_id to produce a cif file, while we should 
+            # just go directly from the mp structure. However, we need to be able to have
+            # or operators available in requiredInput rather than just and operators.
+            # Need to add inputs: mp_id, mp_api_key
+            if 'mp.id' in input:
+                mpr = MPRester(input['mp.apikey'][0][0])
+                output['mp.structure'] = mpr.get_structure_by_material_id(input["mp.id"][0][0])
+            elif 'cif_input' in input:
+                parser = CifParser(input.get("cif_input")[0][0])
+                output['mp.structure'] = parser.get_structures()[0]
+    
+            
+             
+            
 
 
 

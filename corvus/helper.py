@@ -126,7 +126,7 @@ class helper(Handler):
                 numdone=0
                 while totprocs > 0:
                     poolSize = min(ncpu,totprocs)
-                    print("Pool size: ", poolSize)
+                    #print("Pool size: ", poolSize)
                     print("processes left to run: ", totprocs)
                     inputs = []
                     configs = []

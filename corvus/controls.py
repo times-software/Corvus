@@ -404,8 +404,10 @@ def generateWorkflow(target, handlers, system, config, desc=''):
     # given target.
     for t in reversed(mainTargets):
        targets = set([t])
+       
        while len(targets) > 0:
            noMatch = True
+           #print("targets:", targets)
 
            # Loop through all handlers that can produce target t and find all handlers that can produce the given target
            #possibleHandlers = [ h for h
@@ -427,9 +429,10 @@ def generateWorkflow(target, handlers, system, config, desc=''):
                         if h.canProduce(target):
                             possibleHandlers = possibleHandlers + [h]
                             break # For now just use the first handler available
-                   
+           #print("possible handlers", possibleHandlers)            
            for h in possibleHandlers:
                htargets = [target for target in targets if h.canProduce(target)]
+
                if htargets:
                    noMatch = False
                    # JK - The following loops over all possible subsets of the list of targets
@@ -437,14 +440,27 @@ def generateWorkflow(target, handlers, system, config, desc=''):
                    # of handlers to handle all of the target properties. Note: CanProduce only
                    # checks if a property is implemented, even though other properties are specified
                    # as output of an implemented property. 
+         
+                   # This is a problem, as this doesn't check what is defined in the user input. 
+                   # If there is a property defined in the user input, but a handler can also produce
+                   # that property, what do we want to do? I think favor the user input first, then
+                   # For now, check if required input is already defined, and delete target from htargets
+                   # if it is.
                    for subset in reversed(sorted(subs(htargets), key=len)):
                        l = list(subset)
+                       #print(l,h)
+                       #print(h.canProduce(l))
                        if h.canProduce(l):
+                           #print("adding exchange for: ", l)
                            workflow.addExchangeAt(0, h.sequenceFor(l,system))
                            targets.difference_update(subset)  
                            targets.update(set(workflow.getRequiredInput()))
+                           #print('after update')
+                           #print(targets)
                            #allTargets=allTargets | targets 
                            break
+                       else:
+                           sys.exit()
                #print(targets)
            if noMatch:
                break
@@ -565,7 +581,9 @@ def generateAndRunWorkflow(config, system, targetList):
 
     # Check for any missing user input or handlers.
     required = set(workflow.getRequiredInput())
-    missing = list(required.difference(set(system.keys())))
+    #print([t for t in required if (not target_in_system(t,system))])
+    missing = [t for t in required if (not target_in_system(t,system))]
+    #missing = list(required.difference(set(system.keys())))
     
     #config2=copy.deepcopy(config)
     # Create a copy of config
@@ -812,7 +830,8 @@ def oneshot():
     required = set(workflow.getRequiredInput())
 # Debug: FDV
 #   print required
-    missing = list(required.difference(set(system.keys())))
+    #missing = list(required.difference(set(system.keys())))
+    missing = [t for t in required if (not target_in_system(t,system))]
     if len(missing) > 0:
         printAndExit('Error: missing user input for ' + str(missing))
 
@@ -857,3 +876,15 @@ def print_version():
     print('#          Corvus version 1.0.9')
     print('#                                                   #')
     print('#####################################################')
+
+def target_in_system(target,system):
+    ts = target.split("|")
+    #print('target_in_system')
+    #print(target,ts)
+    for t in ts:
+       #print(t, t in system)
+       if t in system:
+          target = t
+          return True
+
+    return False
