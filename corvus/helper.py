@@ -1,5 +1,6 @@
 from corvus.structures import Handler, Exchange, Loop, Update
 import numpy as np
+from scipy.interpolate import RegularGridInterpolator as rgi
 import corvutils.pyparsing as pp
 import os, sys, subprocess, shutil #, resource
 import math
@@ -113,6 +114,7 @@ class helper(Handler):
                 print("Number of absorbers:", len(cluster_array))
                 en = []
                 mu = []
+                dataNd = []
                 step = 1.e30
                 totalWeight = 0.0
                 weights = []
@@ -166,40 +168,77 @@ class helper(Handler):
                     # get results from inputs.
                     #print(targetList[0][0])
                     #print(inputs[i])
-                    en0,mu0=np.array(outputs[i][targetList[0][0]])
                     weight = clust_elem[1]
                     weights = weights + [weight]
                     #mu0 = mu0
                     totalWeight = totalWeight + weight
-                    
-                    # Save in array of XANES output.
-                    en = en + [en0]
-                    step = min(step,np.amin(en0[1:]-en0[:-1]))
-                    mu = mu + [mu0]
-                    #plt.plot(en,mu)
-
-                en = np.array(en)
-                mu = np.array(mu)
+                    data = np.array(outputs[i][targetList[0][0]])
+                    if data.ndim == 2: # array of rows corresponding to set of 1d data 
+                       en0,mu0=data
+                       # Save in array of XANES output.
+                       en = en + [en0]
+                       step = min(step,np.amin(en0[1:]-en0[:-1]))
+                       mu = mu + [mu0]
+                       #plt.plot(en,mu)
+                    elif data.ndim == 3: # 2d data like RIXS. Assummes first two indices are x and y.
+                       # Now reform data as a 2d ndarray
+                       dataNd = dataNd + [data]
+                       
+                     
+                   
                 weights = np.array(weights)
-                # Make the common grid.
-                emin=np.amin(en)
-                emax=np.amax(en)
-                egrid = np.arange(emin,emax,step)
+                if data.ndim == 2:     
+                   en = np.array(en)
+                   mu = np.array(mu)
 
-                # Interpolate onto common grid.
-                mu_interp = []
+                   # Make the common grid.
+                   emin=np.amin(en)
+                   emax=np.amax(en)
+                   egrid = np.arange(emin,emax,step)
+
+                   # Interpolate onto common grid.
+                   mu_interp = []
+
                 for i,clust_elem in enumerate(cluster_array):
-                    # interpolate onto the common grid and add to total.
-                    mui = np.interp(egrid, en[i], mu[i], left = 0.0)
-                    mu_interp = mu_interp + [mui]
+                    if data.ndim == 2:
+                        # interpolate onto the common grid and add to total.
+                       
+                        mui = np.interp(egrid, en[i], mu[i], left = 0.0)
+                        mu_interp = mu_interp + [mui]
 
-                # Get average and standard deviation.
-                mu_avg,mu_stdev = weighted_avg_and_std(mu_interp, weights)
-                #mu_avg,mu_stdev = weighted_avg_and_std(mu_interp)
-                #mu_stdev = np.std(mu_interp,0)/totalWeight*len(cluster_array)
 
-                output['cfavg'] = np.array([egrid,mu_avg,mu_stdev]).tolist()
+                    elif data.ndim == 3:
+                        # interpolate onto common 2d grid - just use the first grid
+                        print('Adding contribution from absorber ', i)
+                        datai = rgi((dataNd[i][1,:,0],dataNd[i][0,0,:]),dataNd[i][2],method='linear', bounds_error=False,fill_value=0.0)
+                        if i == 0:
+                            data_tot = datai((dataNd[0][1],dataNd[0][0])).flatten()*weights[i]
+                        else:
+                            data_tot = data_tot + datai((dataNd[0][1],dataNd[0][0])).flatten()*weights[i]
 
+                if data.ndim == 2:                
+                    # Get average and standard deviation.
+                    weights = weights/totalWeight
+                    mu_avg,mu_stdev = weighted_avg_and_std(mu_interp, weights)
+                    np.savetxt(config['pathprefix'] + '.cfavg.' + targetList[0][0] + '.out',np.array([egrid,mu_avg,mu_stdev]).T)
+                    output['cfavg'] = np.array([egrid,mu_avg,mu_stdev]).tolist()
+
+                elif data.ndim == 3:
+                    # Transform data for output
+                    data_out = np.array([dataNd[0][0].flatten(),dataNd[0][1].flatten(),data_tot])
+                    output['cfavg'] = np.array(data_out).tolist()                    
+                    
+                    f = open(config['pathprefix'] + '.cfavg.' + targetList[0][0] + '.out', 'w')
+                    i=0
+                    nd = dataNd[0][0].shape[0]
+                    print(nd)
+                    for row in data_out.T:
+                        if i == nd:
+                            f.write('\n')
+                            i = 0
+
+                        f.write('    '.join(map(str,row)) + '\n')
+                        i += 1
             #elif(target == 'spectrum_set'):
                 # Loop through set of parameters, create and run the
                 # Set the target of spectrum_set - XANES, XES, RIXS, ...

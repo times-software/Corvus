@@ -401,7 +401,7 @@ class Feff(Handler):
                             # will more likely have only one executable. Here I am running
                             # rdinp again since writeSCFInput may have different cards than
 
-                            execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                            execs = ['rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                         
                             for exe in execs:
                                 if 'feff.mpi.cmd' in input:
@@ -445,7 +445,7 @@ class Feff(Handler):
 
                     # Loop over executable: This is specific to feff. Other codes
                     # will more likely have only one executable. 
-                    execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                    execs = ['rdinp','atomic','pot','ldos','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                     for exe in execs:
                         if 'feff.mpi.cmd' in input:
                             executable = input.get('feff.mpi.cmd')[0]
@@ -495,9 +495,9 @@ class Feff(Handler):
                 edge0 = edges[0]
 
                 nEdge=0
-                for edge in edges:
+                for edge in edges[0:2]:
                     nEdge = nEdge + 1
-
+                    print(edge)
                     # Make directory
                     dirname = os.path.join(dir,edge)
                     if not os.path.exists(dirname):
@@ -505,6 +505,7 @@ class Feff(Handler):
 
                     if edge.upper() != "VAL":
                         outFileName='rixsET.dat'
+                        outFile=os.path.join(dir,outFileName)
                         # Delete XES input key
                         if 'feff.xes' in feffInput:
                             del feffInput['feff.xes']
@@ -531,6 +532,7 @@ class Feff(Handler):
                     else: # This is a valence calculation. Calculate NOHOLE and XES
                         # XANES calculation
                         outFileName='rixsET-sat.dat'
+                        outFile=os.path.join(dir,outFileName)
                         # Find out if we are using a valence hole for valence calculation.
                         # Set edge.
                         setInput(feffInput,'feff.edge',[[edge0]],Force=True)
@@ -580,17 +582,18 @@ class Feff(Handler):
 
                         # Run executables to get XES
                         # Set output and error files
-                        with open(os.path.join(xesdir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(xesdir, 'corvus.FEFF.stderr'), 'w') as err:
-                            execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
-                            for exe in execs:
-                                if 'feff.mpi.cmd' in input:
-                                    executable = input.get('feff.mpi.cmd')[0]
-                                    args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
-                                else:
-                                    executable = [os.path.join(feffdir,exe)]
-                                    args = ['']
+                        if not (os.path.exists(outFile) and input['usesaved'][0][0]):
+                            with open(os.path.join(xesdir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(xesdir, 'corvus.FEFF.stderr'), 'w') as err:
+                                execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                                for exe in execs:
+                                    if 'feff.mpi.cmd' in input:
+                                        executable = input.get('feff.mpi.cmd')[0]
+                                        args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                                    else:
+                                        executable = [os.path.join(feffdir,exe)]
+                                        args = ['']
 
-                                runExecutable('',xesdir,executable,args,out,err)
+                                    runExecutable('',xesdir,executable,args,out,err)
 
                         # Make xes.dat from xmu.dat
                         xmuFile = open(os.path.join(xesdir,'xmu.dat'))
@@ -622,17 +625,18 @@ class Feff(Handler):
                         
                     # Run XANES for this edge
                     # Set output and error files
-                    with open(os.path.join(dirname, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dirname, 'corvus.FEFF.stderr'), 'w') as err:
-                        execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
-                        for exe in execs:
-                            if 'feff.mpi.cmd' in input:
-                                executable = input.get('feff.mpi.cmd')[0]
-                                args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
-                            else:
-                                executable = [os.path.join(feffdir,exe)]
-                                args = ['']
+                    if not (os.path.exists(outFile) and input['usesaved'][0][0]):
+                        with open(os.path.join(dirname, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dirname, 'corvus.FEFF.stderr'), 'w') as err:
+                            execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                            for exe in execs:
+                                if 'feff.mpi.cmd' in input:
+                                    executable = input.get('feff.mpi.cmd')[0]
+                                    args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                                else:
+                                    executable = [os.path.join(feffdir,exe)]
+                                    args = ['']
 
-                            runExecutable('',dirname,executable,args,out,err)
+                                runExecutable('',dirname,executable,args,out,err)
 
 
                     # Now copy files from this edge to main directory
@@ -664,20 +668,30 @@ class Feff(Handler):
                 writeXANESInput(feffInput,feffinp)
 
                 # Set output and error files                
-                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
-                    execs = ['rdinp','atomic','rixs']
-                    for exe in execs:
-                        if 'feff.mpi.cmd' in input:
-                            executable = input.get('feff.mpi.cmd')[0]
-                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
-                        else:
-                            executable = [os.path.join(feffdir,exe)]
-                            args = ['']
+                if not (os.path.exists(outFile) and input['usesaved'][0][0]):
+                    with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                        execs = ['rdinp','atomic','rixs']
+                        for exe in execs:
+                            if 'feff.mpi.cmd' in input:
+                                executable = input.get('feff.mpi.cmd')[0]
+                                args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                            else:
+                                executable = [os.path.join(feffdir,exe)]
+                                args = ['']
 
-                        runExecutable('',dir,executable,args,out,err)
+                            runExecutable('',dir,executable,args,out,err)
 
-                outFile=os.path.join(dir,outFileName)
-                output[target] = np.loadtxt(outFile).T.tolist()
+                print("Reading RIXS data from",outFileName)
+                rixsData = np.loadtxt(outFile,usecols = (0,1,2)).T
+                # Find length of second dimension
+                nd1 = 1
+                while nd1 < rixsData.shape[1]:
+                    if rixsData[0,0] == rixsData[0,nd1]: break
+                    nd1 += 1
+
+                nd2 = int(rixsData.shape[1]/nd1)
+
+                output[target] = np.reshape(rixsData,(rixsData.shape[0],nd1,nd2)).tolist()
     
 ## OPCONS BEGIN
             elif (target == 'opcons'):
