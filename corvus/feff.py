@@ -163,6 +163,9 @@ class Feff(Handler):
         non_feff_cards = ["feff.mpi", "feff.potentials.spin"]
         feffInput = {key:input[key] for key in input if (key.startswith('feff.') and (not key.startswith(tuple(non_feff_cards))))}
         
+        # Set polarization vectors to calculate.
+        pols = input['polarization']
+
         # Generate any data that is needed from generic input and populate feffInput with
         # global data (needed for all feff runs.)
         if 'feff.target' in input or 'cluster' not in input: 
@@ -394,12 +397,11 @@ class Feff(Handler):
                 
                         # Write input file for FEFF.
                         # Add polarization and loop over direction.
-                        pols = [[1.0, 0.0, 0.0],[0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
                         ipol = 1
                         for pol in pols:
                             savedfl = os.path.join(dir,'xmu_' + edge + '_' + str(ipol) + '.dat')
                             if not (os.path.exists(savedfl) and input['usesaved'][0][0]):
-                                feffInput['feff.polarization'] = [pol]
+                                if 'feff.polarization' not in input: feffInput['feff.polarization'] = [pol]
                                 writeXANESInput(feffInput,inpf)
 
                                 # Loop over executable: This is specific to feff. Other codes
@@ -462,12 +464,12 @@ class Feff(Handler):
                 
                         # Write input file for FEFF.
                         # Add polarization and loop over direction.
-                        pols = [[1.0, 0.0, 0.0],[0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+
                         ipol = 1
                         for pol in pols:
                             savedfl = os.path.join(dir,'xmu_' + edge + '_' + str(ipol) + '.dat')
                             if not (os.path.exists(savedfl) and input['usesaved'][0][0]):
-                                feffInput['feff.polarization'] = [pol]
+                                if 'feff.polarization' not in input: feffInput['feff.polarization'] = [pol]
                                 writeXESInput(feffInput,inpf)
 
                                 # Loop over executable: This is specific to feff. Other codes
