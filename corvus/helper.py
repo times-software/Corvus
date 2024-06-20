@@ -111,11 +111,7 @@ class helper(Handler):
 
                 cluster_array = input['cluster_array']
                 print("Number of absorbers:", len(cluster_array))
-                en = []
-                mu = []
-                step = 1.e30
-                totalWeight = 0.0
-                weights = []
+                
                 dirs=[]
                 
                 
@@ -126,7 +122,7 @@ class helper(Handler):
                 numdone=0
                 while totprocs > 0:
                     poolSize = min(ncpu,totprocs)
-                    print("Pool size: ", poolSize)
+                    print("Using ", poolSize, ' processors.')
                     print("processes left to run: ", totprocs)
                     inputs = []
                     configs = []
@@ -161,44 +157,61 @@ class helper(Handler):
 
                 #for Prcss in tasks:
                 #    Prcss.join()
+                mu_pol = []
+                ipol = 1
+                UnicodeEncodeError = []
+                while ipol <= 4:
+                    en = []
+                    mu = []
+                    step = 1.e30
+                    totalWeight = 0.0
+                    weights = []
+                    for i,clust_elem in enumerate(cluster_array):
+                        # get results from inputs.
+                        #print(targetList[0][0])
+                        #print(inputs[i])
+                        xns=np.array(outputs[i][targetList[0][0]])
+                        en0=xns[0]
+                        mu0=xns[ipol]
+                        weight = clust_elem[1]
+                        weights = weights + [weight]
+                        #mu0 = mu0
+                        totalWeight = totalWeight + weight
+                        
+                        # Save in array of XANES output.
+                        en = en + [en0]
+                        step = min(step,np.amin(en0[1:]-en0[:-1]))
+                        mu = mu + [mu0]
+                        #plt.plot(en,mu)
 
-                for i,clust_elem in enumerate(cluster_array):
-                    # get results from inputs.
-                    #print(targetList[0][0])
-                    #print(inputs[i])
-                    en0,mu0=np.array(outputs[i][targetList[0][0]])
-                    weight = clust_elem[1]
-                    weights = weights + [weight]
-                    #mu0 = mu0
-                    totalWeight = totalWeight + weight
+                    en = np.array(en)
+                    mu = np.array(mu)
+                    weights = np.array(weights)
+                    # Make the common grid.
+                    emin=np.amin(en)
+                    emax=np.amax(en)
+                    step = max(step,0.01)
+                    if ipol == 1:
+                        egrid = np.arange(emin,emax,step)
                     
-                    # Save in array of XANES output.
-                    en = en + [en0]
-                    step = min(step,np.amin(en0[1:]-en0[:-1]))
-                    mu = mu + [mu0]
-                    #plt.plot(en,mu)
+                    # Interpolate onto common grid.
+                    mu_interp = []
+                    for i,clust_elem in enumerate(cluster_array):
+                        # interpolate onto the common grid and add to total.
+                        mui = np.interp(egrid, en[i], mu[i], left = 0.0)
+                        mu_interp = mu_interp + [mui]
 
-                en = np.array(en)
-                mu = np.array(mu)
-                weights = np.array(weights)
-                # Make the common grid.
-                emin=np.amin(en)
-                emax=np.amax(en)
-                egrid = np.arange(emin,emax,step)
-
-                # Interpolate onto common grid.
-                mu_interp = []
-                for i,clust_elem in enumerate(cluster_array):
-                    # interpolate onto the common grid and add to total.
-                    mui = np.interp(egrid, en[i], mu[i], left = 0.0)
-                    mu_interp = mu_interp + [mui]
-
-                # Get average and standard deviation.
-                mu_avg,mu_stdev = weighted_avg_and_std(mu_interp, weights)
-                #mu_avg,mu_stdev = weighted_avg_and_std(mu_interp)
-                #mu_stdev = np.std(mu_interp,0)/totalWeight*len(cluster_array)
-
-                output['cfavg'] = np.array([egrid,mu_avg,mu_stdev]).tolist()
+                    # Get average and standard deviation.
+                    mu_avg,mu_stdev = weighted_avg_and_std(np.array(mu_interp), weights)
+                    mu_pol = mu_pol + [mu_avg]
+                    #print("mu_pol",mu_pol)
+                    #mu_avg,mu_stdev = weighted_avg_and_std(mu_interp)
+                    #mu_stdev = np.std(mu_interp,0)/totalWeight*len(cluster_array)
+                    ipol = ipol + 1
+                
+                mu_pol = [egrid] + mu_pol
+                
+                output['cfavg'] = np.array(mu_pol).tolist()
 
             #elif(target == 'spectrum_set'):
                 # Loop through set of parameters, create and run the

@@ -3,6 +3,7 @@ import corvutils.pyparsing as pp
 import os, sys, subprocess, shutil #, resource
 import re
 import numpy as np
+from scipy.interpolate import interp1d
 #from CifFile import ReadCif
 #from cif2cell.uctools import *
 
@@ -384,82 +385,139 @@ class Feff(Handler):
 
             elif (target == 'xanes'):
                 # Loop over edges. For now just run in the same directory. Should change this later.
+                xanes_arr = []
                 for i,edge in enumerate(input['feff.edge'][0]):
                     feffInput['feff.edge'] = [[edge]]
                     # Set output and error files
                     outFile=os.path.join(dir,'xmu.dat')
-                    if not (os.path.exists(outFile) and input['usesaved'][0][0]):
-                        with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
-                    
-                            # Write input file for FEFF.
-                            writeXANESInput(feffInput,inpf)
-                            
-                            # Loop over executable: This is specific to feff. Other codes
-                            # will more likely have only one executable. Here I am running
-                            # rdinp again since writeSCFInput may have different cards than
+                    with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                
+                        # Write input file for FEFF.
+                        # Add polarization and loop over direction.
+                        pols = [[1.0, 0.0, 0.0],[0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+                        ipol = 1
+                        for pol in pols:
+                            savedfl = os.path.join(dir,'xmu_' + edge + '_' + str(ipol) + '.dat')
+                            if not (os.path.exists(savedfl) and input['usesaved'][0][0]):
+                                feffInput['feff.polarization'] = [pol]
+                                writeXANESInput(feffInput,inpf)
 
-                            execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
-                        
-                            for exe in execs:
-                                if 'feff.mpi.cmd' in input:
-                                    executable = [input.get('feff.mpi.cmd')[0][0] + win_exe]
-                                    args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe) + win_exe]
+                                # Loop over executable: This is specific to feff. Other codes
+                                # will more likely have only one executable. 
+                                if ipol == 1:
+                                    execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                                 else:
-                                    executable = [os.path.join(feffdir,exe)]
-                                    args = ['']
+                                    execs = ['rdinp','xsph','mkgtr','path','genfmt','ff2x','sfconv']
 
-                                runExecutable('',dir,executable,args,out,err)
+                                for exe in execs:
+                                    if 'feff.mpi.cmd' in input:
+                                        executable = input.get('feff.mpi.cmd')[0]
+                                        args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                                    else:
+                                        executable = [os.path.join(feffdir,exe)]
+                                        args = ['']
+
+                                    runExecutable('',dir,executable,args,out,err)
+                                
+                                shutil.copyfile(outFile, savedfl)
+                            
+                            if ipol == 1:
+                                xanes = np.loadtxt(savedfl,usecols = (0,3)).T
+                            else: 
+                                xanes = np.append(xanes,[np.loadtxt(savedfl,usecols = (3)).T],axis=0)
 
 
-                    w,xmu = np.loadtxt(outFile,usecols = (0,3)).T
 
-                    if i==0:
-                        xmu_arr = [xmu]
-                        w_arr = [w]
-                    else:
-                        xmu_arr = xmu_arr + [xmu]
-                        w_arr = w_arr + [w]
-                        
-                # Now combine energy grids, interpolate files, and sum.
-                wtot = np.unique(np.append(w_arr[0],w_arr[1:]))
-                xmutot = np.zeros_like(wtot)
-                xmuterp_arr = []
-                for i,xmu_elem in enumerate(xmu_arr):
-                    xmuterp_arr = xmuterp_arr + [np.interp(wtot,w_arr[i],xmu_elem)]
-                    xmutot = xmutot + np.interp(wtot,w_arr[i],xmu_elem)
+                            ipol = ipol + 1
 
-                #output[target] = np.array([wtot,xmutot] + xmuterp_arr).tolist()
-                output[target] = np.array([wtot,xmutot]).tolist()
+                    xavg = np.average(xanes[1:],axis=0)
+                    xanes = np.append(xanes,[xavg],axis=0)
+                    xanes_arr = xanes_arr + [xanes]
+
+                # First combind the energy grids.
+                wtot = []
+                for xns in xanes_arr: wtot.append([xns[0]]) 
+                wtot = np.unique(wtot)
+
+                xanes_interp = []
+                for xns in xanes_arr:
+                    xns_interp = []
+                    for xpol in xns[1:]:
+                        xns_interp = xns_interp + [np.interp(wtot,xns[0],xpol,left=0.0)]
+                    xanes_interp = xanes_interp + [xns_interp]
+                
+                xastot = np.sum(xanes_interp,axis=0)
+                output[target] = [wtot.tolist()] + xastot.tolist()
                 #print output[target]
 
 
             elif (target == 'xes'):
-                # Set output and error files
-                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                # Loop over edges. For now just run in the same directory. Should change this later.
+                xanes_arr = []
+                for i,edge in enumerate(input['feff.edge'][0]):
+                    feffInput['feff.edge'] = [[edge]]
+                    # Set output and error files
+                    outFile=os.path.join(dir,'xmu.dat')
+                    with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                
+                        # Write input file for FEFF.
+                        # Add polarization and loop over direction.
+                        pols = [[1.0, 0.0, 0.0],[0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+                        ipol = 1
+                        for pol in pols:
+                            savedfl = os.path.join(dir,'xmu_' + edge + '_' + str(ipol) + '.dat')
+                            if not (os.path.exists(savedfl) and input['usesaved'][0][0]):
+                                feffInput['feff.polarization'] = [pol]
+                                writeXESInput(feffInput,inpf)
 
-                    # Write input file for FEFF.
-                    writeXESInput(feffInput,inpf)
+                                # Loop over executable: This is specific to feff. Other codes
+                                # will more likely have only one executable. 
+                                if ipol == 1:
+                                    execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                                else:
+                                    execs = ['rdinp','xsph','mkgtr','path','genfmt','ff2x','sfconv']
 
-                    # Loop over executable: This is specific to feff. Other codes
-                    # will more likely have only one executable. 
-                    execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
-                    for exe in execs:
-                        if 'feff.mpi.cmd' in input:
-                            executable = input.get('feff.mpi.cmd')[0]
-                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
-                        else:
-                            executable = [os.path.join(feffdir,exe)]
-                            args = ['']
+                                for exe in execs:
+                                    if 'feff.mpi.cmd' in input:
+                                        executable = input.get('feff.mpi.cmd')[0]
+                                        args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                                    else:
+                                        executable = [os.path.join(feffdir,exe)]
+                                        args = ['']
 
-                        runExecutable('',dir,executable,args,out,err)
+                                    runExecutable('',dir,executable,args,out,err)
+                                
+                                shutil.copyfile(outFile, savedfl)
+                            
+                            if ipol == 1:
+                                xanes = np.loadtxt(savedfl,usecols = (0,3)).T
+                            else: 
+                                xanes = np.append(xanes,[np.loadtxt(savedfl,usecols = (3)).T],axis=0)
 
 
-                # For this case, I am only passing the directory for now so
-                # that other executables in FEFF can use the data.
 
-                outFile=os.path.join(dir,'xmu.dat')
-                output[target] = np.loadtxt(outFile,usecols = (0,3)).T.tolist()
+                            ipol = ipol + 1
 
+                    xavg = np.average(xanes[1:],axis=0)
+                    xanes = np.append(xanes,[xavg],axis=0)
+                    xanes_arr = xanes_arr + [xanes]
+
+                # First combind the energy grids.
+                wtot = []
+                for xns in xanes_arr: wtot.append([xns[0]]) 
+                wtot = np.unique(wtot)
+
+                xanes_interp = []
+                for xns in xanes_arr:
+                    xns_interp = []
+                    for xpol in xns[1:]:
+                        xns_interp = xns_interp + [np.interp(wtot,xns[0],xpol,left=0.0)]
+                    xanes_interp = xanes_interp + [xns_interp]
+                
+                xastot = np.sum(xanes_interp,axis=0)
+                output[target] = [wtot.tolist()] + xastot.tolist()
+                #print output[target]
+                    
             elif (target == 'feffRIXS'):
                 # For RIXS, need to run multiple times as follows.
                 
@@ -1341,7 +1399,7 @@ def getFeffAtomsFromCluster(input):
             feffAtoms = []
             feffAtoms.append([0.0, 0.0, 0.0, 0])
             for atm in atoms:
-                print(atm)
+                #print(atm)
                 feffAtom = atm[1:3]
                 feffAtom = [ e - float(input['cluster'][absorber][i+1]) for i,e in enumerate(atm[1:4]) ]
                 feffAtom.append(atm[4])

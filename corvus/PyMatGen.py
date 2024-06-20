@@ -225,7 +225,7 @@ class PyMatGen(Handler):
                             # weighting (stoichiometry for example).
                             cluster_array = cluster_array + [(1,weight,cluster)]
                 i_disord = i_disord + 1        
-            print("Number of absorbers:", len(cluster_array))
+            #print("Number of absorbers:", len(cluster_array))
             if(len(cluster_array) == 0):
                print("No absorbing atoms of types", absorber_types)
                print("found.")

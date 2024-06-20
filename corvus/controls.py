@@ -748,18 +748,18 @@ def oneshot():
         # Create Workflow
         autodesc = 'Calculate ' + ', '.join(targetList[0])
         workflow = generateWorkflow(targetList, handlerList, system, config, desc=autodesc)
-        if len(workflow.getRequiredInput()) > 1:
-            print('')
-            print('')
-            print('#########################')
-            print('    WORKFLOW')
-            print('#########################')
-            print(workflow)
-            print('#########################')
-            print('  END WORKFLOW')
-            print('#########################')
-            print('')
-            print('')
+        #if len(workflow.getRequiredInput()) > 1:
+        print('')
+        print('')
+        print('#########################')
+        print('    WORKFLOW')
+        print('#########################')
+        print(workflow)
+        print('#########################')
+        print('  END WORKFLOW')
+        print('#########################')
+        print('')
+        print('')
 
     # JJK add help by keyword. Print help for keyword and also for all requirements.
     if helpOnly:
