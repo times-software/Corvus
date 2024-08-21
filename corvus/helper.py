@@ -1,5 +1,6 @@
 from corvus.structures import Handler, Exchange, Loop, Update
 import numpy as np
+import random
 from scipy.interpolate import RegularGridInterpolator as rgi
 import corvutils.pyparsing as pp
 import os, sys, subprocess, shutil #, resource
@@ -67,7 +68,11 @@ class helper(Handler):
 
     @staticmethod
     def prep(config):
-       subdir = config['pathprefix'] + str(config['xcIndex']) + '_helper'
+       if 'xcLabel' in config:
+           subdir = config['pathprefix'] + str(config['xcIndex']) + config['xcLabel'] + '_helper'
+       else:
+           subdir = config['pathprefix'] + str(config['xcIndex']) + '_helper'
+
        xcDir = os.path.join(config['cwd'], subdir)
        # Make new output directory if it doesn't exist
        if not os.path.exists(xcDir):
@@ -123,7 +128,19 @@ class helper(Handler):
                 
 
                 # Set total number of processes
-                totprocs = len(cluster_array)
+                if 'cfavg.max_configurations' in input and len(cluster_array) > 1:
+                    # Use nmax randomly chosen configurations
+                    totprocs = min(input['cfavg.max_configurations'][0][0],len(cluster_array))
+                    if 'cfavg.chose_random_absorbers' in input:
+                       absorbers=random.sample(range(1, len(cluster_array)), totprocs)
+                       for iabs in absorbers:
+                          new_cluster_array = [cluster_array[i] for i in absorbers]
+
+                       cluster_array = new_cluster_array
+                else:
+                    totprocs = len(cluster_array)
+                
+ 
                 outputs = []
                 numdone=0
                 while totprocs > 0:
@@ -143,6 +160,7 @@ class helper(Handler):
                         configs = configs + [copy.copy(config)]
                         configs[i]['cwd'] = config['xcDir']
                         configs[i]['xcIndexStart'] = i+numdone+1
+                        configs[i]['xcLabel'] = clust_elem[3]
                         tLists = tLists + [targetList]
                         arguments = arguments + [(configs[i],inputs[i],targetList)]
                         #targetList = [['xanes']]
@@ -175,7 +193,7 @@ class helper(Handler):
                     data = np.array(outputs[i][targetList[0][0]])
                     if data.ndim == 2: # array of rows corresponding to set of 1d data 
                        en0,mu0=data
-                       # Save in array of XANES output.
+                       # Save in array of output.
                        en = en + [en0]
                        step = min(step,np.amin(en0[1:]-en0[:-1]))
                        mu = mu + [mu0]

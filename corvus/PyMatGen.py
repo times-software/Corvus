@@ -10,6 +10,7 @@ from mp_api.client import MPRester
 from pymatgen.io.cif import CifParser,CifWriter
 from pymatgen.core import structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+from pymatgen.analysis.magnetism import CollinearMagneticStructureAnalyzer
 
 pp_debug = pprint.PrettyPrinter(indent=4)
 
@@ -69,7 +70,7 @@ class PyMatGen(Handler):
                    canProduce = True
                    break
             if canProduce: output = out
-            print(output)
+            #print(output)
             return canProduce 
             # JK - Add support for logical or in requirements, i.e., 'req':['cif_input', 'mp_id|mp_query'
             # Split output by | and check if any are implemented.
@@ -148,8 +149,19 @@ class PyMatGen(Handler):
             #sg_anal = SpacegroupAnalyzer(structure,symprec=symprec, angle_tolerance=angle_tolerance) 
             sg_anal = SpacegroupAnalyzer(structure,symprec=symprec) 
             structure = sg_anal.get_symmetrized_structure()
-            #print(structure)
-            #print(structure.equivalent_indices)
+            try:
+                is_magnetic = CollinearMagneticStructureAnalyzer(structure).is_magnetic
+            except:
+                is_magnetic = False
+
+            # Get local denSpacegroupAnalyzersities for possible later use.
+            cluster_radius = input['clusterradius'][0][0]
+            getLocalDensity(structure,cluster_radius)
+            with open('densities.dat', 'w') as fden:
+               for site in structure.sites:
+                  print('Pt',site.coords.tolist()[0],site.coords.tolist()[1],site.coords.tolist()[2],site.properties["local_density"],file=fden)
+            
+            #exit()
 
             #print(input['absorbing_atom_type'])
             if "absorbing_atom_type" in input: # Will set up calculation of all unique absorbers in unit cell.
@@ -166,6 +178,7 @@ class PyMatGen(Handler):
             abstype = []
             for inds in structure.equivalent_indices:
                 xnat = len(inds)
+                #print(structure.sites[inds[0]])
                 # Here, redefine the absorber_types using regex. Take all species
                 # That start with the chemical symbols given in the input.
                 for key in structure.sites[inds[0]].species.as_dict().keys():
@@ -188,26 +201,29 @@ class PyMatGen(Handler):
                         else:
                             magmom += [structure.sites[ind].properties['magmom']]
                         #print(structure.sites[ind].properties['itype'])
-
+                        if 'magmom_by_label' in input:
+                           for elem in input['magmom_by_label']:
+                              if structure.sites[ind].label == elem[0]:
+                                 magmom = [elem[1]]
                         if occ != 1.0:
                             disordered_structure = True
                             n_disord = input['numberofconfigurations'][0][0]
                         i_spec += 1
 
                     structure.sites[ind].properties['magmom'] = magmom
-                    #print(structure.sites[ind],structure.sites[ind].properties)
+                    #print(structure.sites[ind],magmom)
+                    #print(structure.sites[ind].properties['magmom'])
                        
                 #print(ipot,structure.sites[ind].properties['itype'])
                 ipot = ipot + i_spec
                 #print('ipot',ipot)
-            
+           
             absorber_types = set(abstype)
             #print(absorber_types)
             #exit() 
             #print(dir(structure.sites[0].species))
             #print(structure.sites[0].species.as_dict())
             i_disord = 1
-            cluster_radius = input['clusterradius'][0][0]
             #print('n_disord:', n_disord)
             while i_disord <= n_disord:
                 for inds in structure.equivalent_indices:
@@ -218,7 +234,7 @@ class PyMatGen(Handler):
                         # remove alphabetical characters from keys in the dictionary.
                         #for key,value in structure.sites[inds[0]].species.as_dict().items():
                         #    species[re.sub('[^a-zA-Z]','',key)] = value
-                        print(structure.sites[inds[0]].species.as_dict())
+                        #print(structure.sites[inds[0]].species.as_dict())
                         if any(abs_symbol in spec for spec in structure.sites[inds[0]].species.as_dict().keys()):
                         #if abs_symbol in structure.sites[inds[0]].species.as_dict():
 
@@ -252,11 +268,25 @@ class PyMatGen(Handler):
                                     #print(site)
                                     # Always put the absorbing atom in the cluster
                                     if spec_str == abs_symbol and iclust == 0:
-                                        cluster = cluster + [[re.sub('[^a-zA-Z]','',spec_str)] + site.coords.tolist() + [ site.properties['itype'] ] + [site.properties['xnat']] + [site.properties.get('magmom')[0]]]
+                                        #print('Magnetic moment of absorber:', site.properties.get('magmom'))
+                                        #exit()
+                                        cluster = cluster + [[abs_symbol] + site.coords.tolist()     + 
+                                                             [ site.properties['itype'][i_spec] ]    + 
+                                                             [site.properties['xnat'][i_spec]]       + 
+                                                             [site.properties.get('magmom')[i_spec]] + 
+                                                             [site.properties.get('local_density')]  +
+                                                             [site.label]]
+                                        label = site.label
                                         break
                                     elif occ_sum < rnd <= occ + occ_sum:
                                         #print(site.properties)
-                                        cluster = cluster + [[re.sub('[^a-zA-Z]','',spec_str)] + site.coords.tolist() + [ site.properties['itype'][i_spec] ] + [site.properties['xnat'][i_spec]] + [site.properties.get('magmom')[i_spec]]]
+                                        cluster = cluster + [[re.sub('[^a-zA-Z]','',spec_str)]       + 
+                                                             site.coords.tolist()                    + 
+                                                             [ site.properties['itype'][i_spec] ]    + 
+                                                             [site.properties['xnat'][i_spec]]       + 
+                                                             [site.properties.get('magmom')[i_spec]] + 
+                                                             [site.properties.get('local_density')]  +
+                                                             [site.label]]
                                         #print(site.properties)
                                         #print(cluster[-1])
                                         #sys.stdin.readline()
@@ -268,17 +298,23 @@ class PyMatGen(Handler):
                                 
                             # cluster_array is a list of tuples, each with absorbing atom, associated cluster, and 
                             # weighting (stoichiometry for example).
-                            cluster_array = cluster_array + [(1,weight,cluster)]
+                            cluster_array = cluster_array + [(1,weight,cluster,label)]
                 i_disord = i_disord + 1        
             print("Number of absorbers:", len(cluster_array))
+            #print(cluster_array[0])
+            #exit()
             if(len(cluster_array) == 0):
                print("No absorbing atoms of types", absorber_types)
                print("found.")
                exit() 
             output['cluster_array'] = cluster_array
-
+            #print("CLUSTER ARRAY")
+            #print(cluster_array[0][0:1])
+            #for line in cluster_array[0][2]:
+            #   print(line[4])
         elif set(output.keys()).issubset(set(['supercell', 'cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc', 'number_density'])):
         #elif 'supercell' in output:
+            structure = input['mp.structure']
             sg_anal = SpacegroupAnalyzer(structure) 
             structure = sg_anal.get_symmetrized_structure()
             if "absorbing_atom_type" in input: # Will set up calculation of all unique absorbers in unit cell.
@@ -351,9 +387,11 @@ class PyMatGen(Handler):
             if 'mp.id' in input:
                 mpr = MPRester(input['mp.apikey'][0][0])
                 output['mp.structure'] = mpr.get_structure_by_material_id(input["mp.id"][0][0])
+                output['mp.structure'].to(filename=input["mp.id"][0][0] + ".cif")
             elif 'cif_input' in input:
                 parser = CifParser(input.get("cif_input")[0][0])
-                output['mp.structure'] = parser.get_structures()[0]
+                # Only take first structure for now.
+                output['mp.structure'] = parser.parse_structures()[0]
     
             
              
@@ -367,7 +405,58 @@ class PyMatGen(Handler):
         pass
 
 
+def getLocalDensity(structure,cluster_radius):
+   # Define a few simple local structure parameters to define potentials in FEFF. Maybe this should be moved to the feff
+   # module along with cluster_array etc.
+   sigma = 2.3 # For now use 2.3 angstrom width.
+   mindens=1.0e10
+   maxdens=0.0
+   densities = []
+   for site in structure.sites:
+       # Create a cluster around the site
+       site_cluster = structure.get_neighbors(site,sigma*5)
+       coords0 = np.array(site.coords.tolist())
+       density = 0.0
+       for neighbor in site_cluster:
+         coords = np.array(neighbor.coords.tolist()) - coords0
+         distance = np.sqrt(np.inner(coords,coords))
+          
+         #print(neighbor)
+         #print(dir(neighbor.species))
+         #print(neighbor.species.elements)
+         # For now, average over partially occupied sites for the density. May need to change this later.
+         i=0
+         #print('Elements:')
+         #print(neighbor.species.elements)
+         for occ in neighbor.species.as_dict().values():   
+            #print(occ)
+            #print(neighbor.species.elements[i].Z)
+            #print(distance)
+            density = density + localDensityFunction(distance,sigma)*neighbor.species.elements[i].Z
+            #print('Z: ', neighbor.species.elements[i].Z)
+            #print(density,distance)
+            i=i+1
+       
+       # Add density to site properties
+       densities = densities + [density]
+       mindens=min(mindens,density)
+       maxdens=max(maxdens,density)
+   for i,density in enumerate(densities):
+       if maxdens == mindens:
+          structure.sites[i].properties["local_density"] = 0.0
+       else:
+          structure.sites[i].properties["local_density"] = (density - mindens)/(maxdens-mindens)
+          #print('Densities: ', density, mindens, maxdens, (density-mindens)/(maxdens-mindens))
 
+   return (mindens,maxdens)
+       
+def localDensityFunction(r,sigma):
+   # Define a local function with a volume integral = 1.
+   vol = 4.0*np.pi/3.0*sigma**3
+   return r/(6*sigma)*np.exp(-(r/sigma)**2/2.0)/vol
+
+ 
+       
 # def getSymmetryUniqueAtoms(structure):
 #     ''' input  - structure of cell 
 #         output - modified structure with site properties labeled by number and type of nearest neighbors.   

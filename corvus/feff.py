@@ -43,6 +43,9 @@ implemented['feffFMatrices'] = {'type':'Exchange','out':['feffFMatrices'],'cost'
 implemented['xanes'] = {'type':'Exchange','out':['xanes'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
 
+implemented['exafs'] = {'type':'Exchange','out':['exafs'],'cost':1,
+                        'req':['cluster','absorbing_atom'],'desc':'Calculate EXAFS using FEFF.'}
+
 implemented['xes'] = {'type':'Exchange','out':['xes'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
 
@@ -117,7 +120,10 @@ class Feff(Handler):
     def prep(config):
         if 'xcIndexStart' in config:
             if config['xcIndexStart'] > 0:
-                subdir = config['pathprefix'] + str(config['xcIndex']) + '_FEFF'
+                if 'xcLabel' in config:
+                    subdir = config['pathprefix'] + str(config['xcIndex']) + config['xcLabel'] + '_FEFF'
+                else:
+                    subdir = config['pathprefix'] + str(config['xcIndex']) + '_FEFF'
                 xcDir = os.path.join(config['cwd'], subdir)
             else:
                 xcDir = config['xcDir']
@@ -159,7 +165,7 @@ class Feff(Handler):
         # Copy feff related input to feffinput here. Later we will be overriding some settings,
         # so we want to keep the original input intact.
         # Input specific to FEFF that are not FEFF keywords.
-        non_feff_cards = ["feff.mpi", "feff.potentials.spin"]
+        non_feff_cards = ["feff.mpi", "feff.potentials.spin", "feff.equivalence.nmax", "feff.equivalence"]
         feffInput = {key:input[key] for key in input if (key.startswith('feff.') and (not key.startswith(tuple(non_feff_cards))))}
         
         # Generate any data that is needed from generic input and populate feffInput with
@@ -194,6 +200,15 @@ class Feff(Handler):
                            feffInput["feff.potentials"][ipot].append(spinmom[1])
                        elif len(feffInput["feff.potentials"][ipot]) == 7:
                            feffInput["feff.potentials"][ipot][6] = spinmom[1]
+
+        if "feff.ion" not in input and 'atomic_charge' in input:
+            ions = []
+            for pot in potentials:
+                for at_charge_line in input['atomic_charge']:
+                   if pot[2] == at_charge_line[0]:
+                      ions = ions + [[pot[0],at_charge_line[1]]]
+           
+            feffInput['feff.ion'] = ions 
                             
 
                 
@@ -207,12 +222,12 @@ class Feff(Handler):
             exch = feffInput['feff.exchange']
         else:
             exch = [[0, 0.0, 0.0, 2]] 
-
-        if 'spectral_broadening' in input:
-            exch[0][2] = input['spectral_broadening'][0][0]
+            if 'spectral_broadening' in input:
+                exch[0][2] = input['spectral_broadening'][0][0]
         
-        if 'fermi_shift' in input:
-            exch[0][1] = input['fermi_shift'][0][0]
+            if 'fermi_shift' in input:
+                exch[0][1] = input['fermi_shift'][0][0]
+
 
         feffInput['feff.exchange'] = exch
         if debyeOpts is not None:
@@ -224,6 +239,7 @@ class Feff(Handler):
         # Set input file
         inpf = os.path.join(dir, 'feff.inp')
         # Loop over targets in output. Not sure if there will ever be more than one output target here.
+        print("Running feff to obtain:", output)
         for target in output:
             if (target == 'feffAtomicData'):
                 # Set output and error files
@@ -423,6 +439,56 @@ class Feff(Handler):
                         xmu_arr = xmu_arr + [xmu]
                         w_arr = w_arr + [w]
                         
+                # Now combine energy grids, interpolate files, and sum.
+                wtot = np.unique(np.append(w_arr[0],w_arr[1:]))
+                xmutot = np.zeros_like(wtot)
+                xmuterp_arr = []
+                for i,xmu_elem in enumerate(xmu_arr):
+                    xmuterp_arr = xmuterp_arr + [np.interp(wtot,w_arr[i],xmu_elem)]
+                    xmutot = xmutot + np.interp(wtot,w_arr[i],xmu_elem)
+
+                #output[target] = np.array([wtot,xmutot] + xmuterp_arr).tolist()
+                output[target] = np.array([wtot,xmutot]).tolist()
+                #print output[target]
+
+            elif (target == 'exafs'):
+                # Loop over edges. For now just run in the same directory. Should change this later.
+                for i,edge in enumerate(input['feff.edge'][0]):
+                    feffInput['feff.edge'] = [[edge]]
+                    # Set output and error files
+                    outFile=os.path.join(dir,'chi.dat')
+                    if not (os.path.exists(outFile) and input['usesaved'][0][0]):
+                        with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+
+                            # Write input file for FEFF.
+                            writeEXAFSInput(feffInput,inpf)
+
+                            # Loop over executable: This is specific to feff. Other codes
+                            # will more likely have only one executable. Here I am running
+                            # rdinp again since writeSCFInput may have different cards than
+
+                            execs = ['rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+
+                            for exe in execs:
+                                if 'feff.mpi.cmd' in input:
+                                    executable = [input.get('feff.mpi.cmd')[0][0] + win_exe]
+                                    args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe) + win_exe]
+                                else:
+                                    executable = [os.path.join(feffdir,exe)]
+                                    args = ['']
+
+                                runExecutable('',dir,executable,args,out,err)
+
+
+                    w,xmu = np.loadtxt(outFile,usecols = (0,1)).T
+
+                    if i==0:
+                        xmu_arr = [xmu]
+                        w_arr = [w]
+                    else:
+                        xmu_arr = xmu_arr + [xmu]
+                        w_arr = w_arr + [w]
+
                 # Now combine energy grids, interpolate files, and sum.
                 wtot = np.unique(np.append(w_arr[0],w_arr[1:]))
                 xmutot = np.zeros_like(wtot)
@@ -1187,6 +1253,9 @@ def getInpLines(input,token):
             if key in ['atoms','potentials','egrid']: # Some keywords only have arguments starting on the 
                 lines.insert(0,key.upper())           # next line.
                 
+            elif key in ['ion']: # A few keywords are written multiple times in the input (one for each line).
+                for i,line in enumerate(lines):
+                    lines[i] = key.upper() + ' ' + line
             else:                                     # Most have arguments on the same line as keyword.
                 lines[0] = key.upper() + ' ' + lines[0]
                 
@@ -1356,13 +1425,67 @@ def getFeffAtomsFromCluster(input):
         if len(atoms[0]) >= 5 and equivalence == 1:
             # Use itype from user
             feffAtoms = []
-            feffAtoms.append([0.0, 0.0, 0.0, 0])
+            feffAtoms.append([0.0, 0.0, 0.0, 0, 0.0])
             for atm in atoms:
                 #print(atm)
                 feffAtom = atm[1:3]
                 feffAtom = [ e - float(input['cluster'][absorber][i+1]) for i,e in enumerate(atm[1:4]) ]
                 feffAtom.append(atm[4])
+                feffAtom.append(np.linalg.norm(np.array(atm[1:4]) - np.array(input['cluster'][absorber][1:4])))
                 feffAtoms.append(feffAtom)
+
+        elif len(atoms[0]) >= 7 and equivalence == 2:
+            # Use local density to define potentials.
+            # Unique atoms set by Z and local density, with density binned into equivalence.nmax bins.
+            npotsdens = input.get("feff.equivalence.nmax",[[5]])[0][0]
+            nbins = min(len(set([atm[7] for atm in atoms])),npotsdens)
+            bins=np.linspace(0.0, 1.0, num=nbins, endpoint=True)
+            uniqueAtoms = sorted(list(set([(x[0],np.digitize(x[7],bins), x[6]) for x in atoms])),key=lambda x: x[1]) 
+            feffAtoms = []
+            feffAtoms.append([0.0, 0.0, 0.0, 0, 0.0])
+            for atm in atoms:
+                for i,uatm in enumerate(uniqueAtoms):
+                    if atm[0] == uatm[0] and np.digitize(atm[7],bins) == uatm[1]:
+                        feffAtom = [ e - input['cluster'][absorber][j+1] for j,e in enumerate(atm[1:4]) ]
+                        feffAtom.append(i+1)
+                        feffAtom.append(np.linalg.norm(np.array(atm[1:4]) - np.array(input['cluster'][absorber][1:4])))
+                        feffAtom.append(atm[8])
+                        feffAtoms.append(feffAtom)
+                       
+        elif equivalence == 3:
+            if len(atoms[0]) >= 6:
+                uniqueAtoms = sorted(list(set([ (e[0], np.linalg.norm(np.array(e[1:4]) - np.array(input['cluster'][absorber][1:4])),e[6]) for e in atoms ])),key = lambda x: x[1])
+            else:
+                uniqueAtoms = sorted(list(set([ (e[0], np.linalg.norm(np.array(e[1:4]) - np.array(input['cluster'][absorber][1:4])),0.0) for e in atoms ])),key = lambda x: x[1])
+
+            if 'feff.equivalence.nmax' in input:
+               uniqueAtoms = uniqueAtoms[0:input['feff.equivalence.nmax'][0][0]-1]
+
+            #print(uniqueAtoms)
+
+            feffAtoms = []
+            feffAtoms.append([0.0, 0.0, 0.0, 0, 0.0])
+            for atm in atoms:
+                elementOfUniques = False
+                # Set nearest atoms to unique atoms given distance.
+                for i,uatm in enumerate(uniqueAtoms):
+                    if atm[0] == uatm[0] and np.linalg.norm(np.array(atm[1:4]) - np.array(input['cluster'][absorber][1:4])) == uatm[1]:
+                        feffAtom = [ e - input['cluster'][absorber][j+1] for j,e in enumerate(atm[1:4]) ]
+                        feffAtom.append(i+1)
+                        feffAtom.append(np.linalg.norm(np.array(atm[1:4]) - np.array(input['cluster'][absorber][1:4])))
+                        feffAtoms.append(feffAtom)
+                        elementOfUniques = True
+                        break
+                
+                # surrounding atoms (outside the max number of atoms) use first potential that matches Z.
+                if not elementOfUniques: 
+                    for i,uatm in enumerate(uniqueAtoms):
+                        if atm[0] == uatm[0]:
+                            feffAtom = [ e - input['cluster'][absorber][j+1] for j,e in enumerate(atm[1:4]) ]
+                            feffAtom.append(i+1)
+                            feffAtom.append(np.linalg.norm(np.array(atm[1:4]) - np.array(input['cluster'][absorber][1:4])))
+                            feffAtoms.append(feffAtom)
+                            break
 
         else:
             uniqueAtoms = list(set([ x[0] for x in atoms]))
@@ -1372,14 +1495,19 @@ def getFeffAtomsFromCluster(input):
             #print ''.join(''.join([str(e),' ']) for e in input['cluster'][absorber][1:]) + ' 0'
             #print input
             feffAtoms = []
-            feffAtoms.append([0.0, 0.0, 0.0, 0])
-            for line in atoms: 
-                feffAtom = [ e - input['cluster'][absorber][i+1] for i,e in enumerate(line[1:4]) ]
-                feffAtom.append(uniqueAtoms.index(line[0])+1)
+            feffAtoms.append([0.0, 0.0, 0.0, 0, 0.0])
+            for atm in atoms: 
+                feffAtom = [ e - input['cluster'][absorber][i+1] for i,e in enumerate(atm[1:4]) ]
+                feffAtom.append(uniqueAtoms.index(atm[0])+1)
+                feffAtom.append(np.linalg.norm(np.array(atm[1:4]) - np.array(input['cluster'][absorber][1:4])))
                 #print feffAtom
                 #print ''.join(''.join([str(e),' ']) for e in line[1:]) + str(uniqueAtoms.index(line[0])+1)
                 #print ptable[x[0]]['number']
                 feffAtoms.append(feffAtom)
+
+        
+        # Sort by distance
+        feffAtoms = sorted(feffAtoms, key=lambda x: x[4])
     return feffAtoms
 
 def getFeffPotentialsFromCluster(input):
@@ -1390,14 +1518,17 @@ def getFeffPotentialsFromCluster(input):
     lfms1 = input.get('feff.lfms1')[0][0]
     lfms2 = input.get('feff.lfms2')[0][0]
     equivalence = input.get('feff.equivalence')[0][0]
+    print('equi = ', equivalence)
 
     # stoichiometry and unique atoms set by crystal structure.
     #print(atoms[0])
     if len(atoms[0]) >=7 and equivalence == 1:
         # Include spin now.
+        #for atm in atoms:
+        #   print(atm)
         uniqueAtoms = sorted(list(set([ (x[0],x[4],x[5],x[6]) for x in atoms ])),key=lambda x: x[1])
         feffPots = [[]]
-        feffPots[0] = [0, ptable[abs_symb]['number'], input['cluster'][absorber][0], lfms1, lfms2, 0.01, input['cluster'][absorber][-1]]
+        feffPots[0] = [0, ptable[abs_symb]['number'], input['cluster'][absorber][0], lfms1, lfms2, 0.01, input['cluster'][absorber][6]]
         for i,atm in enumerate(uniqueAtoms):
             atm_symb=re.sub('[^a-zA-Z]','',atm[0])
             xnat = atm[2]
@@ -1425,15 +1556,51 @@ def getFeffPotentialsFromCluster(input):
             #feffPots.append([atm[1], int(ptable[atm[0]]['number']), atm[0], lfms1, lfms2, xnat ])
             feffPots.append([i+1, int(ptable[atm_symb]['number']), atm[0], lfms1, lfms2, xnat ])
     
+    elif len(atoms[0]) >= 7 and equivalence == 2:
+        # Unique atoms set by Z and local density, with density binned into equivalence.nmax bins.
+        npotsdens = input.get("feff.equivalence.nmax",[[5]])[0][0]
+        nbins = min(len(set([atm[7] for atm in atoms])),npotsdens)
+        bins=np.linspace(0.0, 1.0, num=nbins, endpoint=True)
+        allTypes = sorted(list([int(ptable[re.sub('[^a-zA-Z]','',x[0])]['number'])*100 + np.digitize(x[7],bins) for x in atoms]))
+        uniqueAtoms = sorted(list(set([(x[0],np.digitize(x[7],bins), x[6]) for x in atoms])),key=lambda x: x[1]) 
+        feffPots = [[]]
+        feffPots[0] = [0, ptable[abs_symb]['number'], input['cluster'][absorber][0], lfms1, lfms2, 1.0, 0.0 ]
+        for i,atm in enumerate(uniqueAtoms):
+            atm_symb=re.sub('[^a-zA-Z]','',atm[0])
+            xnat = allTypes.count(int(ptable[atm_symb]['number'])*100 + atm[1])
+            spin = atm[2]
+            feffPots.append([i+1, int(ptable[atm_symb]['number']), atm[0], lfms1, lfms2, xnat, spin ])
+           
+
+    elif equivalence == 3:
+    # Set Unique atoms according to distance from absorber and Z. Use stoichiometry of 0.01 for absorber and 1
+    # for all others. Could be useful for liquids.
+        # Get distances.
+        if len(atoms[0]) >= 6:
+            uniqueAtoms = sorted(list(set([ (e[0], np.linalg.norm(np.array(e[1:4]) - np.array(input['cluster'][absorber][1:4])),e[6]) for e in atoms ])),key = lambda x: x[1])
+        else:
+            uniqueAtoms = sorted(list(set([ (e[0], np.linalg.norm(np.array(e[1:4]) - np.array(input['cluster'][absorber][1:4])),0.0) for e in atoms ])),key = lambda x: x[1])
+
+        if 'feff.equivalence.nmax' in input:
+            uniqueAtoms = uniqueAtoms[0:input['feff.equivalence.nmax'][0][0]-1]
+
+        feffPots = [[]]
+        feffPots[0] = [0, ptable[abs_symb]['number'], input['cluster'][absorber][0], lfms1, lfms2, 0.01, 0.0 ]
+        for i,atm in enumerate(uniqueAtoms):
+            atm_symb=re.sub('[^a-zA-Z]','',atm[0])
+            xnat = 1.0
+            spin = atm[2]
+            feffPots.append([i+1, int(ptable[atm_symb]['number']), atm[0], lfms1, lfms2, xnat, spin ])
+        
     # Unique atoms set by cluster (only includes one unique atom per element).
     else:       
         uniqueAtoms = list(set([ x[0] for x in atoms]))
         feffPots = [[]]
         feffPots[0] = [0, ptable[abs_symb]['number'], input['cluster'][absorber][0], lfms1, lfms2, 1.0 ]
         for i,atm in enumerate(uniqueAtoms):
-            atm_symb=re.sub('[^a-zA-Z]','',atm[0])
+            atm_symb=re.sub('[^a-zA-Z]','',atm)
             xnat = [ x[0] for x in input['cluster'] ].count(atm)
-            feffPots.append([i+1, int(ptable[atm_symb]['number']), atm[0], lfms1, lfms2, xnat ])
+            feffPots.append([i+1, int(ptable[atm_symb]['number']), atm, lfms1, lfms2, xnat ])
     
 
     return feffPots
@@ -1694,6 +1861,20 @@ def writeXANESInput(input, feffinp='feff.inp'):
 
     writeInput(input,feffinp)
 
+def writeEXAFSInput(input, feffinp='feff.inp'):
+    print('Writing EXAFS input.')
+    lines = []
+    lines.append('* This feff9 input file was generated by corvus.')
+    lines.append('')
+
+    setInput(input,'feff.control', [[1, 1, 1, 1, 1, 1]])
+    setInput(input,'feff.print', [[0, 0, 0, 0, 0, 5]])
+    setInput(input,'feff.exchange', [[0, 0.0, 0.0, 0]])
+    setInput(input,'feff.exafs', [[20]])
+    setInput(input,'feff.rpath', [[9.0]])
+    setInput(input,'feff.edge', [['K']])
+
+    writeInput(input,feffinp)
 
 def writeXESInput(input, feffinp='feff.inp'):
     lines = []
