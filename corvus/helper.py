@@ -107,7 +107,7 @@ class helper(Handler):
             #print('Inside helper', output)
             if (target == 'cfavg'):
                 #Define the target of the average
-                targetList = input['cfavg.target']
+                targetList = input['cfavg_target']
 
                 cluster_array = input['cluster_array']
                 print("Number of absorbers:", len(cluster_array))
