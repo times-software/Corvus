@@ -617,6 +617,7 @@ def oneshot():
     #       directly here. Should change so that oneshot can be called
     #       as a function as well, but later. 
     argv = sys.argv
+    #print(argv)
     setExit(True) # JJK - No arguments should be passed to oneshot,
                   # so setting sys_exit to True here.
 
@@ -732,6 +733,7 @@ def oneshot():
 # rather than the command line.
     if 'target_list' in list(system.keys()):
       targetList = system['target_list']
+      print(targetList)
     elif not helpOnly:
       print('Provide target properties or Workflow')
       exitOneshot()
@@ -765,19 +767,20 @@ def oneshot():
     elif not resume:
         # Create Workflow
         autodesc = 'Calculate ' + ', '.join(targetList[0])
+        print(targetList)
         workflow = generateWorkflow(targetList, handlerList, system, config, desc=autodesc)
-        if len(workflow.getRequiredInput()) > 1:
-            print('')
-            print('')
-            print('#########################')
-            print('    WORKFLOW')
-            print('#########################')
-            print(workflow)
-            print('#########################')
-            print('  END WORKFLOW')
-            print('#########################')
-            print('')
-            print('')
+        #if len(workflow.getRequiredInput()) > 1:
+        print('')
+        print('')
+        print('#########################')
+        print('    WORKFLOW')
+        print('#########################')
+        print(workflow)
+        print('#########################')
+        print('  END WORKFLOW')
+        print('#########################')
+        print('')
+        print('')
 
     # JJK add help by keyword. Print help for keyword and also for all requirements.
     if helpOnly:

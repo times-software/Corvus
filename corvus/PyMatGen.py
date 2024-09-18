@@ -34,7 +34,7 @@ for s in subs(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_
 #                        'req':['cif_input'],'desc':'Calculate cell structure from cif file using cif2cell.'}
 
 implemented['mp.structure'] = {'type':'Exchange','out':['mp.structure'],'cost':0,
-                        'req':['mp.id|cif_input'],'desc':'Get cif file from material project id.'}
+                        'req':['mp_id|cif_input'],'desc':'Get cif file from material project id.'}
 implemented['cluster_array'] = {'type':'Exchange','out':['cluster_array'],'cost':0,
                         'req':['mp.structure'],'desc':'Calculate cluster from cif using pymatgen.'}
 implemented['supercell'] = {'type':'Exchange','out':['supercell'],'cost':0,
@@ -140,11 +140,13 @@ class PyMatGen(Handler):
         #print("Inside PyMatGen")
         site_tol = 1.0e-6
         if 'cluster_array' in output:
+
+            #print("Number of absorbers:", len(cluster_array))
             #parser = CifParser(input.get("cif_input")[0][0],site_tolerance=site_tol)
             #structure = parser.get_structures()[0]
             structure = input['mp.structure']
             #symprec=input['pymatgen.symprec'][0][0]
-            symprec=1.0e-6
+            symprec=0.1
             #angle_tolerance=input['pymatgen.angle_tolerance'][0][0]
             #sg_anal = SpacegroupAnalyzer(structure,symprec=symprec, angle_tolerance=angle_tolerance) 
             sg_anal = SpacegroupAnalyzer(structure,symprec=symprec) 
@@ -300,9 +302,7 @@ class PyMatGen(Handler):
                             # weighting (stoichiometry for example).
                             cluster_array = cluster_array + [(1,weight,cluster,label)]
                 i_disord = i_disord + 1        
-            print("Number of absorbers:", len(cluster_array))
-            #print(cluster_array[0])
-            #exit()
+
             if(len(cluster_array) == 0):
                print("No absorbing atoms of types", absorber_types)
                print("found.")
@@ -384,10 +384,10 @@ class PyMatGen(Handler):
             # just go directly from the mp structure. However, we need to be able to have
             # or operators available in requiredInput rather than just and operators.
             # Need to add inputs: mp_id, mp_api_key
-            if 'mp.id' in input:
-                mpr = MPRester(input['mp.apikey'][0][0])
-                output['mp.structure'] = mpr.get_structure_by_material_id(input["mp.id"][0][0])
-                output['mp.structure'].to(filename=input["mp.id"][0][0] + ".cif")
+            if 'mp_id' in input:
+                mpr = MPRester(input['mp_apikey'][0][0])
+                output['mp.structure'] = mpr.get_structure_by_material_id(input["mp_id"][0][0])
+                output['mp.structure'].to(filename=input["mp_id"][0][0] + ".cif")
             elif 'cif_input' in input:
                 parser = CifParser(input.get("cif_input")[0][0])
                 # Only take first structure for now.
