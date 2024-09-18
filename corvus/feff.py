@@ -1486,17 +1486,26 @@ def getFeffAtomsFromCluster(input):
         atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
         equivalence = input.get('feff.equivalence')[0][0]
         if len(atoms[0]) >= 5 and equivalence == 1:
-            # Use itype from user
+            # Use itype and mag mom.
             feffAtoms = []
             feffAtoms.append([0.0, 0.0, 0.0, 0, 0.0])
-            for atm in atoms:
-                #print(atm)
-                feffAtom = atm[1:3]
-                feffAtom = [ e - float(input['cluster'][absorber][i+1]) for i,e in enumerate(atm[1:4]) ]
-                feffAtom.append(atm[4])
-                feffAtom.append(np.linalg.norm(np.array(atm[1:4]) - np.array(input['cluster'][absorber][1:4])))
-                feffAtoms.append(feffAtom)
+            if 'feff.spin' in input:
+                uniqueAtoms = sorted(list(set([ (x[0],x[4],x[5],x[6]) for x in atoms ])),key=lambda x: x[1])
+            else:
+                uniqueAtoms = sorted(list(set([ (x[0],x[4],x[5], 0.0) for x in atoms ])),key=lambda x: x[1])
 
+            for atm in atoms:
+                for ipot,uatm in enumerate(uniqueAtoms):
+                    if 'feff.spin' in input:
+                        test = atm[4] == uatm[1] and atm[6] == uatm[3]
+                    else:
+                        test = atm[4] == uatm[1]
+                    if test:
+                        #feffAtom = atm[1:3]
+                        feffAtom = [ e - float(input['cluster'][absorber][i+1]) for i,e in enumerate(atm[1:4]) ]
+                        feffAtom.append(ipot+1)
+                        feffAtom.append(np.linalg.norm(np.array(atm[1:4]) - np.array(input['cluster'][absorber][1:4])))
+                        feffAtoms.append(feffAtom)
         elif len(atoms[0]) >= 7 and equivalence == 2:
             # Use local density to define potentials.
             # Unique atoms set by Z and local density, with density binned into equivalence.nmax bins.
@@ -1515,7 +1524,7 @@ def getFeffAtomsFromCluster(input):
                         feffAtom.append(atm[8])
                         feffAtoms.append(feffAtom)
                        
-        elif equivalence == 3:
+        elif equivalence == 3: # not functional yes
             if len(atoms[0]) >= 6:
                 uniqueAtoms = sorted(list(set([ (e[0], np.linalg.norm(np.array(e[1:4]) - np.array(input['cluster'][absorber][1:4])),e[6]) for e in atoms ])),key = lambda x: x[1])
             else:
@@ -1575,6 +1584,9 @@ def getFeffAtomsFromCluster(input):
 
 def getFeffPotentialsFromCluster(input):
     absorber = input['absorbing_atom'][0][0] - 1
+    #for at in input['cluster']:
+    #   print(at[4], at[6], at[0])
+    #sys.exit()
     atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
     abs_symb = re.sub('[^a-zA-Z]','',input['cluster'][absorber][0])
 
@@ -1589,13 +1601,18 @@ def getFeffPotentialsFromCluster(input):
         # Include spin now.
         #for atm in atoms:
         #   print(atm)
-        uniqueAtoms = sorted(list(set([ (x[0],x[4],x[5],x[6]) for x in atoms ])),key=lambda x: x[1])
+        if 'feff.spin' in input:
+            uniqueAtoms = sorted(list(set([ (x[0],x[4],x[5],x[6]) for x in atoms ])),key=lambda x: x[1])
+        else: 
+            uniqueAtoms = sorted(list(set([ (x[0],x[4],x[5],0.0) for x in atoms ])),key=lambda x: x[1])
+
         feffPots = [[]]
         feffPots[0] = [0, ptable[abs_symb]['number'], input['cluster'][absorber][0], lfms1, lfms2, 0.01, input['cluster'][absorber][6]]
         for i,atm in enumerate(uniqueAtoms):
             atm_symb=re.sub('[^a-zA-Z]','',atm[0])
             xnat = atm[2]
             spin = atm[3]
+
             #feffPots.append([atm[1], int(ptable[atm[0]]['number']), atm[0], lfms1, lfms2, xnat ])
             feffPots.append([i+1, int(ptable[atm_symb]['number']), atm[0], lfms1, lfms2, xnat, spin ])
     elif len(atoms[0]) == 6 and equivalence == 1:

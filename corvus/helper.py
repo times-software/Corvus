@@ -103,8 +103,8 @@ class helper(Handler):
         #print('Inside helper')
         from corvus.controls import generateAndRunWorkflow
         dir = config['xcDir']
-        if "multiprocessing.ncpu" in input:
-           ncpu = input["multiprocessing.ncpu"][0][0]
+        if "multiprocessing_ncpu" in input:
+           ncpu = input["multiprocessing_ncpu"][0][0]
         else:
            ncpu = mltp.cpu_count()
 
