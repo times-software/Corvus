@@ -389,7 +389,7 @@ class PyMatGen(Handler):
                 output['mp.structure'] = mpr.get_structure_by_material_id(input["mp_id"][0][0])
                 output['mp.structure'].to(filename=input["mp_id"][0][0] + ".cif")
             elif 'cif_input' in input:
-                parser = CifParser(input.get("cif_input")[0][0])
+                parser = CifParser(input.get("cif_input"))
                 # Only take first structure for now.
                 output['mp.structure'] = parser.parse_structures()[0]
     
