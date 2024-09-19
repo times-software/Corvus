@@ -3,7 +3,7 @@ import corvutils.pyparsing as pp
 import os, sys, subprocess, shutil #, resource
 import re
 import numpy as np
-from scipy.interpolate import interp1d
+#from scipy.interpolate import interp1d
 #from CifFile import ReadCif
 #from cif2cell.uctools import *
 
