@@ -1,4 +1,5 @@
 from corvus.structures import Handler, Exchange, Loop, Update
+from time import sleep
 import numpy as np
 import random
 from scipy.interpolate import RegularGridInterpolator as rgi
@@ -158,8 +159,11 @@ class helper(Handler):
                         tLists = tLists + [targetList]
                         arguments = arguments + [(configs[i],inputs[i],targetList)]
                         #targetList = [['xanes']]
-                    pool = mltp.Pool(processes=poolSize)
-                    outputs = outputs + pool.starmap(multiproc_genAndRun,arguments)
+                    with mltp.Pool(processes=poolSize) as pool:
+                        output =  pool.starmap_async(multiproc_genAndRun,arguments)
+                        while not output.ready():
+                            sleep(1)
+                    outputs = outputs + output
                     numdone = numdone + poolSize
                    
                     #print('Check: ', len(outputs), poolSize, totprocs)
