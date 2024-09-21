@@ -8,6 +8,7 @@ import os, sys, subprocess, shutil #, resource
 import math
 import pprint
 import copy
+from corvus.abort import check_abort
 #import mltp
 #try:
 #    import ray.util.multiprocessing as mltp
@@ -101,6 +102,7 @@ class helper(Handler):
 
     @staticmethod
     def run(config, input, output):
+        if check_abort(None,'helper.run'): return
         #print('Inside helper')
         from corvus.controls import generateAndRunWorkflow
         dir = config['xcDir']
@@ -160,10 +162,10 @@ class helper(Handler):
                         arguments = arguments + [(configs[i],inputs[i],targetList)]
                         #targetList = [['xanes']]
                     with mltp.Pool(processes=poolSize) as pool:
-                        output =  pool.starmap_async(multiproc_genAndRun,arguments)
-                        while not output.ready():
+                        poolout =  pool.starmap_async(multiproc_genAndRun,arguments)
+                        while not poolout.ready():
                             sleep(1)
-                    outputs = outputs + output
+                    outputs = outputs + poolout.get()
                     numdone = numdone + poolSize
                    
                     #print('Check: ', len(outputs), poolSize, totprocs)

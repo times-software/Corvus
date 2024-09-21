@@ -1,4 +1,5 @@
 from corvus.structures import Handler, Exchange, Loop, Update
+from corvus.abort import check_abort
 import corvutils.pyparsing as pp
 import os, sys, subprocess, shutil #, resource
 import re
@@ -1367,8 +1368,27 @@ def runExecutable(execDir,workDir,executable, args,out,err):
     #       2) Send output directly to a file. This also works, but you can't see what the 
     #          subprocess is doing. For a long-running process, this is not very satisfactory. 
     #       For now, I will go with 1)
+    try:
+        f = open('abort_corvus.txt','r')
+        line = f.readlines()[0].strip()
+        f.close()
+        if line == 'True':
+            return
+    except:
+        pass
+
     p = subprocess.Popen(execList, cwd=workDir, encoding='utf8')
-    p.wait()
+    while p.poll() is None:
+        try:
+            f = open('abort_corvus.txt','r')
+            line = f.readlines()[0].strip()
+            f.close()
+            if line == 'True':
+                p.kill()
+                return
+        except:
+            pass
+
     #p = subprocess.run(execList, cwd=workDir, capture_output=True, encoding='utf8')
     #p = subprocess.Popen(execList, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf8')
     #while True:

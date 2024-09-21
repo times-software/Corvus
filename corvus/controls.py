@@ -1,6 +1,9 @@
 import sys, os
 # Debug: FDV
 import pprint
+import corvus.abort
+from importlib.util import find_spec
+DEBUG = False
 pp_debug = pprint.PrettyPrinter(indent=4)
 
 # Define the available handlers by hand here
@@ -9,67 +12,112 @@ pp_debug = pprint.PrettyPrinter(indent=4)
 def availableHandlers():
     # Need to check which of these is defined in config file befor importing
     # and adding to list of available handlers. 
+    if DEBUG: print('DEBUG4.1')
     config = {}
     configure(config)
+    if DEBUG: print('DEBUG4.2')
     handlers = []
     if config['abinit'] and config['anaddb'] and config['mrgddb'] and config['mrggkk']:
+        if corvus.abort.check_abort(None,'availableHandlers'): 
+            print('returning'); return []
         from corvus.abinit import Abinit
         handlers = handlers + [Abinit]
     if config['dmdw']:
+        if corvus.abort.check_abort(None,'availableHandlers'): 
+            print('returning'); return []
         from corvus.dmdw import Dmdw
         handlers = handlers + [Dmdw]
     if config['feff']:
+        if corvus.abort.check_abort(None,'availableHandlers'): 
+            print('returning'); return []
         from corvus.feff import Feff
         handlers = handlers + [Feff]
     if config['vasp_gam'] and config['vasp_std']:
+        if corvus.abort.check_abort(None,'availableHandlers'): 
+            print('returning'); return []
         from corvus.vasp import Vasp
         handlers = handlers + [Vasp]
     if config['nwchem']:
+        if corvus.abort.check_abort(None,'availableHandlers'): 
+            print('returning'); return []
         from corvus.nwchem import Nwchem
         handlers = handlers + [Nwchem]
     if config['ocean']:
+        if corvus.abort.check_abort(None,'availableHandlers'): 
+            print('returning'); return []
         from corvus.ocean import Ocean
         handlers = handlers + [Ocean]
     if config['orca']: 
+        if corvus.abort.check_abort(None,'availableHandlers'): 
+            print('returning'); return []
         # JK - Note that there is another command named orca on many linux systems.
         # Need to figure out how to check that this is indeed orca electronic structure code.
         from corvus.orca import Orca
         handlers = handlers + [Orca]
     if config['siesta']:
+        if corvus.abort.check_abort(None,'availableHandlers'): 
+            print('returning'); return []
         from corvus.siesta import Siesta
         handlers = handlers + [Siesta]
     if config['phsf']:
+        if corvus.abort.check_abort(None,'availableHandlers'): 
+            print('returning'); return []
         from corvus.phsf import phsf
         handlers = handlers + [phsf]
     if config['cif2cell']:
+        if corvus.abort.check_abort(None,'availableHandlers'): 
+            print('returning'); return []
         from corvus.Cif2Cell import Cif2Cell
         handlers = handlers + [Cif2Cell]
+    if DEBUG: print('DEBUG4.3')
 
+    if corvus.abort.check_abort(None,'availableHandlers'): 
+            print('returning'); return []
     from corvus.mbconv import mbconv
     handlers = handlers + [mbconv]
+    if DEBUG: print('DEBUG4.4')
+    if corvus.abort.check_abort(None,'availableHandlers'): 
+            print('returning'); return []
     from corvus.filereader import filereader
     handlers = handlers + [filereader]
+    if DEBUG: print('DEBUG4.5')
+    if corvus.abort.check_abort(None,'availableHandlers'): 
+            print('returning'); return []
     from corvus.helper import helper
     handlers = handlers + [helper]
+    if DEBUG: print('DEBUG4.6')
     # The following are pure python handlers. Use only if module import throws no error
     # import only if module lmfit exists (fit dependency). Should probably
     # do this with numpy and scipy as well. 
     try:
-        import lmfit
-        from corvus.fit import fit
+        if corvus.abort.check_abort(None,'availableHandlers'): 
+            print('returning'); return []
+        if DEBUG: print('DEBUG4.6.1')
+        if find_spec('lmfit') is not None:
+            from corvus.fit import fit
         handlers = handlers + [fit]
+        if DEBUG: print('DEBUG4.6.2')
     except ImportError:
         print("Warning: lmfit not found. fit handler will be disabled.")
         pass
+    if DEBUG: print('DEBUG4.7')
     
     try:
-        import pymatgen
-        from corvus.PyMatGen import PyMatGen
-        handlers = handlers + [PyMatGen]
+        if DEBUG: print('DEBUG4.7.1')
+        if corvus.abort.check_abort(None,'availableHandlers'): 
+            print('returning'); return []
+        if DEBUG: print('DEBUG4.7.2')
+        if find_spec('pymatgen') is not None:
+            if DEBUG: print('DEBUG4.7.3')
+            from corvus.PyMatGen import PyMatGen
+            if DEBUG: print('DEBUG4.7.4')
+            handlers = handlers + [PyMatGen]
+            if DEBUG: print('DEBUG4.7.5')
     except ImportError:
         print("Warning: pymatgen not found. PyMatGen handler will be disabled.")
         pass
 
+    if DEBUG: print('DEBUG4.8')
 
 
     return handlers
@@ -321,6 +369,7 @@ def initializeSystem(config, system, doc):
 # before adding handlers to available handler list.
 def generateWorkflow(target, handlers, system, config, desc=''):
     from corvus.structures import Workflow
+    if DEBUG: print('DEBUG3')
 
 # Note FDV: Moving to top so this is available throughout
 # Define the available handlers by hand here
@@ -329,6 +378,7 @@ def generateWorkflow(target, handlers, system, config, desc=''):
     #availableHandlers = [Abinit, Dmdw]
 # From the handlers list we generate a mapping dictionary to identify the 
 # handlers requested by the user
+    if DEBUG: print('DEBUG4')
     availHandlers = availableHandlers()
     availableHandlers_map = { h.__name__:h for h in availHandlers }
 # Debug: FDV
@@ -386,6 +436,7 @@ def generateWorkflow(target, handlers, system, config, desc=''):
 #   workflow.sequence[0]({1:'a'},{1:'a'},berp)
 #   sys.exit()
 #-----------------------------------------------------------------------------
+    if DEBUG: print('DEBUG5')
     mainTargets = workflow.getRequiredInput()
     #print mainTargets
     #print "Done printing ri" # Debug JJK
@@ -401,6 +452,7 @@ def generateWorkflow(target, handlers, system, config, desc=''):
     # that target. 
     # First check what handlers can produce each target. There might be more than one for a 
     # given target.
+    if DEBUG: print('DEBUG6')
     for t in reversed(mainTargets):
        targets = set([t])
        
@@ -602,6 +654,7 @@ def generateAndRunWorkflow(config, system, targetList):
         config['xcIndex'] = i + config['xcIndexStart']
         #print config['xcIndex']
         
+        if corvus.abort.check_abort(None,'generateAndRunWorkflow'): return
         workflow.sequence[i].go(config, system)
         i += 1
 
@@ -612,9 +665,16 @@ def oneshot():
 #def oneshot(argv,sys_exit=True):
     import getopt, pickle, argparse
 
+    # Remove the abort signal file in case it was set previously.
+    try:
+        os.remove('abort_corvus.txt')
+    except:
+        pass
+
     # JJK - argv used to be passed to oneshot. Now we get the arguements
     #       directly here. Should change so that oneshot can be called
     #       as a function as well, but later. 
+
     argv = sys.argv
     #print(argv)
     setExit(True) # JJK - No arguments should be passed to oneshot,
@@ -732,7 +792,7 @@ def oneshot():
 # rather than the command line.
     if 'target_list' in list(system.keys()):
       targetList = system['target_list']
-      print(targetList)
+      #print(targetList)
     elif not helpOnly:
       print('Provide target properties or Workflow')
       exitOneshot()
@@ -766,8 +826,10 @@ def oneshot():
     elif not resume:
         # Create Workflow
         autodesc = 'Calculate ' + ', '.join(targetList[0])
-        print(targetList)
+        #print(targetList)
+        if DEBUG: print('DEBUG1')
         workflow = generateWorkflow(targetList, handlerList, system, config, desc=autodesc)
+        if DEBUG: print('DEBUG2')
         #if len(workflow.getRequiredInput()) > 1:
         print('')
         print('')
@@ -858,8 +920,19 @@ def oneshot():
                 pickle.dump(saveState, saveFile, pickle.HIGHEST_PROTOCOL)
         
         config['xcIndex'] = i + 1
+        if corvus.abort.check_abort(None,'oneshot'): return
         workflow.sequence[i].go(config, system)
         i += 1
+    
+    # Check if corvus was aborted.
+        # Remove the abort signal file in case it was set previously.
+    try:
+        os.remove('abort_corvus.txt')
+        print('Corvus was aborted. Output should not be used.')
+        return
+    except:
+        pass
+
     # Save completed state
     saveState['system'] = system
     with open(config['saveFile'], 'wb') as saveFile:
