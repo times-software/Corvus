@@ -51,7 +51,7 @@ implemented['exafs'] = {'type':'Exchange','out':['exafs'],'cost':1,
 implemented['xes'] = {'type':'Exchange','out':['xes'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
 
-implemented['feffRIXS'] = {'type':'Exchange','out':['feffRIXS'],'cost':1,
+implemented['rixs'] = {'type':'Exchange','out':['feffRIXS'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
 
 implemented['opcons'] = {'type':'Exchange','out':['opcons'],'cost':1,
