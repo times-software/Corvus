@@ -185,6 +185,7 @@ class helper(Handler):
                 data_pol = []
                 ipol = 1
                 UnicodeEncodeError = []
+                print('Summing XAS of all unique absorbers:')
                 while ipol <= 4:
                     en = []
                     mu = []
@@ -193,12 +194,14 @@ class helper(Handler):
                     weights = []
                     ndim=0
                     
-
                     for i,clust_elem in enumerate(cluster_array):
                         # get results from inputs.
                         #print(targetList[0][0])
                         #print(inputs[i])
                         weight = clust_elem[1]
+                        if ipol == 1:
+                           print('Absorber: ', clust_elem[3])
+                           print('weight ratio: ', clust_elem[1])
                         weights = weights + [weight]
                         #mu0 = mu0
                         totalWeight = totalWeight + weight
@@ -219,7 +222,7 @@ class helper(Handler):
                         
                     
                     weights = np.array(weights)/totalWeight
-                    if data.ndim == 2:     
+                    if data.ndim == 2:
                         en = np.array(en)
                         mu = np.array(mu)
 
