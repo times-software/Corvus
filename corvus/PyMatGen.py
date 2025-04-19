@@ -135,9 +135,15 @@ class PyMatGen(Handler):
             ipot = 1
             n_disord = 1
             cluster_array = []
+            abstype = []
             for inds in structure.equivalent_indices:
                 xnat = len(inds)
                 
+                # Here, redefine the absorber_types using regex. Take all species
+                # That start with the chemical symbols given in the input.
+                for key in structure.sites[inds[0]].species.as_dict().keys():
+                    for absorber in absorber_types:
+                        if absorber == re.sub('[^a-zA-Z]','',key): abstype.append(key)
                 for ind in inds:
                     structure.sites[ind].properties['itype'] = []
                     structure.sites[ind].properties['xnat']  = []
@@ -160,7 +166,7 @@ class PyMatGen(Handler):
                 ipot = ipot + i_spec
                 #print('ipot',ipot)
 
-
+            absorber_types = set(abstype)
             #exit() 
             #print(dir(structure.sites[0].species))
             #print(structure.sites[0].species.as_dict())
@@ -176,54 +182,56 @@ class PyMatGen(Handler):
                         #for key,value in structure.sites[inds[0]].species.as_dict().items():
                         #    species[re.sub('[^a-zA-Z]','',key)] = value
 
-                        if abs_symbol in structure.sites[inds[0]].species.as_dict():
-
-                            # Make a cluster around this absorber
-                            site_cluster = structure.get_neighbors(structure.sites[inds[0]],cluster_radius)            
-                            site_cluster = [structure.sites[inds[0]]] + site_cluster
-                            cluster = []
+                        if any(abs_symbol in spec for spec in structure.sites[inds[0]].species.as_dict().keys()):
+                        #if abs_symbol in structure.sites[inds[0]].species.as_dict():
+                            # loop over indices in equivalent indices.
+                            for ind in inds:
+                                # Make a cluster around this absorber
+                                site_cluster = structure.get_neighbors(structure.sites[ind],cluster_radius)            
+                                site_cluster = [structure.sites[ind]] + site_cluster
+                                cluster = []
                          
-                            iclust = 0
-                            for site in site_cluster:
-                                # Loop over all species at this site
-                                nspec = len(site.species.as_dict().keys())
-                                # Get total occupancy.
-                                tot_occ = 0.0
-                                #print(site)
-                                #print(site.properties)
-                                for occ in site.species.as_dict().values():
-                                    # Always put the absorbing atom in the cluster
-                                    if iclust == 0:
-                                        weight = weight*occ
-                                   
-                                        tot_occ = tot_occ + occ
-                                        if tot_occ > 1.0:
-                                            print('Total occupation in cif file for one site is greater than 1')
-                              
-                                occ_sum = 0.0
-                                rnd = np.random.uniform()
-                                i_spec = 0
-                                for spec_str,occ in site.species.as_dict().items():
-                                    #print(iclust,rnd,spec_str,occ_sum)
+                                iclust = 0
+                                for site in site_cluster:
+                                    # Loop over all species at this site
+                                    nspec = len(site.species.as_dict().keys())
+                                    # Get total occupancy.
+                                    tot_occ = 0.0
                                     #print(site)
-                                    # Always put the absorbing atom in the cluster
-                                    if spec_str == abs_symbol and iclust == 0:
-                                        cluster = cluster + [[spec_str] + site.coords.tolist() + [ site.properties['itype'] ] + [site.properties['xnat']]]
-                                        break
-                                    elif occ_sum < rnd <= occ + occ_sum:
-                                        cluster = cluster + [[spec_str] + site.coords.tolist() + [ site.properties['itype'][i_spec] ] + [site.properties['xnat'][i_spec]]]
-                                        #print(site.properties)
-                                        #print(cluster[-1])
-                                        #sys.stdin.readline()
-                                        
-                                    occ_sum = occ_sum + occ
-                                    i_spec += 1
-                            
-                                iclust = iclust + 1
+                                    #print(site.properties)
+                                    for occ in site.species.as_dict().values():
+                                        # Always put the absorbing atom in the cluster
+                                        if iclust == 0:
+                                            weight = weight*occ
+                                       
+                                            tot_occ = tot_occ + occ
+                                            if tot_occ > 1.0:
+                                                print('Total occupation in cif file for one site is greater than 1')
+                                  
+                                    occ_sum = 0.0
+                                    rnd = np.random.uniform()
+                                    i_spec = 0
+                                    for spec_str,occ in site.species.as_dict().items():
+                                        #print(iclust,rnd,spec_str,occ_sum)
+                                        #print(site)
+                                        # Always put the absorbing atom in the cluster
+                                        if spec_str == abs_symbol and iclust == 0:
+                                            cluster = cluster + [[spec_str] + site.coords.tolist() + [ site.properties['itype'] ] + [site.properties['xnat']]]
+                                            break
+                                        elif occ_sum < rnd <= occ + occ_sum:
+                                            cluster = cluster + [[spec_str] + site.coords.tolist() + [ site.properties['itype'][i_spec] ] + [site.properties['xnat'][i_spec]]]
+                                            #print(site.properties)
+                                            #print(cluster[-1])
+                                            #sys.stdin.readline()
+                                            
+                                        occ_sum = occ_sum + occ
+                                        i_spec += 1
                                 
-                            # cluster_array is a list of tuples, each with absorbing atom, associated cluster, and 
-                            # weighting (stoichiometry for example).
-                            cluster_array = cluster_array + [(1,weight,cluster)]
+                                    iclust = iclust + 1
+                                    
+                                # cluster_array is a list of tuples, each with absorbing atom, associated cluster, and 
+                                # weighting (stoichiometry for example).
+                                cluster_array = cluster_array + [(1,weight,cluster)]
                 i_disord = i_disord + 1        
             #print("Number of absorbers:", len(cluster_array))
             if(len(cluster_array) == 0):
