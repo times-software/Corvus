@@ -173,7 +173,11 @@ class helper(Handler):
                         xns=np.array(outputs[i][targetList[0][0]])
                         en0=xns[0]
                         mu0=xns[ipol]
-                        weight = clust_elem[1]
+                        if False:
+                           weight = clust_elem[1]
+                        else:
+                           weight = 1.0 # Make weight 1 (if polarization is requested).
+                        
                         weights = weights + [weight]
                         #mu0 = mu0
                         totalWeight = totalWeight + weight
