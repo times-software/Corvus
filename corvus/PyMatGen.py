@@ -144,7 +144,7 @@ class PyMatGen(Handler):
             #structure = parser.get_structures()[0]
             structure = input['mp.structure']
             #symprec=input['pymatgen.symprec'][0][0]
-            symprec=1.0e-6
+            symprec=0.01
             #angle_tolerance=input['pymatgen.angle_tolerance'][0][0]
             #sg_anal = SpacegroupAnalyzer(structure,symprec=symprec, angle_tolerance=angle_tolerance) 
             sg_anal = SpacegroupAnalyzer(structure,symprec=symprec) 
