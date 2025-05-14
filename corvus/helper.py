@@ -128,7 +128,7 @@ class helper(Handler):
                 if 'cfavg.max_configurations' in input and len(cluster_array) > 1:
                     # Use nmax randomly chosen configurations
                     totprocs = min(input['cfavg.max_configurations'][0][0],len(cluster_array))
-                    if 'cfavg.chose_random_absorbers' in input:
+                    if 'cfavg.choose_random_absorbers' in input:
                        absorbers=random.sample(range(1, len(cluster_array)), totprocs)
                        for iabs in absorbers:
                           new_cluster_array = [cluster_array[i] for i in absorbers]
