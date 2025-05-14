@@ -50,7 +50,8 @@ copy(str(Path('./corvutils/parsnip.corvus.config')),str(util_pth))
     #copy(str(Path('./corvutils/parsnip.corvus.config')),str(util_pth))
 #
 setuptools.setup(name='corvus',
-      version='1.0.9',
+      version='1.1.4',
+      python_requires='==3.12.5',
       description='Property-driven Scientific Workflow Manager',
       author='S. Story, F. D. Vila, J. J. Kas, S. D. Pemmaraju, J. J. Rehr',
       author_email='feff@uw.edu',
@@ -61,5 +62,5 @@ setuptools.setup(name='corvus',
       packages=setuptools.find_packages(),
       # J Kas - Moved corvus.conf to corvus/config since pip/setuptools don't like names that start with the module name?
       package_data={'corvutils':['parsnip.corvus.config','parsnip.corvus.formats'],'corvus':['config']},
-      install_requires=['lmfit','mp_api','pymatgen==2024.6.10','numpy<2.0'],
+      install_requires=['lmfit','mp_api','pymatgen==2024.9.17.1']
       )

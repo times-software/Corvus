@@ -1,4 +1,5 @@
 from corvus.structures import Handler, Exchange, Loop, Update
+from time import sleep
 import numpy as np
 import random
 from scipy.interpolate import RegularGridInterpolator as rgi
@@ -7,6 +8,7 @@ import os, sys, subprocess, shutil #, resource
 import math
 import pprint
 import copy
+from corvus.abort import check_abort
 #import mltp
 #try:
 #    import ray.util.multiprocessing as mltp
@@ -100,11 +102,12 @@ class helper(Handler):
 
     @staticmethod
     def run(config, input, output):
+        if check_abort(None,'helper.run'): return
         #print('Inside helper')
         from corvus.controls import generateAndRunWorkflow
         dir = config['xcDir']
-        if "multiprocessing.ncpu" in input:
-           ncpu = input["multiprocessing.ncpu"][0][0]
+        if "multiprocessing_ncpu" in input:
+           ncpu = input["multiprocessing_ncpu"][0][0]
         else:
            ncpu = mltp.cpu_count()
 
@@ -113,16 +116,10 @@ class helper(Handler):
             #print('Inside helper', output)
             if (target == 'cfavg'):
                 #Define the target of the average
-                targetList = input['cfavg.target']
+                targetList = input['cfavg_target']
 
                 cluster_array = input['cluster_array']
                 print("Number of absorbers:", len(cluster_array))
-                en = []
-                mu = []
-                dataNd = []
-                step = 1.e30
-                totalWeight = 0.0
-                weights = []
                 dirs=[]
                 
                 
@@ -146,7 +143,7 @@ class helper(Handler):
                 numdone=0
                 while totprocs > 0:
                     poolSize = min(ncpu,totprocs)
-                    #print("Pool size: ", poolSize)
+                    print("Using ", poolSize, ' processors.')
                     print("processes left to run: ", totprocs)
                     inputs = []
                     configs = []
@@ -165,8 +162,11 @@ class helper(Handler):
                         tLists = tLists + [targetList]
                         arguments = arguments + [(configs[i],inputs[i],targetList)]
                         #targetList = [['xanes']]
-                    pool = mltp.Pool(processes=poolSize)
-                    outputs = outputs + pool.starmap(multiproc_genAndRun,arguments)
+                    with mltp.Pool(processes=poolSize) as pool:
+                        poolout =  pool.starmap_async(multiproc_genAndRun,arguments)
+                        while not poolout.ready():
+                            sleep(1)
+                    outputs = outputs + poolout.get()
                     numdone = numdone + poolSize
                    
                     #print('Check: ', len(outputs), poolSize, totprocs)
@@ -182,72 +182,106 @@ class helper(Handler):
 
                 #for Prcss in tasks:
                 #    Prcss.join()
-
-                for i,clust_elem in enumerate(cluster_array):
-                    # get results from inputs.
-                    #print(targetList[0][0])
-                    #print(inputs[i])
-                    weight = clust_elem[1]
-                    weights = weights + [weight]
-                    #mu0 = mu0
-                    totalWeight = totalWeight + weight
-                    data = np.array(outputs[i][targetList[0][0]])
-                    if data.ndim == 2: # array of rows corresponding to set of 1d data 
-                       en0,mu0=data
-                       # Save in array of output.
-                       en = en + [en0]
-                       step = min(step,np.amin(en0[1:]-en0[:-1]))
-                       mu = mu + [mu0]
-                       #plt.plot(en,mu)
-                    elif data.ndim == 3: # 2d data like RIXS. Assummes first two indices are x and y.
-                       # Now reform data as a 2d ndarray
-                       dataNd = dataNd + [data]
-                       
-                     
-                   
-                weights = np.array(weights)
-                if data.ndim == 2:     
-                   en = np.array(en)
-                   mu = np.array(mu)
-
-                   # Make the common grid.
-                   emin=np.amin(en)
-                   emax=np.amax(en)
-                   egrid = np.arange(emin,emax,step)
-
-                   # Interpolate onto common grid.
-                   mu_interp = []
-
-                for i,clust_elem in enumerate(cluster_array):
+                mu_pol = []
+                data_pol = []
+                ipol = 1
+                UnicodeEncodeError = []
+                print('Summing XAS of all unique absorbers:')
+                while ipol <= 4:
+                    en = []
+                    mu = []
+                    step = 1.e30
+                    totalWeight = 0.0
+                    weights = []
+                    ndim=0
+                    
+                    for i,clust_elem in enumerate(cluster_array):
+                        # get results from inputs.
+                        #print(targetList[0][0])
+                        #print(inputs[i])
+                        weight = clust_elem[1]
+                        if ipol == 1:
+                           print('Absorber: ', clust_elem[3])
+                           print('weight ratio: ', clust_elem[1])
+                        weights = weights + [weight]
+                        #mu0 = mu0
+                        totalWeight = totalWeight + weight
+                        data = np.array(outputs[i][targetList[0][0]])
+                        ndim = data.ndim
+                        if data.ndim == 2: # array of rows corresponding to set of 1d data 
+                            en0 = data[0]
+                            mu0 = data[ipol]
+                            # Save in array of output.
+                            en = en + [en0]
+                            step = min(step,np.amin(en0[1:]-en0[:-1]))
+                            mu = mu + [mu0]
+                            #plt.plot(en,mu)
+                        elif data.ndim == 3: # 2d data like RIXS. Assummes first two indices are x and y.
+                            # Now reform data as a 2d ndarray
+                            dataNd = dataNd + [data]
+                        
+                        
+                    
+                    weights = np.array(weights)/totalWeight
                     if data.ndim == 2:
-                        # interpolate onto the common grid and add to total.
-                       
-                        mui = np.interp(egrid, en[i], mu[i], left = 0.0)
-                        mu_interp = mu_interp + [mui]
+                        en = np.array(en)
+                        mu = np.array(mu)
+
+                        # Make the common grid.
+                        emin=np.amin(en)
+                        emax=np.amax(en)
+                    if ipol == 1:
+                        step = max(step,0.01)
+                        egrid = np.arange(emin,emax,step)
+
+                    # Interpolate onto common grid.
+                    mu_interp = []
+
+                    for i,clust_elem in enumerate(cluster_array):
+                        if data.ndim == 2:
+                            # interpolate onto the common grid and add to total.
+                        
+                            mui = np.interp(egrid, en[i], mu[i], left = 0.0)
+                            mu_interp = mu_interp + [mui]
 
 
-                    elif data.ndim == 3:
-                        # interpolate onto common 2d grid - just use the first grid
-                        print('Adding contribution from absorber ', i)
-                        datai = rgi((dataNd[i][1,:,0],dataNd[i][0,0,:]),dataNd[i][2],method='linear', bounds_error=False,fill_value=0.0)
-                        if i == 0:
-                            data_tot = datai((dataNd[0][1],dataNd[0][0])).flatten()*weights[i]
-                        else:
-                            data_tot = data_tot + datai((dataNd[0][1],dataNd[0][0])).flatten()*weights[i]
+                        elif data.ndim == 3:
+                            # interpolate onto common 2d grid - just use the first grid
+                            print('Adding contribution from absorber ', i)
+                            datai = rgi((dataNd[i][1,:,0],dataNd[i][0,0,:]),dataNd[i][2],method='linear', bounds_error=False,fill_value=0.0)
+                            if i == 0:
+                                data_tot = datai((dataNd[0][1],dataNd[0][0])).flatten()*weights[i]
+                            else:
+                                data_tot = data_tot + datai((dataNd[0][1],dataNd[0][0])).flatten()*weights[i]
+             
 
-                if data.ndim == 2:                
-                    # Get average and standard deviation.
-                    weights = weights/totalWeight
-                    mu_avg,mu_stdev = weighted_avg_and_std(mu_interp, weights)
-                    np.savetxt(config['pathprefix'] + '.cfavg.' + targetList[0][0] + '.out',np.array([egrid,mu_avg,mu_stdev]).T)
-                    output['cfavg'] = np.array([egrid,mu_avg,mu_stdev]).tolist()
+                    if ndim == 2:
+                        # Get average and standard deviation.
+                        mu_avg,mu_stdev = weighted_avg_and_std(np.array(mu_interp), weights)
+                        mu_pol = mu_pol + [mu_avg]
+                        
+                    elif ndim == 3:
+                        data_pol = data_pol + [data_tot]
+                        break
+                    #print("mu_pol",mu_pol)
+                    #mu_avg,mu_stdev = weighted_avg_and_std(mu_interp)
+                    #mu_stdev = np.std(mu_interp,0)/totalWeight*len(cluster_array)
+                    ipol = ipol + 1
+                
+                if data.ndim == 2: 
+                    mu_pol = [egrid] + mu_pol 
+                    output['cfavg'] = np.array(mu_pol).tolist()
+                    #print(mu_pol[0])
+                    #print(mu_pol[1])              
+                    np.savetxt(config['pathprefix'] + '.cfavg.' + targetList[0][0] + '.out',np.array(mu_pol).T)
+                    
 
                 elif data.ndim == 3:
                     # Transform data for output
                     data_out = np.array([dataNd[0][0].flatten(),dataNd[0][1].flatten(),data_tot])
-                    output['cfavg'] = np.array(data_out).tolist()                    
+                    output['cfavg'] = np.array(data_out).tolist()
                     
-                    f = open(config['pathprefix'] + '.cfavg.' + targetList[0][0] + '.out', 'w')
+                    f = open(config['pathprefix'] + '.cfavg.' + targetList[0][0] + '.1.out', 'w')
                     i=0
                     nd = dataNd[0][0].shape[0]
                     print(nd)

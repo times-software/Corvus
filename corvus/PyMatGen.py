@@ -34,7 +34,7 @@ for s in subs(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_
 #                        'req':['cif_input'],'desc':'Calculate cell structure from cif file using cif2cell.'}
 
 implemented['mp.structure'] = {'type':'Exchange','out':['mp.structure'],'cost':0,
-                        'req':['mp.id|cif_input'],'desc':'Get cif file from material project id.'}
+                        'req':['mp_id|cif_input'],'desc':'Get cif file from material project id.'}
 implemented['cluster_array'] = {'type':'Exchange','out':['cluster_array'],'cost':0,
                         'req':['mp.structure'],'desc':'Calculate cluster from cif using pymatgen.'}
 implemented['supercell'] = {'type':'Exchange','out':['supercell'],'cost':0,
@@ -140,11 +140,13 @@ class PyMatGen(Handler):
         #print("Inside PyMatGen")
         site_tol = 1.0e-6
         if 'cluster_array' in output:
+
+            #print("Number of absorbers:", len(cluster_array))
             #parser = CifParser(input.get("cif_input")[0][0],site_tolerance=site_tol)
             #structure = parser.get_structures()[0]
             structure = input['mp.structure']
             #symprec=input['pymatgen.symprec'][0][0]
-            symprec=0.01
+            symprec=0.1
             #angle_tolerance=input['pymatgen.angle_tolerance'][0][0]
             #sg_anal = SpacegroupAnalyzer(structure,symprec=symprec, angle_tolerance=angle_tolerance) 
             sg_anal = SpacegroupAnalyzer(structure,symprec=symprec) 
@@ -159,15 +161,20 @@ class PyMatGen(Handler):
             getLocalDensity(structure,cluster_radius)
             with open('densities.dat', 'w') as fden:
                for site in structure.sites:
-                  print('Pt',site.coords.tolist()[0],site.coords.tolist()[1],site.coords.tolist()[2],site.properties["local_density"],file=fden)
+                  print(site.label,site.coords.tolist()[0],site.coords.tolist()[1],site.coords.tolist()[2],site.properties["local_density"],file=fden)
             
             #exit()
 
             #print(input['absorbing_atom_type'])
             if "absorbing_atom_type" in input: # Will set up calculation of all unique absorbers in unit cell.
                 absorber_types=[input["absorbing_atom_type"][0][0]]
+                absorber_spec = 1
+            elif "absorbing_atom_by_label" in input: # Will set up calculation for atoms with label that starts with string.
+                absorber_labels = [input["absorbing_atom_by_label"][0][0]]
+                absorber_spec = 2
             else:
                 # Use all elements in crystal
+                absorber_spec = 1
                 absorber_types=structure.symbol_set
 
             #print("Absorber types:", absorber_types)
@@ -176,15 +183,24 @@ class PyMatGen(Handler):
             n_disord = 1
             cluster_array = []
             abstype = []
+            # Get index of all absorbers
+            abs_inds = []
             for inds in structure.equivalent_indices:
                 xnat = len(inds)
-                #print(structure.sites[inds[0]])
-                # Here, redefine the absorber_types using regex. Take all species
-                # That start with the chemical symbols given in the input.
-                for key in structure.sites[inds[0]].species.as_dict().keys():
-                    for absorber in absorber_types:
-                        if absorber == re.sub('[^a-zA-Z]','',key): abstype.append(key)
-
+                print('inds', inds)
+                if absorber_spec == 1:
+                   for key in structure.sites[inds[0]].species.as_dict().keys():
+                        for absorber in absorber_types:
+                            if absorber == re.sub('[^a-zA-Z]','',key): abs_inds = abs_inds + inds
+                elif absorber_spec == 2:
+                    for abs_label in absorber_labels:
+                        #print(structure.sites[inds[0]].label,abs_label,inds)
+                        if structure.sites[inds[0]].label.startswith(abs_label): abs_inds = abs_inds + inds
+                
+                    #elif absorber_spec == 2:
+                    #    for absorber in absorber_types_by_label:
+                    #        absorber_inds = []
+                    #        for site in structure.sites
                 for ind in inds:
                     mag = 'magmom' in structure.sites[ind].properties
                     structure.sites[ind].properties['itype'] = []
@@ -219,6 +235,8 @@ class PyMatGen(Handler):
                 #print('ipot',ipot)
            
             absorber_types = set(abstype)
+            #print(abs_inds)
+            #exit()
             #print(absorber_types)
             #exit() 
             #print(dir(structure.sites[0].species))
@@ -227,15 +245,18 @@ class PyMatGen(Handler):
             #print('n_disord:', n_disord)
             while i_disord <= n_disord:
                 for inds in structure.equivalent_indices:
-                    weight = len(inds)
+                    weight = 1 #len(inds)
                     #print(structure.sites[inds[0]].species_string)
                     species = {}
-                    for abs_symbol in absorber_types:
+                    #for abs_symbol in absorber_types:
+                    for abs_ind in abs_inds:
                         # remove alphabetical characters from keys in the dictionary.
                         #for key,value in structure.sites[inds[0]].species.as_dict().items():
                         #    species[re.sub('[^a-zA-Z]','',key)] = value
                         #print(structure.sites[inds[0]].species.as_dict())
-                        if any(abs_symbol in spec for spec in structure.sites[inds[0]].species.as_dict().keys()):
+                        #if any(abs_symbol in spec for spec in structure.sites[inds[0]].species.as_dict().keys()):
+                        #print(abs_ind,inds)
+                        if abs_ind in inds:
                         #if abs_symbol in structure.sites[inds[0]].species.as_dict():
 
                             # Make a cluster around this absorber
@@ -267,6 +288,7 @@ class PyMatGen(Handler):
                                     #print(iclust,rnd,spec_str,occ_sum)
                                     #print(site)
                                     # Always put the absorbing atom in the cluster
+                                    if absorber_spec == 2: abs_symbol = spec_str 
                                     if spec_str == abs_symbol and iclust == 0:
                                         #print('Magnetic moment of absorber:', site.properties.get('magmom'))
                                         #exit()
@@ -300,12 +322,9 @@ class PyMatGen(Handler):
                             # weighting (stoichiometry for example).
                             cluster_array = cluster_array + [(1,weight,cluster,label)]
                 i_disord = i_disord + 1        
-            print("Number of absorbers:", len(cluster_array))
-            #print(cluster_array[0])
-            #exit()
+
             if(len(cluster_array) == 0):
-               print("No absorbing atoms of types", absorber_types)
-               print("found.")
+               print("No absorbing atoms found.")
                exit() 
             output['cluster_array'] = cluster_array
             #print("CLUSTER ARRAY")
@@ -384,12 +403,12 @@ class PyMatGen(Handler):
             # just go directly from the mp structure. However, we need to be able to have
             # or operators available in requiredInput rather than just and operators.
             # Need to add inputs: mp_id, mp_api_key
-            if 'mp.id' in input:
-                mpr = MPRester(input['mp.apikey'][0][0])
-                output['mp.structure'] = mpr.get_structure_by_material_id(input["mp.id"][0][0])
-                output['mp.structure'].to(filename=input["mp.id"][0][0] + ".cif")
+            if 'mp_id' in input:
+                mpr = MPRester(input['mp_apikey'][0][0])
+                output['mp.structure'] = mpr.get_structure_by_material_id(input["mp_id"][0][0])
+                output['mp.structure'].to(filename=input["mp_id"][0][0] + ".cif")
             elif 'cif_input' in input:
-                parser = CifParser(input.get("cif_input")[0][0])
+                parser = CifParser(input.get("cif_input"))
                 # Only take first structure for now.
                 output['mp.structure'] = parser.parse_structures()[0]
     

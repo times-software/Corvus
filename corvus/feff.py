@@ -1,8 +1,10 @@
 from corvus.structures import Handler, Exchange, Loop, Update
+from corvus.abort import check_abort
 import corvutils.pyparsing as pp
 import os, sys, subprocess, shutil #, resource
 import re
 import numpy as np
+#from scipy.interpolate import interp1d
 #from CifFile import ReadCif
 #from cif2cell.uctools import *
 
@@ -49,7 +51,7 @@ implemented['exafs'] = {'type':'Exchange','out':['exafs'],'cost':1,
 implemented['xes'] = {'type':'Exchange','out':['xes'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
 
-implemented['feffRIXS'] = {'type':'Exchange','out':['feffRIXS'],'cost':1,
+implemented['rixs'] = {'type':'Exchange','out':['feffRIXS'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
 
 implemented['opcons'] = {'type':'Exchange','out':['opcons'],'cost':1,
@@ -168,6 +170,9 @@ class Feff(Handler):
         non_feff_cards = ["feff.mpi", "feff.potentials.spin", "feff.equivalence.nmax", "feff.equivalence"]
         feffInput = {key:input[key] for key in input if (key.startswith('feff.') and (not key.startswith(tuple(non_feff_cards))))}
         
+        # Set polarization vectors to calculate.
+        pols = input['polarization']
+
         # Generate any data that is needed from generic input and populate feffInput with
         # global data (needed for all feff runs.)
         if 'feff.target' in input or 'cluster' not in input: 
@@ -403,52 +408,76 @@ class Feff(Handler):
 
             elif (target == 'xanes'):
                 # Loop over edges. For now just run in the same directory. Should change this later.
+                xanes_arr = []
                 for i,edge in enumerate(input['feff.edge'][0]):
                     feffInput['feff.edge'] = [[edge]]
                     # Set output and error files
                     outFile=os.path.join(dir,'xmu.dat')
-                    if not (os.path.exists(outFile) and input['usesaved'][0][0]):
-                        with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
-                    
-                            # Write input file for FEFF.
-                            writeXANESInput(feffInput,inpf)
-                            
-                            # Loop over executable: This is specific to feff. Other codes
-                            # will more likely have only one executable. Here I am running
-                            # rdinp again since writeSCFInput may have different cards than
+                    with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                
+                        # Write input file for FEFF.
+                        # Add polarization and loop over direction.
+                        ipol = 1
+                        for pol in pols:
+                            savedfl = os.path.join(dir,'xmu_' + edge + '_' + str(ipol) + '.dat')
+                            if not (os.path.exists(savedfl) and input['usesaved'][0][0]):
+                                if 'feff.polarization' not in input: 
+                                    if abs(pol[0])+abs(pol[1])+abs(pol[2]) == 0:
+                                        if 'feff.polarization' in feffInput: del feffInput['feff.polarization']
+                                    else:
+                                        feffInput['feff.polarization'] = [pol]
 
-                            execs = ['rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
-                        
-                            for exe in execs:
-                                if 'feff.mpi.cmd' in input:
-                                    executable = [input.get('feff.mpi.cmd')[0][0] + win_exe]
-                                    args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe) + win_exe]
+                                writeXANESInput(feffInput,inpf)
+
+                                # Loop over executable: This is specific to feff. Other codes
+                                # will more likely have only one executable. 
+                                if ipol == 1:
+                                    execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                                 else:
-                                    executable = [os.path.join(feffdir,exe)]
-                                    args = ['']
+                                    execs = ['rdinp','xsph','mkgtr','path','genfmt','ff2x','sfconv']
 
-                                runExecutable('',dir,executable,args,out,err)
+                                for exe in execs:
+                                    if 'feff.mpi.cmd' in input:
+                                        executable = input.get('feff.mpi.cmd')[0]
+                                        args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                                    else:
+                                        executable = [os.path.join(feffdir,exe)]
+                                        args = ['']
+
+                                    runExecutable('',dir,executable,args,out,err)
+                                
+                                shutil.copyfile(outFile, savedfl)
+                            
+                            if ipol == 1:
+                                xanes = np.loadtxt(savedfl,usecols = (0,3)).T
+                            else: 
+                                xanes = np.append(xanes,[np.loadtxt(savedfl,usecols = (3)).T],axis=0)
 
 
-                    w,xmu = np.loadtxt(outFile,usecols = (0,3)).T
 
-                    if i==0:
-                        xmu_arr = [xmu]
-                        w_arr = [w]
-                    else:
-                        xmu_arr = xmu_arr + [xmu]
-                        w_arr = w_arr + [w]
-                        
-                # Now combine energy grids, interpolate files, and sum.
-                wtot = np.unique(np.append(w_arr[0],w_arr[1:]))
-                xmutot = np.zeros_like(wtot)
-                xmuterp_arr = []
-                for i,xmu_elem in enumerate(xmu_arr):
-                    xmuterp_arr = xmuterp_arr + [np.interp(wtot,w_arr[i],xmu_elem)]
-                    xmutot = xmutot + np.interp(wtot,w_arr[i],xmu_elem)
+                            ipol = ipol + 1
 
-                #output[target] = np.array([wtot,xmutot] + xmuterp_arr).tolist()
-                output[target] = np.array([wtot,xmutot]).tolist()
+                    xavg = np.average(xanes[1:],axis=0)
+                    xanes = np.append(xanes,[xavg],axis=0)
+                    xanes_arr = xanes_arr + [xanes]
+
+                # First combind the energy grids.
+                wtot = []
+                for xns in xanes_arr: 
+                    #print("xns=",xns[0])
+                    wtot = np.append(wtot,xns[0])
+                #print('wtot=',wtot) 
+                wtot = np.unique(wtot)
+
+                xanes_interp = []
+                for xns in xanes_arr:
+                    xns_interp = []
+                    for xpol in xns[1:]:
+                        xns_interp = xns_interp + [np.interp(wtot,xns[0],xpol,left=0.0)]
+                    xanes_interp = xanes_interp + [xns_interp]
+                
+                xastot = np.sum(xanes_interp,axis=0)
+                output[target] = [wtot.tolist()] + xastot.tolist()
                 #print output[target]
 
             elif (target == 'exafs'):
@@ -503,32 +532,72 @@ class Feff(Handler):
 
 
             elif (target == 'xes'):
-                # Set output and error files
-                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                # Loop over edges. For now just run in the same directory. Should change this later.
+                xanes_arr = []
+                for i,edge in enumerate(input['feff.edge'][0]):
+                    feffInput['feff.edge'] = [[edge]]
+                    # Set output and error files
+                    outFile=os.path.join(dir,'xmu.dat')
+                    with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                
+                        # Write input file for FEFF.
+                        # Add polarization and loop over direction.
 
-                    # Write input file for FEFF.
-                    writeXESInput(feffInput,inpf)
+                        ipol = 1
+                        for pol in pols:
+                            savedfl = os.path.join(dir,'xmu_' + edge + '_' + str(ipol) + '.dat')
+                            if not (os.path.exists(savedfl) and input['usesaved'][0][0]):
+                                if 'feff.polarization' not in input: feffInput['feff.polarization'] = [pol]
+                                writeXESInput(feffInput,inpf)
 
-                    # Loop over executable: This is specific to feff. Other codes
-                    # will more likely have only one executable. 
-                    execs = ['rdinp','atomic','pot','ldos','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
-                    for exe in execs:
-                        if 'feff.mpi.cmd' in input:
-                            executable = input.get('feff.mpi.cmd')[0]
-                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
-                        else:
-                            executable = [os.path.join(feffdir,exe)]
-                            args = ['']
+                                # Loop over executable: This is specific to feff. Other codes
+                                # will more likely have only one executable. 
+                                if ipol == 1:
+                                    execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                                else:
+                                    execs = ['rdinp','xsph','mkgtr','path','genfmt','ff2x','sfconv']
 
-                        runExecutable('',dir,executable,args,out,err)
+                                for exe in execs:
+                                    if 'feff.mpi.cmd' in input:
+                                        executable = input.get('feff.mpi.cmd')[0]
+                                        args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                                    else:
+                                        executable = [os.path.join(feffdir,exe)]
+                                        args = ['']
+
+                                    runExecutable('',dir,executable,args,out,err)
+                                
+                                shutil.copyfile(outFile, savedfl)
+                            
+                            if ipol == 1:
+                                xanes = np.loadtxt(savedfl,usecols = (0,3)).T
+                            else: 
+                                xanes = np.append(xanes,[np.loadtxt(savedfl,usecols = (3)).T],axis=0)
 
 
-                # For this case, I am only passing the directory for now so
-                # that other executables in FEFF can use the data.
 
-                outFile=os.path.join(dir,'xmu.dat')
-                output[target] = np.loadtxt(outFile,usecols = (0,3)).T.tolist()
+                            ipol = ipol + 1
 
+                    xavg = np.average(xanes[1:],axis=0)
+                    xanes = np.append(xanes,[xavg],axis=0)
+                    xanes_arr = xanes_arr + [xanes]
+
+                # First combind the energy grids.
+                wtot = []
+                for xns in xanes_arr: wtot.append(xns[0]) 
+                wtot = np.unique(wtot)
+
+                xanes_interp = []
+                for xns in xanes_arr:
+                    xns_interp = []
+                    for xpol in xns[1:]:
+                        xns_interp = xns_interp + [np.interp(wtot,xns[0],xpol,left=0.0)]
+                    xanes_interp = xanes_interp + [xns_interp]
+                
+                xastot = np.sum(xanes_interp,axis=0)
+                output[target] = [wtot.tolist()] + xastot.tolist()
+                #print output[target]
+                    
             elif (target == 'feffRIXS'):
                 # For RIXS, need to run multiple times as follows.
                 
@@ -1304,8 +1373,27 @@ def runExecutable(execDir,workDir,executable, args,out,err):
     #       2) Send output directly to a file. This also works, but you can't see what the 
     #          subprocess is doing. For a long-running process, this is not very satisfactory. 
     #       For now, I will go with 1)
+    try:
+        f = open('abort_corvus.txt','r')
+        line = f.readlines()[0].strip()
+        f.close()
+        if line == 'True':
+            return
+    except:
+        pass
+
     p = subprocess.Popen(execList, cwd=workDir, encoding='utf8')
-    p.wait()
+    while p.poll() is None:
+        try:
+            f = open('abort_corvus.txt','r')
+            line = f.readlines()[0].strip()
+            f.close()
+            if line == 'True':
+                p.kill()
+                return
+        except:
+            pass
+
     #p = subprocess.run(execList, cwd=workDir, capture_output=True, encoding='utf8')
     #p = subprocess.Popen(execList, cwd=workDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf8')
     #while True:
@@ -1423,17 +1511,26 @@ def getFeffAtomsFromCluster(input):
         atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
         equivalence = input.get('feff.equivalence')[0][0]
         if len(atoms[0]) >= 5 and equivalence == 1:
-            # Use itype from user
+            # Use itype and mag mom.
             feffAtoms = []
             feffAtoms.append([0.0, 0.0, 0.0, 0, 0.0])
-            for atm in atoms:
-                #print(atm)
-                feffAtom = atm[1:3]
-                feffAtom = [ e - float(input['cluster'][absorber][i+1]) for i,e in enumerate(atm[1:4]) ]
-                feffAtom.append(atm[4])
-                feffAtom.append(np.linalg.norm(np.array(atm[1:4]) - np.array(input['cluster'][absorber][1:4])))
-                feffAtoms.append(feffAtom)
+            if 'feff.spin' in input:
+                uniqueAtoms = sorted(list(set([ (x[0],x[4],x[5],x[6]) for x in atoms ])),key=lambda x: x[1])
+            else:
+                uniqueAtoms = sorted(list(set([ (x[0],x[4],x[5], 0.0) for x in atoms ])),key=lambda x: x[1])
 
+            for atm in atoms:
+                for ipot,uatm in enumerate(uniqueAtoms):
+                    if 'feff.spin' in input:
+                        test = atm[4] == uatm[1] and atm[6] == uatm[3]
+                    else:
+                        test = atm[4] == uatm[1]
+                    if test:
+                        #feffAtom = atm[1:3]
+                        feffAtom = [ e - float(input['cluster'][absorber][i+1]) for i,e in enumerate(atm[1:4]) ]
+                        feffAtom.append(ipot+1)
+                        feffAtom.append(np.linalg.norm(np.array(atm[1:4]) - np.array(input['cluster'][absorber][1:4])))
+                        feffAtoms.append(feffAtom)
         elif len(atoms[0]) >= 7 and equivalence == 2:
             # Use local density to define potentials.
             # Unique atoms set by Z and local density, with density binned into equivalence.nmax bins.
@@ -1452,7 +1549,7 @@ def getFeffAtomsFromCluster(input):
                         feffAtom.append(atm[8])
                         feffAtoms.append(feffAtom)
                        
-        elif equivalence == 3:
+        elif equivalence == 3: # not functional yes
             if len(atoms[0]) >= 6:
                 uniqueAtoms = sorted(list(set([ (e[0], np.linalg.norm(np.array(e[1:4]) - np.array(input['cluster'][absorber][1:4])),e[6]) for e in atoms ])),key = lambda x: x[1])
             else:
@@ -1512,6 +1609,9 @@ def getFeffAtomsFromCluster(input):
 
 def getFeffPotentialsFromCluster(input):
     absorber = input['absorbing_atom'][0][0] - 1
+    #for at in input['cluster']:
+    #   print(at[4], at[6], at[0])
+    #sys.exit()
     atoms = [x for i,x in enumerate(input['cluster']) if i!=absorber]
     abs_symb = re.sub('[^a-zA-Z]','',input['cluster'][absorber][0])
 
@@ -1526,13 +1626,18 @@ def getFeffPotentialsFromCluster(input):
         # Include spin now.
         #for atm in atoms:
         #   print(atm)
-        uniqueAtoms = sorted(list(set([ (x[0],x[4],x[5],x[6]) for x in atoms ])),key=lambda x: x[1])
+        if 'feff.spin' in input:
+            uniqueAtoms = sorted(list(set([ (x[0],x[4],x[5],x[6]) for x in atoms ])),key=lambda x: x[1])
+        else: 
+            uniqueAtoms = sorted(list(set([ (x[0],x[4],x[5],0.0) for x in atoms ])),key=lambda x: x[1])
+
         feffPots = [[]]
         feffPots[0] = [0, ptable[abs_symb]['number'], input['cluster'][absorber][0], lfms1, lfms2, 0.01, input['cluster'][absorber][6]]
         for i,atm in enumerate(uniqueAtoms):
             atm_symb=re.sub('[^a-zA-Z]','',atm[0])
             xnat = atm[2]
             spin = atm[3]
+
             #feffPots.append([atm[1], int(ptable[atm[0]]['number']), atm[0], lfms1, lfms2, xnat ])
             feffPots.append([i+1, int(ptable[atm_symb]['number']), atm[0], lfms1, lfms2, xnat, spin ])
     elif len(atoms[0]) == 6 and equivalence == 1:
