@@ -421,7 +421,12 @@ class Feff(Handler):
                         for pol in pols:
                             savedfl = os.path.join(dir,'xmu_' + edge + '_' + str(ipol) + '.dat')
                             if not (os.path.exists(savedfl) and input['usesaved'][0][0]):
-                                if 'feff.polarization' not in input: feffInput['feff.polarization'] = [pol]
+                                if 'feff.polarization' not in input: 
+                                    if abs(pol[0])+abs(pol[1])+abs(pol[2]) == 0:
+                                        if 'feff.polarization' in feffInput: del feffInput['feff.polarization']
+                                    else:
+                                        feffInput['feff.polarization'] = [pol]
+
                                 writeXANESInput(feffInput,inpf)
 
                                 # Loop over executable: This is specific to feff. Other codes
