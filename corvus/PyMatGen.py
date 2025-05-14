@@ -168,8 +168,13 @@ class PyMatGen(Handler):
             #print(input['absorbing_atom_type'])
             if "absorbing_atom_type" in input: # Will set up calculation of all unique absorbers in unit cell.
                 absorber_types=[input["absorbing_atom_type"][0][0]]
+                absorber_spec = 1
+            elif "absorbing_atom_by_label" in input: # Will set up calculation for atoms with label that starts with string.
+                absorber_labels = [input["absorbing_atom_by_label"][0][0]]
+                absorber_spec = 2
             else:
                 # Use all elements in crystal
+                absorber_spec = 1
                 absorber_types=structure.symbol_set
 
             #print("Absorber types:", absorber_types)
@@ -178,15 +183,24 @@ class PyMatGen(Handler):
             n_disord = 1
             cluster_array = []
             abstype = []
+            # Get index of all absorbers
+            abs_inds = []
             for inds in structure.equivalent_indices:
                 xnat = len(inds)
-                #print(structure.sites[inds[0]])
-                # Here, redefine the absorber_types using regex. Take all species
-                # That start with the chemical symbols given in the input.
-                for key in structure.sites[inds[0]].species.as_dict().keys():
-                    for absorber in absorber_types:
-                        if absorber == re.sub('[^a-zA-Z]','',key): abstype.append(key)
-
+                print('inds', inds)
+                if absorber_spec == 1:
+                   for key in structure.sites[inds[0]].species.as_dict().keys():
+                        for absorber in absorber_types:
+                            if absorber == re.sub('[^a-zA-Z]','',key): abs_inds = abs_inds + inds
+                elif absorber_spec == 2:
+                    for abs_label in absorber_labels:
+                        #print(structure.sites[inds[0]].label,abs_label,inds)
+                        if structure.sites[inds[0]].label.startswith(abs_label): abs_inds = abs_inds + inds
+                
+                    #elif absorber_spec == 2:
+                    #    for absorber in absorber_types_by_label:
+                    #        absorber_inds = []
+                    #        for site in structure.sites
                 for ind in inds:
                     mag = 'magmom' in structure.sites[ind].properties
                     structure.sites[ind].properties['itype'] = []
@@ -221,6 +235,8 @@ class PyMatGen(Handler):
                 #print('ipot',ipot)
            
             absorber_types = set(abstype)
+            #print(abs_inds)
+            #exit()
             #print(absorber_types)
             #exit() 
             #print(dir(structure.sites[0].species))
@@ -229,15 +245,18 @@ class PyMatGen(Handler):
             #print('n_disord:', n_disord)
             while i_disord <= n_disord:
                 for inds in structure.equivalent_indices:
-                    weight = len(inds)
+                    weight = 1 #len(inds)
                     #print(structure.sites[inds[0]].species_string)
                     species = {}
-                    for abs_symbol in absorber_types:
+                    #for abs_symbol in absorber_types:
+                    for abs_ind in abs_inds:
                         # remove alphabetical characters from keys in the dictionary.
                         #for key,value in structure.sites[inds[0]].species.as_dict().items():
                         #    species[re.sub('[^a-zA-Z]','',key)] = value
                         #print(structure.sites[inds[0]].species.as_dict())
-                        if any(abs_symbol in spec for spec in structure.sites[inds[0]].species.as_dict().keys()):
+                        #if any(abs_symbol in spec for spec in structure.sites[inds[0]].species.as_dict().keys()):
+                        #print(abs_ind,inds)
+                        if abs_ind in inds:
                         #if abs_symbol in structure.sites[inds[0]].species.as_dict():
 
                             # Make a cluster around this absorber
@@ -269,6 +288,7 @@ class PyMatGen(Handler):
                                     #print(iclust,rnd,spec_str,occ_sum)
                                     #print(site)
                                     # Always put the absorbing atom in the cluster
+                                    if absorber_spec == 2: abs_symbol = spec_str 
                                     if spec_str == abs_symbol and iclust == 0:
                                         #print('Magnetic moment of absorber:', site.properties.get('magmom'))
                                         #exit()
@@ -304,8 +324,7 @@ class PyMatGen(Handler):
                 i_disord = i_disord + 1        
 
             if(len(cluster_array) == 0):
-               print("No absorbing atoms of types", absorber_types)
-               print("found.")
+               print("No absorbing atoms found.")
                exit() 
             output['cluster_array'] = cluster_array
             #print("CLUSTER ARRAY")
