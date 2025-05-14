@@ -161,7 +161,7 @@ class PyMatGen(Handler):
             getLocalDensity(structure,cluster_radius)
             with open('densities.dat', 'w') as fden:
                for site in structure.sites:
-                  print('Pt',site.coords.tolist()[0],site.coords.tolist()[1],site.coords.tolist()[2],site.properties["local_density"],file=fden)
+                  print(site.label,site.coords.tolist()[0],site.coords.tolist()[1],site.coords.tolist()[2],site.properties["local_density"],file=fden)
             
             #exit()
 
