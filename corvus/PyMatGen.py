@@ -122,7 +122,9 @@ class PyMatGen(Handler):
             #angle_tolerance=input['pymatgen.angle_tolerance'][0][0]
             #sg_anal = SpacegroupAnalyzer(structure,symprec=symprec, angle_tolerance=angle_tolerance) 
             sg_anal = SpacegroupAnalyzer(structure,symprec=symprec) 
-            structure = sg_anal.get_symmetrized_structure()
+            conventional_structure = sg_anal.get_conventional_standard_structure()
+            sg_anal2 = SpacegroupAnalyzer(conventional_structure,symprec=symprec) 
+            structure = sg_anal2.get_symmetrized_structure()
             #print(input['absorbing_atom_type'])
             if "absorbing_atom_type" in input: # Will set up calculation of all unique absorbers in unit cell.
                 absorber_types=[input["absorbing_atom_type"][0][0]]
