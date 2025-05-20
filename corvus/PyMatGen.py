@@ -3,6 +3,7 @@ import corvutils.pyparsing as pp
 import os, sys, subprocess, shutil #, resource
 import re
 import numpy as np
+import json
 # Debug: FDV
 import pprint
 
@@ -241,6 +242,8 @@ class PyMatGen(Handler):
                print("found.")
                exit() 
             output['cluster_array'] = cluster_array
+            with open('cluster_array.json','w') as file:
+                json.dump(cluster_array,file)
 
         elif set(output.keys()).issubset(set(['supercell', 'cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc', 'number_density'])):
         #elif 'supercell' in output:
