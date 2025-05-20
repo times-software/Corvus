@@ -177,7 +177,7 @@ class PyMatGen(Handler):
             cluster_radius = input['clusterradius'][0][0]
             while i_disord <= n_disord:
                 for inds in structure.equivalent_indices:
-                    weight = len(inds)
+                    weight = 1.0 #len(inds)
                     #print(structure.sites[inds[0]].species_string)
                     species = {}
                     for abs_symbol in absorber_types:
