@@ -123,9 +123,9 @@ class PyMatGen(Handler):
             #angle_tolerance=input['pymatgen.angle_tolerance'][0][0]
             #sg_anal = SpacegroupAnalyzer(structure,symprec=symprec, angle_tolerance=angle_tolerance) 
             sg_anal = SpacegroupAnalyzer(structure,symprec=symprec) 
-            conventional_structure = sg_anal.get_conventional_standard_structure()
-            sg_anal2 = SpacegroupAnalyzer(conventional_structure,symprec=symprec) 
-            structure = sg_anal2.get_symmetrized_structure()
+            #conventional_structure = sg_anal.get_conventional_standard_structure()
+            #sg_anal2 = SpacegroupAnalyzer(conventional_structure,symprec=symprec) 
+            structure = sg_anal.get_symmetrized_structure()
             #print(input['absorbing_atom_type'])
             if "absorbing_atom_type" in input: # Will set up calculation of all unique absorbers in unit cell.
                 absorber_types=[input["absorbing_atom_type"][0][0]]
@@ -219,10 +219,13 @@ class PyMatGen(Handler):
                                         #print(site)
                                         # Always put the absorbing atom in the cluster
                                         if spec_str == abs_symbol and iclust == 0:
-                                            cluster = cluster + [[spec_str] + site.coords.tolist() + [ site.properties['itype'] ] + [site.properties['xnat']]]
+                                            abs_coord = np.array(site.coords.tolist())
+                                            cluster = cluster + [[spec_str] + np.subtract(np.array(site.coords.tolist()),abs_coord).tolist() + [ site.properties['itype'] ] + [site.properties['xnat']] + [0.0]]
                                             break
                                         elif occ_sum < rnd <= occ + occ_sum:
-                                            cluster = cluster + [[spec_str] + site.coords.tolist() + [ site.properties['itype'][i_spec] ] + [site.properties['xnat'][i_spec]]]
+                                            coord = np.subtract(np.array(site.coords.tolist()),abs_coord)
+                                            dist = np.linalg.norm(coord)
+                                            cluster = cluster + [[spec_str] + coord.tolist() + [ site.properties['itype'][i_spec] ] + [site.properties['xnat'][i_spec]] + [dist]]
                                             #print(site.properties)
                                             #print(cluster[-1])
                                             #sys.stdin.readline()
@@ -234,6 +237,7 @@ class PyMatGen(Handler):
                                     
                                 # cluster_array is a list of tuples, each with absorbing atom, associated cluster, and 
                                 # weighting (stoichiometry for example).
+                                cluster = sorted(cluster, key=lambda x: x[6])
                                 cluster_array = cluster_array + [(1,weight,cluster)]
                 i_disord = i_disord + 1        
             #print("Number of absorbers:", len(cluster_array))
