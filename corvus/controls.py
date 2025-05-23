@@ -942,6 +942,8 @@ def oneshot():
     for token in workflow.target:
         if system[token] is not None:
             prettyprint(token, config, system)
+        elif system['write_input_only']:
+            printAndExit('Input files were written. No calculations were performed.')
         else: 
             printAndExit('Error: target [' + token + '] not produced')
 

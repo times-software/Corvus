@@ -183,12 +183,18 @@ class Feff(Handler):
                 if 'feff.reciprocal' not in input:
                     feffInput['feff.real'] = [[True]]
                 
-
         if 'cluster' in input:
             atoms = getFeffAtomsFromCluster(input)
             setInput(feffInput,'feff.atoms',atoms)
             potentials = getFeffPotentialsFromCluster(input)
             setInput(feffInput,'feff.potentials',potentials)
+            folp = set_overlap(potentials,input)
+            if folp is not None: feffInput['feff.folp'] = folp
+            
+
+        #print('folp input')
+        #print(feffInput['feff.folp'])
+        #exit()
            
          
         # Give potentials extra field if spins are defined
@@ -241,6 +247,9 @@ class Feff(Handler):
         # Set directory for this exchange
         dir = config['xcDir']
         
+        # Write only the input without calculations?
+        write_input_only = input['write_input_only'][0][0]
+
         # Set input file
         inpf = os.path.join(dir, 'feff.inp')
         # Loop over targets in output. Not sure if there will ever be more than one output target here.
@@ -428,6 +437,7 @@ class Feff(Handler):
                                         feffInput['feff.polarization'] = [pol]
 
                                 writeXANESInput(feffInput,inpf)
+                                if write_input_only: continue
 
                                 # Loop over executable: This is specific to feff. Other codes
                                 # will more likely have only one executable. 
@@ -457,27 +467,33 @@ class Feff(Handler):
 
                             ipol = ipol + 1
 
+                    if write_input_only: continue
+                       
                     xavg = np.average(xanes[1:],axis=0)
                     xanes = np.append(xanes,[xavg],axis=0)
                     xanes_arr = xanes_arr + [xanes]
 
-                # First combind the energy grids.
-                wtot = []
-                for xns in xanes_arr: 
-                    #print("xns=",xns[0])
-                    wtot = np.append(wtot,xns[0])
-                #print('wtot=',wtot) 
-                wtot = np.unique(wtot)
+                if write_input_only:
+                    output[target] = None
+                else:
+                    # First combine the energy grids.
+                    wtot = []
+                    for xns in xanes_arr: 
+                        #print("xns=",xns[0])
+                        wtot = np.append(wtot,xns[0])
+                    #print('wtot=',wtot) 
+                    wtot = np.unique(wtot)
 
-                xanes_interp = []
-                for xns in xanes_arr:
-                    xns_interp = []
-                    for xpol in xns[1:]:
-                        xns_interp = xns_interp + [np.interp(wtot,xns[0],xpol,left=0.0)]
-                    xanes_interp = xanes_interp + [xns_interp]
+                    xanes_interp = []
+                    for xns in xanes_arr:
+                        xns_interp = []
+                        for xpol in xns[1:]:
+                            xns_interp = xns_interp + [np.interp(wtot,xns[0],xpol,left=0.0)]
+                        xanes_interp = xanes_interp + [xns_interp]
                 
-                xastot = np.sum(xanes_interp,axis=0)
-                output[target] = [wtot.tolist()] + xastot.tolist()
+                    xastot = np.sum(xanes_interp,axis=0)
+
+                    output[target] = [wtot.tolist()] + xastot.tolist()
                 #print output[target]
 
             elif (target == 'exafs'):
@@ -547,7 +563,11 @@ class Feff(Handler):
                         for pol in pols:
                             savedfl = os.path.join(dir,'xmu_' + edge + '_' + str(ipol) + '.dat')
                             if not (os.path.exists(savedfl) and input['usesaved'][0][0]):
-                                if 'feff.polarization' not in input: feffInput['feff.polarization'] = [pol]
+                                if 'feff.polarization' not in input: 
+                                    if abs(pol[0])+abs(pol[1])+abs(pol[2]) == 0:
+                                        if 'feff.polarization' in feffInput: del feffInput['feff.polarization']
+                                    else:
+                                        feffInput['feff.polarization'] = [pol]
                                 writeXESInput(feffInput,inpf)
 
                                 # Loop over executable: This is specific to feff. Other codes
@@ -1304,11 +1324,9 @@ def writeInput(input,inpfile):
 def getInpLines(input,token):
     lines=[]
     key = token[len('feff.'):]
-
     if key == 'end':
         return lines  # Don't use this to write END card, since that might be
                       # written before end of input file.
-    
     if token in input:
         # If the first element is not a boolean, this contains values
         # to be stored after keyword.
@@ -1322,7 +1340,7 @@ def getInpLines(input,token):
             if key in ['atoms','potentials','egrid']: # Some keywords only have arguments starting on the 
                 lines.insert(0,key.upper())           # next line.
                 
-            elif key in ['ion']: # A few keywords are written multiple times in the input (one for each line).
+            elif key in ['ion','folp']: # A few keywords are written multiple times in the input (one for each line).
                 for i,line in enumerate(lines):
                     lines[i] = key.upper() + ' ' + line
             else:                                     # Most have arguments on the same line as keyword.
@@ -1710,6 +1728,26 @@ def getFeffPotentialsFromCluster(input):
 
     return feffPots
 
+def set_overlap(pots,input):
+    #print(input['mt_overlap'])
+    overlap = []
+    for pot in pots:
+        ipot = pot[0]
+        iz = pot[1]
+        ovp_dict = dict()
+        if 'mt_overlap' in input:
+            for ovp in input['mt_overlap']:
+                ovp_dict[ptable[ovp[0]]['number']] = ovp[1]
+
+            #print(pot[1], ovp_dict, pot[1] in ovp_dict)
+            if pot[1] in ovp_dict: overlap = overlap + [[pot[0], ovp_dict[pot[1]]]] 
+
+    #print(overlap)
+    #exit()
+    if overlap:
+        return overlap
+    else:
+        return None
 def getFeffDebyeOptions(input):
 # Now we have to make the DEBYE input line depending on what input we have
 # for the DMDW approach.

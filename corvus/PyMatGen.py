@@ -149,12 +149,16 @@ class PyMatGen(Handler):
             symprec=0.1
             #angle_tolerance=input['pymatgen.angle_tolerance'][0][0]
             #sg_anal = SpacegroupAnalyzer(structure,symprec=symprec, angle_tolerance=angle_tolerance) 
-            sg_anal = SpacegroupAnalyzer(structure,symprec=symprec) 
-            structure = sg_anal.get_symmetrized_structure()
             try:
                 is_magnetic = CollinearMagneticStructureAnalyzer(structure).is_magnetic
+                #symprec = 1.0e-12
             except:
                 is_magnetic = False
+
+            sg_anal = SpacegroupAnalyzer(structure,symprec=symprec) 
+            conventional_structure = sg_anal.get_conventional_standard_structure()
+            sg_anal2 = SpacegroupAnalyzer(conventional_structure,symprec=symprec) 
+            structure = sg_anal2.get_symmetrized_structure()
 
             # Get local denSpacegroupAnalyzersities for possible later use.
             cluster_radius = input['clusterradius'][0][0]
@@ -187,11 +191,12 @@ class PyMatGen(Handler):
             abs_inds = []
             for inds in structure.equivalent_indices:
                 xnat = len(inds)
-                print('inds', inds)
+                #print('inds', inds)
                 if absorber_spec == 1:
                    for key in structure.sites[inds[0]].species.as_dict().keys():
                         for absorber in absorber_types:
-                            if absorber == re.sub('[^a-zA-Z]','',key): abs_inds = abs_inds + inds
+                            if absorber == re.sub('[^a-zA-Z]','',key): abs_inds = abs_inds + [inds[0]]
+                            if absorber == re.sub('[^a-zA-Z]','',key): abstype.append(key)
                 elif absorber_spec == 2:
                     for abs_label in absorber_labels:
                         #print(structure.sites[inds[0]].label,abs_label,inds)
@@ -288,6 +293,10 @@ class PyMatGen(Handler):
                                     #print(iclust,rnd,spec_str,occ_sum)
                                     #print(site)
                                     # Always put the absorbing atom in the cluster
+                                    #print(spec_str, absorber_types)
+                                    if spec_str in absorber_types:
+                                        abs_symbol = spec_str 
+                                    
                                     if absorber_spec == 2: abs_symbol = spec_str 
                                     if spec_str == abs_symbol and iclust == 0:
                                         #print('Magnetic moment of absorber:', site.properties.get('magmom'))
