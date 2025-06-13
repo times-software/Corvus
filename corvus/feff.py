@@ -442,7 +442,7 @@ class Feff(Handler):
                                 # Loop over executable: This is specific to feff. Other codes
                                 # will more likely have only one executable. 
                                 if ipol == 1:
-                                    execs = ['rdinp','atomic','pot','screen','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                                    execs = ['rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                                 else:
                                     execs = ['rdinp','xsph','mkgtr','path','genfmt','ff2x','sfconv']
 
@@ -469,8 +469,10 @@ class Feff(Handler):
 
                     if write_input_only: continue
                        
-                    xavg = np.average(xanes[1:],axis=0)
-                    xanes = np.append(xanes,[xavg],axis=0)
+                    if len(xanes) > 3:
+                        xavg = np.average(xanes[1:],axis=0)
+                        xanes = np.append(xanes,[xavg],axis=0)
+
                     xanes_arr = xanes_arr + [xanes]
 
                 if write_input_only:
@@ -598,8 +600,9 @@ class Feff(Handler):
 
                             ipol = ipol + 1
 
-                    xavg = np.average(xanes[1:],axis=0)
-                    xanes = np.append(xanes,[xavg],axis=0)
+                    if len(xanes) > 3:
+                        xavg = np.average(xanes[1:],axis=0)
+                        xanes = np.append(xanes,[xavg],axis=0)
                     xanes_arr = xanes_arr + [xanes]
 
                 # First combind the energy grids.

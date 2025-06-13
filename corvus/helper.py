@@ -188,9 +188,13 @@ class helper(Handler):
                 mu_pol = []
                 data_pol = []
                 ipol = 1
+                npol =  len(outputs[0][targetList[0][0]])
+                #print(outputs[0][targetList[0][0]])
+                #print('npol=',npol)
+                #exit()
                 UnicodeEncodeError = []
                 print('Summing XAS of all unique absorbers:')
-                while ipol <= 4:
+                while ipol <= npol-1:
                     en = []
                     mu = []
                     step = 1.e30
