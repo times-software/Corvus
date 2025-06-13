@@ -154,12 +154,20 @@ class PyMatGen(Handler):
                 #symprec = 1.0e-12
             except:
                 is_magnetic = False
+            
+            #print(input)
+            #print('HELP1:', structure.sites[0].label)
+            #print('absorbing_atom_by_label' in input)
+            if 'absorbing_atom_by_label' in input:
+                # Set equivelent indices arrays to single sites.
+                structure.equivalent_indices = [[i] for i,x in enumerate(structure.sites)]
+            else:
+                sg_anal = SpacegroupAnalyzer(structure,symprec=symprec) 
+                #conventional_structure = sg_anal.get_conventional_standard_structure()
+                #sg_anal2 = SpacegroupAnalyzer(conventional_structure,symprec=symprec) 
+                structure = sg_anal.get_symmetrized_structure()
 
-            sg_anal = SpacegroupAnalyzer(structure,symprec=symprec) 
-            conventional_structure = sg_anal.get_conventional_standard_structure()
-            sg_anal2 = SpacegroupAnalyzer(conventional_structure,symprec=symprec) 
-            structure = sg_anal2.get_symmetrized_structure()
-
+            #print('HELP2:', structure.sites[0].label)
             # Get local denSpacegroupAnalyzersities for possible later use.
             cluster_radius = input['clusterradius'][0][0]
             getLocalDensity(structure,cluster_radius)
@@ -167,7 +175,6 @@ class PyMatGen(Handler):
                for site in structure.sites:
                   print(site.label,site.coords.tolist()[0],site.coords.tolist()[1],site.coords.tolist()[2],site.properties["local_density"],file=fden)
             
-            #exit()
 
             #print(input['absorbing_atom_type'])
             if "absorbing_atom_type" in input: # Will set up calculation of all unique absorbers in unit cell.
@@ -189,6 +196,7 @@ class PyMatGen(Handler):
             abstype = []
             # Get index of all absorbers
             abs_inds = []
+            #print('HELP3:', structure.sites[0].label)
             for inds in structure.equivalent_indices:
                 xnat = len(inds)
                 #print('inds', inds)
@@ -199,6 +207,9 @@ class PyMatGen(Handler):
                             if absorber == re.sub('[^a-zA-Z]','',key): abstype.append(key)
                 elif absorber_spec == 2:
                     for abs_label in absorber_labels:
+                        #print(structure.sites[0].label)
+                        #print(dir(structure.sites[inds[0]]))
+                        #exit()
                         #print(structure.sites[inds[0]].label,abs_label,inds)
                         if structure.sites[inds[0]].label.startswith(abs_label): abs_inds = abs_inds + inds
                 
