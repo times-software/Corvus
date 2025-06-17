@@ -128,6 +128,7 @@ class helper(Handler):
                 if 'cfavg.max_configurations' in input and len(cluster_array) > 1:
                     # Use nmax randomly chosen configurations
                     totprocs = min(input['cfavg.max_configurations'][0][0],len(cluster_array))
+                    nclust=totprocs
                     if 'cfavg.choose_random_absorbers' in input: 
                          if input['cfavg.choose_random_absorbers'][0][0]:
                             absorbers=random.sample(range(1, len(cluster_array)), totprocs)
@@ -137,6 +138,7 @@ class helper(Handler):
                             cluster_array = new_cluster_array
                 else:
                     totprocs = len(cluster_array)
+                    nclust=totprocs
                 
  
                 outputs = []
@@ -202,7 +204,7 @@ class helper(Handler):
                     weights = []
                     ndim=0
                     
-                    for i,clust_elem in enumerate(cluster_array):
+                    for i,clust_elem in enumerate(cluster_array[0:nclust]):
                         # get results from inputs.
                         #print(targetList[0][0])
                         #print(inputs[i])
@@ -244,7 +246,7 @@ class helper(Handler):
                     # Interpolate onto common grid.
                     mu_interp = []
 
-                    for i,clust_elem in enumerate(cluster_array):
+                    for i,clust_elem in enumerate(cluster_array[0:nclust]):
                         if data.ndim == 2:
                             # interpolate onto the common grid and add to total.
                         

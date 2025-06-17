@@ -204,14 +204,18 @@ class PyMatGen(Handler):
                    for key in structure.sites[inds[0]].species.as_dict().keys():
                         for absorber in absorber_types:
                             if absorber == re.sub('[^a-zA-Z]','',key): abs_inds = abs_inds + [inds[0]]
-                            if absorber == re.sub('[^a-zA-Z]','',key): abstype.append(key)
+                            if absorber == re.sub('[^a-zA-Z]','',key): 
+                                abstype.append(key)
                 elif absorber_spec == 2:
                     for abs_label in absorber_labels:
                         #print(structure.sites[0].label)
                         #print(dir(structure.sites[inds[0]]))
                         #exit()
                         #print(structure.sites[inds[0]].label,abs_label,inds)
-                        if structure.sites[inds[0]].label.startswith(abs_label): abs_inds = abs_inds + inds
+                        if structure.sites[inds[0]].label.startswith(abs_label): 
+                            abs_inds = abs_inds + inds
+                            for k in structure.sites[inds[0]].species.as_dict().keys():
+                                abstype.append(k)
                 
                     #elif absorber_spec == 2:
                     #    for absorber in absorber_types_by_label:
@@ -265,7 +269,11 @@ class PyMatGen(Handler):
                     #print(structure.sites[inds[0]].species_string)
                     species = {}
                     #for abs_symbol in absorber_types:
+                    iabs=0
                     for abs_ind in abs_inds:
+                        abs_symbol = abstype[iabs]
+                        #print('abs_symbol',abs_symbol)
+                        iabs=iabs+1
                         # remove alphabetical characters from keys in the dictionary.
                         #for key,value in structure.sites[inds[0]].species.as_dict().items():
                         #    species[re.sub('[^a-zA-Z]','',key)] = value
@@ -274,7 +282,7 @@ class PyMatGen(Handler):
                         #print(abs_ind,inds)
                         if abs_ind in inds:
                         #if abs_symbol in structure.sites[inds[0]].species.as_dict():
-
+                            # Set absorber symbol
                             # Make a cluster around this absorber
                             site_cluster = structure.get_neighbors(structure.sites[inds[0]],cluster_radius)            
                             site_cluster = [structure.sites[inds[0]]] + site_cluster
@@ -305,21 +313,26 @@ class PyMatGen(Handler):
                                     #print(site)
                                     # Always put the absorbing atom in the cluster
                                     #print(spec_str, absorber_types)
-                                    if spec_str in absorber_types:
-                                        abs_symbol = spec_str 
+                                    #if spec_str in absorber_types:
+                                    #    abs_symbol = spec_str 
                                     
-                                    if absorber_spec == 2: abs_symbol = spec_str 
-                                    if spec_str == abs_symbol and iclust == 0:
-                                        #print('Magnetic moment of absorber:', site.properties.get('magmom'))
-                                        #exit()
-                                        cluster = cluster + [[abs_symbol] + site.coords.tolist()     + 
+                                    #if absorber_spec == 2: abs_symbol = spec_str 
+                                    #print('spec_str,abs_symbol', spec_str,abs_symbol,iclust)
+                                    if(iclust == 0):
+                                        if spec_str == abs_symbol:
+                                            #print('Magnetic moment of absorber:', site.properties.get('magmom'))
+                                            #exit()
+                                            #print('inside: spec_str,abs_symbol', spec_str,abs_symbol,iclust)
+                                            cluster = cluster + [[abs_symbol] + site.coords.tolist()     + 
                                                              [ site.properties['itype'][i_spec] ]    + 
                                                              [site.properties['xnat'][i_spec]]       + 
                                                              [site.properties.get('magmom')[i_spec]] + 
                                                              [site.properties.get('local_density')]  +
                                                              [site.label]]
-                                        label = site.label
-                                        break
+                                            label = site.label
+                                            break
+                                        else:
+                                            continue
                                     elif occ_sum < rnd <= occ + occ_sum:
                                         #print(site.properties)
                                         cluster = cluster + [[re.sub('[^a-zA-Z]','',spec_str)]       + 
