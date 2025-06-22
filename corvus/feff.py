@@ -428,7 +428,10 @@ class Feff(Handler):
                         # Add polarization and loop over direction.
                         ipol = 1
                         for pol in pols:
-                            savedfl = os.path.join(dir,'xmu_' + edge + '_' + str(ipol) + '.dat')
+                            if len(pols) == 1:
+                                savedfl = os.path.join(dir,'xmu.dat')
+                            else:
+                                savedfl = os.path.join(dir,'xmu_' + edge + '_' + str(ipol) + '.dat')
                             if not (os.path.exists(savedfl) and input['usesaved'][0][0]):
                                 if 'feff.polarization' not in input: 
                                     if abs(pol[0])+abs(pol[1])+abs(pol[2]) == 0:
@@ -563,7 +566,10 @@ class Feff(Handler):
 
                         ipol = 1
                         for pol in pols:
-                            savedfl = os.path.join(dir,'xmu_' + edge + '_' + str(ipol) + '.dat')
+                            if len(pols) == 1:
+                                savedfl = os.path.join(dir,'xmu.dat')
+                            else:
+                                savedfl = os.path.join(dir,'xmu_' + edge + '_' + str(ipol) + '.dat')
                             if not (os.path.exists(savedfl) and input['usesaved'][0][0]):
                                 if 'feff.polarization' not in input: 
                                     if abs(pol[0])+abs(pol[1])+abs(pol[2]) == 0:
