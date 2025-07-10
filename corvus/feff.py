@@ -1463,11 +1463,10 @@ def getFeffPotentialsFromCluster(input):
         feffPots = [[]]
         feffPots[0] = [0, ptable[abs_symb]['number'], input['cluster'][absorber][0], lfms1, lfms2, 1.0 ]
         for i,atm in enumerate(uniqueAtoms):
-            atm_symb=re.sub('[^a-zA-Z]','',atm[0])
+            atm_symb=re.sub('[^a-zA-Z]','',atm)
             xnat = [ x[0] for x in input['cluster'] ].count(atm)
-            feffPots.append([i+1, int(ptable[atm_symb]['number']), atm[0], lfms1, lfms2, xnat ])
+            feffPots.append([i+1, int(ptable[atm_symb]['number']), atm, lfms1, lfms2, xnat ])
     
-
     return feffPots
 
 def getFeffDebyeOptions(input):
