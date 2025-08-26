@@ -57,6 +57,8 @@ implemented['rixs'] = {'type':'Exchange','out':['feffRIXS'],'cost':1,
 implemented['opcons'] = {'type':'Exchange','out':['opcons'],'cost':1,
                         'req':['cif_input'],'desc':'Calculate optical constants using FEFF.'}
 
+implemented['ldos'] = {'type':'Exchange','out':['ldos'],'cost':1,
+                        'req':['cluster','absorbing_atom'],'desc':'Calculate LDOS using FEFF.'}
 # Added by FDV
 # Trying to implement and EXAFS with optimized geometry and ab initio DW factors
 implemented['opt_dynmat_s2_exafs'] = {'type':'Exchange',
@@ -415,6 +417,32 @@ class Feff(Handler):
                         
                 output[target] = dir
 
+            elif (target == 'ldos'):
+                # Just run ldos alone
+                with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
+                   outFile=os.path.join(dir,'ldos00.dat')
+                   savedfl = os.path.join(dir,'ldos00.dat')
+                   if not (os.path.exists(savedfl) and input['usesaved'][0][0]):
+                      if 'ldos' not in feffInput: feffInput['feff.ldos'] = [[-30, 10, 0.3, 200]]
+                
+                      execs = ['rdinp','atomic','pot','ldos','jdos']
+                      writeXANESInput(feffInput,inpf)
+                      if write_input_only: 
+                         output[target] = [['inpf']]
+                         return
+                      for exe in execs:
+                         if 'feff.mpi.cmd' in input:
+                             executable = input.get('feff.mpi.cmd')[0]
+                             args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                         else:
+                             executable = [os.path.join(feffdir,exe)]
+                             args = ['']
+
+                         runExecutable('',dir,executable,args,out,err)
+                               
+ 
+                ldos = np.loadtxt(savedfl).T
+                output[target] = ldos
             elif (target == 'xanes'):
                 # Loop over edges. For now just run in the same directory. Should change this later.
                 xanes_arr = []
