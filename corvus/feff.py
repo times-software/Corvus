@@ -487,7 +487,7 @@ class Feff(Handler):
 
                                     runExecutable('',dir,executable,args,out,err)
                                 
-                                shutil.copyfile(outFile, savedfl)
+                                if len(pols)>1: shutil.copyfile(outFile, savedfl)
                             
                             if ipol == 1:
                                 xanes = np.loadtxt(savedfl,usecols = (0,3)).T
@@ -1717,12 +1717,12 @@ def getFeffPotentialsFromCluster(input):
             feffPots.append([i+1, int(ptable[atm_symb]['number']), atm[0], lfms1, lfms2, xnat ])
     
     elif len(atoms[0]) >= 7 and equivalence == 2:
-        # Unique atoms set by Z and local density, with density binned into equivalence.nmax bins.
+        # Unique atoms set by Z, sign of spin, and local density, with density binned into equivalence.nmax bins.
         npotsdens = input.get("feff.equivalence.nmax",[[5]])[0][0]
         nbins = min(len(set([atm[7] for atm in atoms])),npotsdens)
         bins=np.linspace(0.0, 1.0, num=nbins, endpoint=True)
         allTypes = sorted(list([int(ptable[re.sub('[^a-zA-Z]','',x[0])]['number'])*100 + np.digitize(x[7],bins) for x in atoms]))
-        uniqueAtoms = sorted(list(set([(x[0],np.digitize(x[7],bins), x[6]) for x in atoms])),key=lambda x: x[1]) 
+        uniqueAtoms = sorted(list(set([(x[0],np.digitize(x[7],bins), round(x[6])) for x in atoms])),key=lambda x: x[1]) 
         feffPots = [[]]
         feffPots[0] = [0, ptable[abs_symb]['number'], input['cluster'][absorber][0], lfms1, lfms2, 1.0, 0.0 ]
         for i,atm in enumerate(uniqueAtoms):
@@ -1752,7 +1752,7 @@ def getFeffPotentialsFromCluster(input):
             spin = atm[2]
             feffPots.append([i+1, int(ptable[atm_symb]['number']), atm[0], lfms1, lfms2, xnat, spin ])
         
-    # Unique atoms set by cluster (only includes one unique atom per element).
+    # Unique atoms set by Z (only includes one unique atom per element).
     else:       
         uniqueAtoms = list(set([ x[0] for x in atoms]))
         feffPots = [[]]
