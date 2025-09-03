@@ -487,7 +487,7 @@ class Feff(Handler):
 
                                     runExecutable('',dir,executable,args,out,err)
                                 
-                               if len(pols) > 1: shutil.copyfile(outFile, savedfl)
+                                if len(pols) > 1: shutil.copyfile(outFile, savedfl)
                             
                             if ipol == 1:
                                 xanes = np.loadtxt(savedfl,usecols = (0,3)).T
