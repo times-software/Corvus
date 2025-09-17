@@ -8,7 +8,8 @@ import pprint
 
 from mp_api.client import MPRester
 from pymatgen.io.cif import CifParser,CifWriter
-from pymatgen.core import structure
+from pymatgen.core import structure, Molecule
+from pymatgen.io.vasp import Vasprun, Outcar, Xdatcar
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.analysis.magnetism import CollinearMagneticStructureAnalyzer
 
@@ -34,7 +35,7 @@ for s in subs(['cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_
 #                        'req':['cif_input'],'desc':'Calculate cell structure from cif file using cif2cell.'}
 
 implemented['mp.structure'] = {'type':'Exchange','out':['mp.structure'],'cost':0,
-                        'req':['mp_id|cif_input'],'desc':'Get cif file from material project id.'}
+                        'req':['mp_id|cif_input|vasp_xml|vasp_xdatcar|xyz_input'],'desc':'Get pymatgen structure from various input.'}
 implemented['cluster_array'] = {'type':'Exchange','out':['cluster_array'],'cost':0,
                         'req':['mp.structure'],'desc':'Calculate cluster from cif using pymatgen.'}
 implemented['supercell'] = {'type':'Exchange','out':['supercell'],'cost':0,
@@ -223,6 +224,7 @@ class PyMatGen(Handler):
                     #        for site in structure.sites
                 for ind in inds:
                     mag = 'magmom' in structure.sites[ind].properties
+                    #print('checking mag', mag,structure.sites[ind].properties['magmom'])
                     structure.sites[ind].properties['itype'] = []
                     structure.sites[ind].properties['xnat']  = []
                     magmom = []
@@ -359,11 +361,14 @@ class PyMatGen(Handler):
             if(len(cluster_array) == 0):
                print("No absorbing atoms found.")
                exit() 
+            #print(cluster_array)
             output['cluster_array'] = cluster_array
             #print("CLUSTER ARRAY")
             #print(cluster_array[0][0:1])
             #for line in cluster_array[0][2]:
             #   print(line[4])
+        elif 'vasp_md_to_feff' in output:
+             print("hello")
         elif set(output.keys()).issubset(set(['supercell', 'cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc', 'number_density'])):
         #elif 'supercell' in output:
             structure = input['mp.structure']
@@ -386,7 +391,7 @@ class PyMatGen(Handler):
                 itypes = itypes + [itype]
                 itype += 1
 
-            scaling_vector=input['supercell.dimensions'][0]
+            scaling_vector=input['supercell_dimensions'][0]
             structure.make_supercell(scaling_vector)
 
             # Get equivalent indices of the supercell.
@@ -438,12 +443,52 @@ class PyMatGen(Handler):
             # Need to add inputs: mp_id, mp_api_key
             if 'mp_id' in input:
                 mpr = MPRester(input['mp_apikey'][0][0])
-                output['mp.structure'] = mpr.get_structure_by_material_id(input["mp_id"][0][0])
-                output['mp.structure'].to(filename=input["mp_id"][0][0] + ".cif")
+                struct = mpr.get_structure_by_material_id(input["mp_id"][0][0])
             elif 'cif_input' in input:
                 parser = CifParser(input.get("cif_input"))
                 # Only take first structure for now.
-                output['mp.structure'] = parser.parse_structures()[0]
+                struct = parser.parse_structures()[0]
+            elif 'vasp_xml' in input:
+                vr = Vasprun(input['vasp_xml'][0][0])
+                struct = vr.structures[input['vasp_snapshot'][0][0]]
+                #print(struct)
+                if 'vasp_outcar' in input: 
+                   oc = Outcar(input['vasp_outcar'][0][0])
+                   if len(oc.magnetization) == len(struct.sites): 
+                      magmom = [m['tot'] for m in oc.magnetization]
+                      struct.add_site_property("magmom",magmom)
+                #print(struct)
+            elif 'vasp_xdatcar' in input:
+                xc = Xdatcar(input['vasp_xdatcar'][0][0])
+                struct = xc.structures[input['vasp_snapshot'][0][0]]
+                if 'vasp_outcar' in input: 
+                   oc = Outcar(input['vasp_outcar'][0][0])
+                   if len(oc.magnetization) == len(struct.sites): 
+                      magmom = [m['tot'] for m in oc.magnetization]
+                      struct.add_site_property("magmom",magmom)
+            elif 'xyz_input' in input:
+                
+                # Read the molecule from xyz
+                mol = Molecule.from_file(input['xyz_input'])
+
+                # Get the bounding box coordinates. Add 10 (angstrom?) to sizes.
+                min_x = min(site.x for site in mol)
+                max_x = max(site.x for site in mol)+10.0
+                min_y = min(site.y for site in mol)
+                max_y = max(site.y for site in mol)+10.0
+                min_z = min(site.z for site in mol)
+                max_z = max(site.z for site in mol)+10.0
+                # We will create a cubic cell with cell length equal to max of the molecular sizes.
+                cell_size = max([max_x-min_x,max_y-min_y,max_z-min_z])
+
+                struct = mol.get_boxed_structure(cell_size,cell_size,cell_size)
+
+            # write the output cif to file
+            struct.to(filename="corvus_struct.cif")
+
+            # Set the output structure.              
+            output['mp.structure'] = struct
+                 
     
             
              
