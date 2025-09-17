@@ -423,7 +423,7 @@ class Feff(Handler):
                    outFile=os.path.join(dir,'ldos00.dat')
                    savedfl = os.path.join(dir,'ldos00.dat')
                    if not (os.path.exists(savedfl) and input['usesaved'][0][0]):
-                      if 'ldos' not in feffInput: feffInput['feff.ldos'] = [[-30, 10, 0.3, 200]]
+                      if 'feff.ldos' not in feffInput: feffInput['feff.ldos'] = [[-30, 10, 0.3, 200]]
                 
                       execs = ['rdinp','atomic','pot','ldos','jdos']
                       writeXANESInput(feffInput,inpf)
@@ -623,7 +623,7 @@ class Feff(Handler):
 
                                     runExecutable('',dir,executable,args,out,err)
                                 
-                                shutil.copyfile(outFile, savedfl)
+                                if (len(pols)>1): shutil.copyfile(outFile, savedfl)
                             
                             if ipol == 1:
                                 xanes = np.loadtxt(savedfl,usecols = (0,3)).T
@@ -1604,7 +1604,7 @@ def getFeffAtomsFromCluster(input):
                         feffAtom.append(atm[8])
                         feffAtoms.append(feffAtom)
                        
-        elif equivalence == 3: # not functional yes
+        elif equivalence == 3: # not functional yet
             if len(atoms[0]) >= 6:
                 uniqueAtoms = sorted(list(set([ (e[0], np.linalg.norm(np.array(e[1:4]) - np.array(input['cluster'][absorber][1:4])),e[6]) for e in atoms ])),key = lambda x: x[1])
             else:
@@ -1640,7 +1640,7 @@ def getFeffAtomsFromCluster(input):
                             break
 
         else:
-            uniqueAtoms = list(set([ x[0] for x in atoms]))
+            uniqueAtoms = sorted(list(set([ x[0] for x in atoms])))
             #print absorber
             #print input['absorbing_atom']
             #print uniqueAtoms
@@ -1754,7 +1754,7 @@ def getFeffPotentialsFromCluster(input):
         
     # Unique atoms set by Z (only includes one unique atom per element).
     else:       
-        uniqueAtoms = list(set([ x[0] for x in atoms]))
+        uniqueAtoms = sorted(list(set([ x[0] for x in atoms])))
         feffPots = [[]]
         feffPots[0] = [0, ptable[abs_symb]['number'], input['cluster'][absorber][0], lfms1, lfms2, 1.0 ]
         for i,atm in enumerate(uniqueAtoms):
