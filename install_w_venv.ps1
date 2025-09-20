@@ -65,22 +65,14 @@ $source = $jmoldir
 $destination = "$HOME\.venv\Corvus\share\"
 
 # Check if the destination file exists
-if (Test-Path $destination) {
-    # Prompt the user for confirmation
-    $response = Read-Host "Jmol already exists at $destination. Overwrite? (Y/N)[Y]"
-    if ($response -eq "N") {
-        
-        Write-Host "Previous installation of Jmol used."
-        cd ..
-        exit
-    } else {
-        rm -r "$destination\$jmoldir"
-        Move-Item -Path "$source" -Destination "$destination"
-    }
+if (Test-Path $destination\$jmoldir) {
+    # If jmol directory already found.
+    Write-Host "Previous installation of Jmol found. If you want to reinstall"
+    echo "please remove the directory: $destination\$jmoldir"
+    echo "and re-run the installer."
 } else {
-    Move-Item -Path "$source" -Destination "$destination"
+    Move-Item -Path "$source" -Destination "$destination\$jmoldir"
 }
-
 
 cd ..
 
