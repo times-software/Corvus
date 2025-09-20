@@ -21,6 +21,7 @@ elif [ $shell == "tcsh" ]
 then
 	echo "exec $shell -c 'source "$HOME/.venv/Corvus/bin/activate"'; tcsh" >> "$HOME/Desktop/corvus_shell"
 fi
+chmod u+x "$HOME/Desktop/corvus_shell"
 
 # Install SciGUI if user want to.
 echo 'Would you like to install the corvus graphical user interface? (Y/N)[Y]' 
@@ -41,6 +42,7 @@ else
 	echo "#!/bin/$shell" > "$HOME/Desktop/corvus"
 	echo "source \"$HOME/.venv/Corvus/bin/activate\"" >> "$HOME/Desktop/corvus"
 	echo "corvus" >> "$HOME/Desktop/corvus"
+	chmod u+x "$HOME/Desktop/corvus"
 	cd ..
 fi
 
