@@ -27,7 +27,7 @@ chmod u+x "$HOME/Desktop/corvus_shell"
 echo 'Would you like to install the corvus graphical user interface? (Y/N)[Y]' 
 read a
 echo "Response: $a"
-if [ "X$a" == "XN" ]
+if [ "X$a" = "XN" ]
 then
 	echo "Will not install the corvus GUI. Finished installation of corvus."
 else
