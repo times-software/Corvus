@@ -86,5 +86,5 @@ cd ..
 # Create scigui.ini file to tell it where jmol is.
 $OutputEncoding = [System.Text.Encoding]::UTF8
 echo "[visualization]" > "$HOME\.Corvus\scigui.ini"
-echo "jmol_path = `"$HOME\.venv\Corvus\share\$jmoldir\jmol.bat`"" >> "$HOME\.Corvus\scigui.ini" 
+echo "jmol_path = $HOME\.venv\Corvus\share\$jmoldir\jmol.bat" >> "$HOME\.Corvus\scigui.ini"
 echo "Finished installing corvus."
