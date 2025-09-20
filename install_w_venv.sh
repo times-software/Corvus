@@ -64,9 +64,10 @@ else
 			mv $jmoldir "$HOME/.venv/Corvus/share/"
 		fi
 		# Now check for scigui.ini and add if it doesn't exist.
-		if [ ! -e "$HOME/.Corvus/scigui.ini" ]
+		if [ -e "$HOME/.Corvus/scigui.ini" ]
 		then
-			exit
+			echo "scigui.ini configuration file exists. If jmol structure"
+			echo "visualization does not work, contact developer."
 		else
 			echo "[visualization]" > "$HOME/.Corvus/scigui.ini"
 			echo "jmol_path = $HOME/.venv/Corvus/share/$jmoldir" >> "$HOME/.Corvus/scigui.ini"
