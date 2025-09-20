@@ -44,5 +44,32 @@ else
 	echo "corvus" >> "$HOME/Desktop/corvus"
 	chmod u+x "$HOME/Desktop/corvus"
 	cd ..
-fi
 
+	echo "Would you like to install jmol, which is used to visualize structures within the corvus GUI?"
+	read a
+	if [ ! "X$a"=="XN" ]
+	then
+		# Download jmol
+		mkdir jmol
+		cd jmol
+		curl -L "http://sourceforge.net/projects/jmol/files/latest/download" -o jmol.zip
+		unzip jmol.zip
+		jmoldir=`ls |grep jmol-`
+		if [ -d "$HOME/.venv/Corvus/share/$jmoldir" ]
+		then
+			echo "The jmol directory $HOME/.venv/Corvus/share/$jmoldir"
+			echo "already exists. If you want to re-install jmol, please"
+			echo "remove the directory and re-run this installer."
+		else
+			mv $jmoldir "$HOME/.venv/Corvus/share/"
+		fi
+		# Now check for scigui.ini and add if it doesn't exist.
+		if [ ! -e "$HOME/.Corvus/scigui.ini" ]
+		then
+			exit
+		else
+			echo "[visualization]" > "$HOME/.Corvus/scigui.ini"
+			echo "jmol_path = $HOME/.venv/Corvus/share/$jmoldir" >> "$HOME/.Corvus/scigui.ini"
+		fi
+	fi
+fi
