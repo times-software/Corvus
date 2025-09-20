@@ -1,8 +1,8 @@
 #!/bin/bash -x
 # Create a venv environment
-python -m venv "$HOME/.venv/Corvus"
+python3 -m venv "$HOME/.venv/Corvus"
 source "$HOME/.venv/Corvus/bin/activate"
-python -m pip install .
+pip3 install .
 
 # Create a shell script that will start an interactive session when double clicked.
 shell=`basename $SHELL`
@@ -35,7 +35,7 @@ else
 	curl -L "https://github.com/times-software/SciGUI/archive/refs/heads/main.zip" -o SciGUI.zip
 	unzip SciGUI.zip
 	cd SciGUI-main
-	pip install .
+	pip3 install .
 	
 	# Now make the corvus shortcut on the desktop.
 	echo "#!/bin/$shell" > "$HOME/Desktop/corvus"
