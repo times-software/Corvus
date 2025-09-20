@@ -8,16 +8,16 @@ pip3 install .
 shell=`basename $SHELL`
 echo "User shell: $shell"
 echo "#!/bin/$shell" > "$HOME/Desktop/corvus_shell"
-if [ $shell=="zsh" ]
+if [ "$shell" = "zsh" ]
 then
 	echo "export ZDOTDIR="$HOME/.venv/Corvus/bin/"" >> "$HOME/Desktop/corvus_shell"
 	# Copy activation script to a new startup shell file
 	cp "$HOME/.venv/Corvus/bin/activate" "$HOME/.venv/Corvus/bin/.zshrc"
 	echo "exec $SHELL -i" >> "$HOME/Desktop/corvus_shell"
-elif [ $shell == "bash" ]
+elif [ "$shell" = "bash" ]
 then
 	echo "exec $SHELL --rcfile "$HOME/.venv/Corvus/bin"" >> "$HOME/Desktop/corvus_shell"
-elif [ $shell == "tcsh" ]
+elif [ "$shell" = "tcsh" ]
 then
 	echo "exec $shell -c 'source "$HOME/.venv/Corvus/bin/activate"'; tcsh" >> "$HOME/Desktop/corvus_shell"
 fi
@@ -27,7 +27,7 @@ chmod u+x "$HOME/Desktop/corvus_shell"
 echo 'Would you like to install the corvus graphical user interface? (Y/N)[Y]' 
 read a
 echo "Response: $a"
-if [ ! "X$a"=="XN" ]
+if [ "X$a" == "XN" ]
 then
 	echo "Will not install the corvus GUI. Finished installation of corvus."
 else
@@ -47,7 +47,7 @@ else
 
 	echo "Would you like to install jmol, which is used to visualize structures within the corvus GUI?"
 	read a
-	if [ ! "X$a"=="XN" ]
+	if [ "X$a" != "XN" ]
 	then
 		# Download jmol
 		mkdir jmol
