@@ -81,6 +81,6 @@ else
 		echo "already exists. If you want to overwrite, please"
 		echo "remove that folder and reinstall."
 	else
-		cp -r SciGUI-main/examples "$HOME/Desktop/corvus_examples"
+		cp -r SciGUI-main/example "$HOME/Desktop/corvus_examples"
 	fi
 fi
