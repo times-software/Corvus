@@ -72,5 +72,15 @@ else
 			echo "[visualization]" > "$HOME/.Corvus/scigui.ini"
 			echo "jmol_path = $HOME/.venv/Corvus/share/$jmoldir" >> "$HOME/.Corvus/scigui.ini"
 		fi
+		cd ..
+	fi
+	# Copy examples to desktop
+	if [ -d "$HOME/Desktop/corvus_examples" ]
+	then
+		echo "Example folder $HOME/Desktop/corvus_examples"
+		echo "already exists. If you want to overwrite, please"
+		echo "remove that folder and reinstall."
+	else
+		cp -r SciGUI-main/examples "$HOME/Desktop/corvus_examples"
 	fi
 fi
