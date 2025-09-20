@@ -45,7 +45,7 @@ else
 	chmod u+x "$HOME/Desktop/corvus"
 	cd ..
 
-	echo "Would you like to install jmol, which is used to visualize structures within the corvus GUI?"
+	echo "Would you like to install jmol, which is used to visualize structures within the corvus GUI? (Y/N)[Y]"
 	read a
 	if [ "X$a" != "XN" ]
 	then
