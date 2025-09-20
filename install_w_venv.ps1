@@ -46,6 +46,13 @@ $Shortcut.TargetPath = $TargetFile
 $Shortcut.Arguments = $Arguments
 $Shortcut.Save()
 
+if (Test-Path "$HOME\Desktop\corvus_examples" ) {
+    echo "$HOME\Desktop\corvus_examples already exists."
+    echo "If you want to keep the new example files, please"
+    echo "delete the old folder and rerun the installation."
+} else {
+    cp -r examples "$HOME\Desktop\corvus_examples"
+}
 cd "..\.."
 
 # Install jmol if user wants it.
