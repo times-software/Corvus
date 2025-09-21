@@ -10,8 +10,8 @@ if ($pypath) {
 }
 
 # Create and activate the Corvus environment
-python -m venv "$HOME\.venv\Corvus"
-& "$HOME\.venv\Corvus\Scripts\Activate.ps1"
+conda create -n Corvus python
+conda activate Corvus
 
 # Install corvus
 pip install .
