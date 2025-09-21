@@ -80,7 +80,7 @@ cd jmol
 $jmoldir = (ls | Select-Object -ExpandProperty Name)
 
 $source = $jmoldir
-$destination = "$HOME\.venv\Corvus\share\"
+$destination = "$HOME\miniconda3\envs\Corvus\share\"
 
 # Check if the destination file exists
 if (Test-Path $destination\$jmoldir) {
@@ -97,5 +97,5 @@ cd ..
 # Create scigui.ini file to tell it where jmol is.
 $OutputEncoding = [System.Text.Encoding]::UTF8
 echo "[visualization]" > "$HOME\.Corvus\scigui.ini"
-echo "jmol_path = $HOME\.venv\Corvus\share\$jmoldir\jmol.bat" >> "$HOME\.Corvus\scigui.ini"
+echo "jmol_path = $HOME\miniconda3\envs\Corvus\share\$jmoldir\jmol.bat" >> "$HOME\.Corvus\scigui.ini"
 echo "Finished installing corvus."
