@@ -1,7 +1,7 @@
 #!/bin/bash -x
 
 # Check that python is available
-which pyrthon
+which python
 if [ $? -ne 0 ]
 then
 	echo "Python is not available. Please install it, or if it is installed,"
