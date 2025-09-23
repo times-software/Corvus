@@ -169,7 +169,7 @@ class Feff(Handler):
         # Copy feff related input to feffinput here. Later we will be overriding some settings,
         # so we want to keep the original input intact.
         # Input specific to FEFF that are not FEFF keywords.
-        non_feff_cards = ["feff.mpi", "feff.potentials.spin", "feff.equivalence.nmax", "feff.equivalence"]
+        non_feff_cards = ["feff.mpi", "feff.potentials.spin", "feff.equivalence_nmax", "feff.equivalence"]
         feffInput = {key:input[key] for key in input if (key.startswith('feff.') and (not key.startswith(tuple(non_feff_cards))))}
         
         # Set polarization vectors to calculate.
@@ -1589,7 +1589,7 @@ def getFeffAtomsFromCluster(input):
         elif len(atoms[0]) >= 7 and equivalence == 2:
             # Use local density to define potentials.
             # Unique atoms set by Z and local density, with density binned into equivalence.nmax bins.
-            npotsdens = input.get("feff.equivalence.nmax",[[5]])[0][0]
+            npotsdens = input.get("feff.equivalence_nmax",[[5]])[0][0]
             nbins = min(len(set([atm[7] for atm in atoms])),npotsdens)
             bins=np.linspace(0.0, 1.0, num=nbins, endpoint=True)
             uniqueAtoms = sorted(list(set([(x[0],np.digitize(x[7],bins), x[6]) for x in atoms])),key=lambda x: x[1]) 
@@ -1610,8 +1610,8 @@ def getFeffAtomsFromCluster(input):
             else:
                 uniqueAtoms = sorted(list(set([ (e[0], np.linalg.norm(np.array(e[1:4]) - np.array(input['cluster'][absorber][1:4])),0.0) for e in atoms ])),key = lambda x: x[1])
 
-            if 'feff.equivalence.nmax' in input:
-               uniqueAtoms = uniqueAtoms[0:input['feff.equivalence.nmax'][0][0]-1]
+            if 'feff.equivalence_nmax' in input:
+               uniqueAtoms = uniqueAtoms[0:input['feff.equivalence_nmax'][0][0]-1]
 
             #print(uniqueAtoms)
 
@@ -1718,7 +1718,7 @@ def getFeffPotentialsFromCluster(input):
     
     elif len(atoms[0]) >= 7 and equivalence == 2:
         # Unique atoms set by Z, sign of spin, and local density, with density binned into equivalence.nmax bins.
-        npotsdens = input.get("feff.equivalence.nmax",[[5]])[0][0]
+        npotsdens = input.get("feff.equivalence_nmax",[[5]])[0][0]
         nbins = min(len(set([atm[7] for atm in atoms])),npotsdens)
         bins=np.linspace(0.0, 1.0, num=nbins, endpoint=True)
         allTypes = sorted(list([int(ptable[re.sub('[^a-zA-Z]','',x[0])]['number'])*100 + np.digitize(x[7],bins) for x in atoms]))
@@ -1741,8 +1741,8 @@ def getFeffPotentialsFromCluster(input):
         else:
             uniqueAtoms = sorted(list(set([ (e[0], np.linalg.norm(np.array(e[1:4]) - np.array(input['cluster'][absorber][1:4])),0.0) for e in atoms ])),key = lambda x: x[1])
 
-        if 'feff.equivalence.nmax' in input:
-            uniqueAtoms = uniqueAtoms[0:input['feff.equivalence.nmax'][0][0]-1]
+        if 'feff.equivalence_nmax' in input:
+            uniqueAtoms = uniqueAtoms[0:input['feff.equivalence_nmax'][0][0]-1]
 
         feffPots = [[]]
         feffPots[0] = [0, ptable[abs_symb]['number'], input['cluster'][absorber][0], lfms1, lfms2, 0.01, 0.0 ]
