@@ -1,4 +1,5 @@
 from corvus.structures import Handler, Exchange, Loop, Update
+import re
 from time import sleep
 import numpy as np
 import random
@@ -160,7 +161,13 @@ class helper(Handler):
                         configs = configs + [copy.copy(config)]
                         configs[i]['cwd'] = config['xcDir']
                         configs[i]['xcIndexStart'] = i+numdone+1
-                        configs[i]['xcLabel'] = clust_elem[3]
+                        
+                        # Create a safe folder name from input
+                        invalid_chars = r'[<>:"/\|?*`]'
+                        folder_name = re.sub(invalid_chars, '', clust_elem[3])
+                        folder_name = re.sub(r'[\x00-\x1f\x7f]', '', folder_name)
+                        configs[i]['xcLabel'] = folder_name
+
                         tLists = tLists + [targetList]
                         arguments = arguments + [(configs[i],inputs[i],targetList)]
                         #targetList = [['xanes']]

@@ -1370,7 +1370,7 @@ def getInpLines(input,token):
         if not isinstance(input[token][0][0],bool): # Keywords that have no arguments are written if bool is true
             if token in input: # Use pre-defined values
                 for element in input[token]: # Takes care of single and multi-line input.
-                    lines.append(' '.join([str(value) for value in element])) 
+                    lines.append(' '.join([str_f(value) for value in element])) 
             else: # Use default
                 lines.append(' '.join(default))
           	
@@ -2441,3 +2441,10 @@ def kk_transform(w,eps2):
         eps1[iw] = np.sum(a*delta + a*w0/2.0*g1 + b/2.0*g2)
     return wnew,eps1*2/np.pi
 
+def str_f(variable):
+    if isinstance(variable, float):
+        # Format float to one decimal place, ensuring it looks like "10.5"
+        return f"{variable:.10f}" 
+    else:
+        # Convert other types to string directly
+        return str(variable)
