@@ -1638,6 +1638,28 @@ def getFeffAtomsFromCluster(input):
                             feffAtom.append(np.linalg.norm(np.array(atm[1:4]) - np.array(input['cluster'][absorber][1:4])))
                             feffAtoms.append(feffAtom)
                             break
+        elif equivalence == 4: # Set by Z, coordination environment, and spin
+            if 'feff.spin' in input:
+                uniqueAtoms = sorted(list(set([ (x[0],x[9],x[6]) for x in atoms ])),key=lambda x: x[1])
+            else:
+                uniqueAtoms = sorted(list(set([ (x[0],x[9]) for x in atoms ])),key=lambda x: x[1])
+
+            feffAtoms = []
+            feffAtoms.append([0.0, 0.0, 0.0, 0, 0.0])
+
+            for atm in atoms:
+                for ipot,uatm in enumerate(uniqueAtoms):
+                    if 'feff.spin' in input:
+                        test = atm[9] == uatm[1] and atm[6] == uatm[2]
+                    else:
+                        test = atm[9] == uatm[1]
+                    if test:
+                        #feffAtom = atm[1:3]
+                        feffAtom = [ e - float(input['cluster'][absorber][i+1]) for i,e in enumerate(atm[1:4]) ]
+                        feffAtom.append(ipot+1)
+                        feffAtom.append(np.linalg.norm(np.array(atm[1:4]) - np.array(input['cluster'][absorber][1:4])))
+                        feffAtoms.append(feffAtom)
+                
 
         else:
             uniqueAtoms = sorted(list(set([ x[0] for x in atoms])))
@@ -1752,6 +1774,28 @@ def getFeffPotentialsFromCluster(input):
             spin = atm[2]
             feffPots.append([i+1, int(ptable[atm_symb]['number']), atm[0], lfms1, lfms2, xnat, spin ])
         
+    elif equivalence == 4:
+    # Set unique atoms by Z, coordination environment, and spin.
+        if len(atoms[0]) < 10:
+           print("feff.equivalence{ 4 } not compatible with this input. Exiting.")
+           exit()
+
+        if 'feff.spin' in input:
+            uniqueAtoms = sorted(list(set([ (x[0],x[9],x[6]) for x in atoms ])),key=lambda x: x[1])
+        else:
+            uniqueAtoms = sorted(list(set([ (x[0],x[9]) for x in atoms ])),key=lambda x: x[1])
+        #print(uniqueAtoms) 
+        feffPots = [[]]
+        feffPots[0] = [0, ptable[abs_symb]['number'], input['cluster'][absorber][0], lfms1, lfms2, 1.0 ]
+        for i,atm in enumerate(uniqueAtoms):
+            atm_symb=re.sub('[^a-zA-Z]','',atm[0])
+            if 'feff.spin' in input:
+                spin = atm[2]
+                xnat = [ x[9]*100.0+x[6] for x in input['cluster'] ].count(atm[1]*100.0+atm[2])
+            else:
+                spin = 0.0
+                xnat = [ x[9] for x in input['cluster'] ].count(atm[1])
+            feffPots.append([i+1, int(ptable[atm_symb]['number']), atm[0], lfms1, lfms2, xnat, spin ])
     # Unique atoms set by Z (only includes one unique atom per element).
     else:       
         uniqueAtoms = sorted(list(set([ x[0] for x in atoms])))

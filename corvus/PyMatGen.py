@@ -12,6 +12,7 @@ from pymatgen.core import structure, Molecule
 from pymatgen.io.vasp import Vasprun, Outcar, Xdatcar
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.analysis.magnetism import CollinearMagneticStructureAnalyzer
+from pymatgen.analysis.local_env import CrystalNN
 
 pp_debug = pprint.PrettyPrinter(indent=4)
 
@@ -172,9 +173,22 @@ class PyMatGen(Handler):
             # Get local denSpacegroupAnalyzersities for possible later use.
             cluster_radius = input['clusterradius'][0][0]
             getLocalDensity(structure,cluster_radius)
+            nn_getter = CrystalNN(weighted_cn=False)
+            cn_set=set()
+            i_coord=1
             with open('densities.dat', 'w') as fden:
-               for site in structure.sites:
+               for i,site in enumerate(structure.sites):
                   print(site.label,site.coords.tolist()[0],site.coords.tolist()[1],site.coords.tolist()[2],site.properties["local_density"],file=fden)
+                  site.properties['cn'] = (site.label,frozenset(nn_getter.get_cn_dict(structure,i,use_weights=False).items()))
+                  #print(site.properties['cn'])
+                  cn_set.add(site.properties['cn'])
+            
+            cn_list=sorted(cn_set)
+            # Now add an coordination environment index to site properties
+            for i, site in enumerate(structure.sites):
+                site.properties['ce']=cn_list.index(site.properties['cn'])
+                #print(site.label,nn_getter.get_cn_dict(structure,i,use_weights=False),cn_list.index(site.properties['cn']))
+            
             
 
             #print(input['absorbing_atom_type'])
@@ -330,7 +344,7 @@ class PyMatGen(Handler):
                                                              [site.properties['xnat'][i_spec]]       + 
                                                              [site.properties.get('magmom')[i_spec]] + 
                                                              [site.properties.get('local_density')]  +
-                                                             [site.label]]
+                                                             [site.label] + [site.properties.get('ce')]]
                                             label = site.label
                                             break
                                         else:
@@ -343,7 +357,7 @@ class PyMatGen(Handler):
                                                              [site.properties['xnat'][i_spec]]       + 
                                                              [site.properties.get('magmom')[i_spec]] + 
                                                              [site.properties.get('local_density')]  +
-                                                             [site.label]]
+                                                             [site.label]+[site.properties.get('ce')]]
                                         #print(site.properties)
                                         #print(cluster[-1])
                                         #sys.stdin.readline()
@@ -482,6 +496,7 @@ class PyMatGen(Handler):
                 cell_size = max([max_x-min_x,max_y-min_y,max_z-min_z])
 
                 struct = mol.get_boxed_structure(cell_size,cell_size,cell_size)
+                
 
             # write the output cif to file
             struct.to(filename="corvus_struct.cif")
