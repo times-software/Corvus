@@ -25,6 +25,8 @@ strlistkey = lambda L:','.join(sorted(L))
 implemented['cfavg'] = {'type':'Exchange','out':['cfavg'],'cost':1,'req':['cluster_array'],
 'desc':'Average over an array of clusters and absorbing atoms.'}
 
+implemented['loop'] = {'type':'Exchange','out':['loop'],'cost':1,'req':['loop_target'],
+'desc':'Run multiple calculations with different settings.'}
 #implemented['spectrum_set'] = {'type':'Exchange','out':['scan'],'cost':1,'req':['parameter_scan'],
 #'desc':'Calculate an array of spectra from an array of input parameters, absorbing atoms, and inputs.'}
 
@@ -126,12 +128,12 @@ class helper(Handler):
                 
 
                 # Set total number of processes
-                if 'cfavg.max_configurations' in input and len(cluster_array) > 1:
+                if 'cfavg_max_configurations' in input and len(cluster_array) > 1:
                     # Use nmax randomly chosen configurations
-                    totprocs = min(input['cfavg.max_configurations'][0][0],len(cluster_array))
+                    totprocs = min(input['cfavg_max_configurations'][0][0],len(cluster_array))
                     nclust=totprocs
-                    if 'cfavg.choose_random_absorbers' in input: 
-                         if input['cfavg.choose_random_absorbers'][0][0]:
+                    if 'cfavg_choose_random_absorbers' in input: 
+                         if input['cfavg_choose_random_absorbers'][0][0]:
                             absorbers=random.sample(range(1, len(cluster_array)), totprocs)
                             for iabs in absorbers:
                                new_cluster_array = [cluster_array[i] for i in absorbers]
@@ -289,7 +291,7 @@ class helper(Handler):
                     output['cfavg'] = np.array(mu_pol).tolist()
                     #print(mu_pol[0])
                     #print(mu_pol[1])              
-                    np.savetxt(config['pathprefix'] + '.cfavg.' + targetList[0][0] + '.out',np.array(mu_pol).T)
+                    np.savetxt(config['pathprefix'] + '.cfavg_' + targetList[0][0] + '.out',np.array(mu_pol).T)
                     
 
                 elif data.ndim == 3:
@@ -297,7 +299,7 @@ class helper(Handler):
                     data_out = np.array([dataNd[0][0].flatten(),dataNd[0][1].flatten(),data_tot])
                     output['cfavg'] = np.array(data_out).tolist()
                     
-                    f = open(config['pathprefix'] + '.cfavg.' + targetList[0][0] + '.1.out', 'w')
+                    f = open(config['pathprefix'] + '.cfavg_' + targetList[0][0] + '.1.out', 'w')
                     i=0
                     nd = dataNd[0][0].shape[0]
                     print(nd)
@@ -308,19 +310,78 @@ class helper(Handler):
 
                         f.write('    '.join(map(str,row)) + '\n')
                         i += 1
-            #elif(target == 'spectrum_set'):
-                # Loop through set of parameters, create and run the
-                # Set the target of spectrum_set - XANES, XES, RIXS, ...
-                #targetList = input['spectrum_set.target']
 
-                #parameter_set = input['parameter_set']
-                #en = []
-                #mu = []
-                #step = 1.e30
-                #totalWeight = 0.0
-                #weights = []
-                #dirs=[]
+            if (target == 'loop'):
+                #Define the target of the average
+                targetList = input['loop_target']
 
+                # Get loop parameter and loop values
+                # Parameter is on first line.
+                loop_parameter = input['loop_parameter'][0][0]
+                # values are on next N lines.
+                loop_values = input['loop_parameter'][1:]
+                
+                print("Number of calculations:", len(loop_values))
+                dirs=[]
+                
+                
+
+                # Set total number of processes
+                totprocs = len(loop_values)
+                ncalc=totprocs
+                
+ 
+                outputs = []
+                numdone=0
+                #while totprocs > 0:
+                #    poolSize = min(ncpu,totprocs)
+                #    print("Using ", poolSize, ' processors.')
+                #    print("processes left to run: ", totprocs)
+                inputs = []
+                configs = []
+                tLists = []
+                arguments = []
+                for i,value in enumerate(loop_values):
+                    inputs = inputs + [copy.copy(input)]
+                    inputs[i][loop_parameter] = [loop_values[i]]
+                    inputs[i]['multiprocessing_ncpu'] = [[1]]
+                    del inputs[i]['target_list']
+                    del inputs[i]['loop_parameter']
+                    inputs[i]['target_list'] = targetList
+
+                    # Set the current working directory to the correct directory. 
+                    if 'xcLabel' in config:
+                        subdir = config['pathprefix'] + str(i) + config['xcLabel'] + '_loop'
+                    else:
+                        subdir = config['pathprefix'] + str(i) + '_loop'
+
+                    xcDir = os.path.join(config['cwd'], subdir)
+                    # Make new output directory if it doesn't exist
+                    if not os.path.exists(xcDir):
+                        os.mkdir(xcDir)
+
+                    dirs = dirs + [xcDir]
+                    configs = configs + [copy.copy(config)]
+                        
+                    configs[i]['xcIndexStart'] = 1
+                    configs[i]['cwd'] = xcDir
+                    configs[i]['pathprefix'] = xcDir
+                        
+                    tLists = tLists + [targetList]
+                    arguments = arguments + [(configs[i],inputs[i],targetList)]
+                        #targetList = [['xanes']]
+                    #with mltp.Pool(processes=poolSize) as pool:
+                    #    poolout =  pool.starmap_async(multiproc_genAndRun,arguments)
+                    #    while not poolout.ready():
+                    #        sleep(1)
+                    generateAndRunWorkflow(configs[i], inputs[i], targetList) 
+                    outputs = outputs + [output]
+                
+                if input['write_input_only'][0][0]: 
+                    output[target] = None
+                    return
+
+                output[target] = [dirs]
 
 
 
