@@ -45,6 +45,9 @@ implemented['feffFMatrices'] = {'type':'Exchange','out':['feffFMatrices'],'cost'
 implemented['xanes'] = {'type':'Exchange','out':['xanes'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
 
+implemented['xas'] = {'type':'Exchange','out':['xas'],'cost':1,
+                        'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
+
 implemented['exafs'] = {'type':'Exchange','out':['exafs'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate EXAFS using FEFF.'}
 
@@ -529,6 +532,104 @@ class Feff(Handler):
                     output[target] = [wtot.tolist()] + xastot.tolist()
                 #print output[target]
 
+            elif (target == 'xas'):
+                # Loop over edges. For now just run in the same directory. Should change this later.
+                xanes_arr = []
+                exafs_arr = []
+                for spec in ['xanes','exafs']:
+                    
+                    for i,edge in enumerate(input['feff.edge'][0]):
+                        feffInput['feff.edge'] = [[edge]]
+                        # Set output and error files
+                        outFile=os.path.join(dir,'xmu.dat')
+                        with open(os.path.join(dir, 'corvus.FEFF.'+spec+'.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.'+spec+'.stderr'), 'w') as err:
+
+                            # Write input file for FEFF.
+                            # Add polarization and loop over direction.
+                            ipol = 1
+                            for pol in pols:
+                                if len(pols) == 1:
+                                    savedfl = os.path.join(dir,spec + '_' + edge + '.dat')
+                                else:
+                                    savedfl = os.path.join(dir,spec + '_' + edge + '_' + str(ipol) + '.dat')
+                                if not (os.path.exists(savedfl) and input['usesaved'][0][0]):
+                                    if 'feff.polarization' not in input:
+                                        if abs(pol[0])+abs(pol[1])+abs(pol[2]) == 0:
+                                            if 'feff.polarization' in feffInput: del feffInput['feff.polarization']
+                                        else:
+                                            feffInput['feff.polarization'] = [pol]
+                                
+                                    if spec == 'xanes':
+                                        writeXANESInput(feffInput,inpf)
+                                    else:
+                                        # remove fms from feff input
+                                        del feffInput['feff.fms']
+                                        del feffInput['feff.xanes']
+                                        if feffInput['feff.rpath'][0][0] < 1.0: del feffInput['feff.rpath']
+                                        feffInput['feff.control'] = [[0,0,0,1,1,1]]
+                                        writeEXAFSInput(feffInput,inpf)
+                                    if write_input_only: continue
+
+                                    # Loop over executable: This is specific to feff. Other codes
+                                    # will more likely have only one executable. 
+                                    if ipol == 1:
+                                        execs = ['rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                                    else:
+                                        execs = ['rdinp','xsph','mkgtr','path','genfmt','ff2x','sfconv']
+
+                                    for exe in execs:
+                                        if 'feff.mpi.cmd' in input:
+                                            executable = input.get('feff.mpi.cmd')[0]
+                                            args = input.get('feff.mpi.args',[['']])[0] + [os.path.join(feffdir,exe)]
+                                        else:
+                                            executable = [os.path.join(feffdir,exe)]
+                                            args = ['']
+
+                                        runExecutable('',dir,executable,args,out,err)
+
+                                    shutil.copyfile(outFile, savedfl)
+
+                                if ipol == 1:
+                                    xanes = np.loadtxt(savedfl,usecols = (0,3)).T
+                                else:
+                                    xanes = np.append(xanes,[np.loadtxt(savedfl,usecols = (3)).T],axis=0)
+
+
+
+                                ipol = ipol + 1
+
+                        if write_input_only: continue
+
+                        if len(xanes) > 3:
+                            xavg = np.average(xanes[1:],axis=0)
+                            xanes = np.append(xanes,[xavg],axis=0)
+
+                        if spec == 'xanes':
+                            xanes_arr = xanes_arr + [xanes]
+                        else:
+                            exafs_arr = exafs_arr + [xanes]
+
+                    if write_input_only:
+                        output[target] = None
+                    else:
+                        # First combine the energy grids.
+                        wtot = []
+                        for xns in xanes_arr:
+                            #print("xns=",xns[0])
+                            wtot = np.append(wtot,xns[0])
+                        #print('wtot=',wtot) 
+                        wtot = np.unique(wtot)
+
+                        xanes_interp = []
+                        for xns in xanes_arr:
+                            xns_interp = []
+                            for xpol in xns[1:]:
+                                xns_interp = xns_interp + [np.interp(wtot,xns[0],xpol,left=0.0)]
+                            xanes_interp = xanes_interp + [xns_interp]
+
+                        xastot = np.sum(xanes_interp,axis=0)
+
+                        output[target] = [wtot.tolist()] + xastot.tolist()
             elif (target == 'exafs'):
                 # Loop over edges. For now just run in the same directory. Should change this later.
                 for i,edge in enumerate(input['feff.edge'][0]):

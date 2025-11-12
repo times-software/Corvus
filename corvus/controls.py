@@ -93,7 +93,8 @@ def availableHandlers():
         if corvus.abort.check_abort(None,'availableHandlers'): 
             print('returning'); return []
         if DEBUG: print('DEBUG4.6.1')
-        if find_spec('lmfit') is not None:
+        fs=find_spec('lmfit')
+        if fs is not None:
             from corvus.fit import fit
         handlers = handlers + [fit]
         if DEBUG: print('DEBUG4.6.2')
@@ -107,7 +108,9 @@ def availableHandlers():
         if corvus.abort.check_abort(None,'availableHandlers'): 
             print('returning'); return []
         if DEBUG: print('DEBUG4.7.2')
-        if find_spec('pymatgen') is not None:
+        fs = find_spec("pymatgen")
+        print(fs)
+        if fs is not None:
             if DEBUG: print('DEBUG4.7.3')
             from corvus.PyMatGen import PyMatGen
             if DEBUG: print('DEBUG4.7.4')
@@ -119,6 +122,7 @@ def availableHandlers():
 
     if DEBUG: print('DEBUG4.8')
 
+    from corvus.PyMatGen import PyMatGen
 
     return handlers
 
@@ -658,6 +662,15 @@ def generateAndRunWorkflow(config, system, targetList):
         workflow.sequence[i].go(config, system)
         i += 1
 
+    # Print output
+    print('printing output:', workflow.target)
+    for token in workflow.target:
+        if system[token] is not None:
+            prettyprint(token, config, system)
+        elif system['write_input_only']:
+            printAndExit('Input files were written. No calculations were performed.')
+        else: 
+            printAndExit('Error: target [' + token + '] not produced')
 # Handles command line arguments and runs through workflow
 
 # JK change to use of argparse in place of passing argv
