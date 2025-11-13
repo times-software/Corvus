@@ -42,4 +42,5 @@ absorbing_atom_type{ Cu }
 # toler2: Keep this at 0.0
 # rdirec: Keep this at 40.0
 
-multiprocessing_ncpu{ 1 }
+# Use multithreading with up to this number of processors
+multiprocessing_ncpu{ 2 }
