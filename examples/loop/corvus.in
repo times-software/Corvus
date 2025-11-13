@@ -25,8 +25,9 @@ absorbing_atom_type{ Cu }
 # Other useful cards with explanation of the options.
 #
 # feff.scf{ rscf  imol   nscf  ca   nmix
-# feff.scf{ 9.0   0     100   0.05 0   }
-# rscf: scf radius - the default of 7.0 is usually well converged
+feff.scf{ 3.0   0     100   0.05 0   }
+# rscf: scf radius - the default of 7.0 is usually well converged. Comment out the
+#       above line to use the defult.
 # imol: for solids keep this value of 0
 # nscf: number of scf iterations. If the scf doesn't converge, may need to increase
 # ca:   scf convergence acceleration. A smaller number is safer but will take longer
@@ -34,8 +35,9 @@ absorbing_atom_type{ Cu }
 # nmix: If the scf doesn't converge, you can try changing this between 0 and about 10.
 #
 # feff.fms{rfms imol minv toler1 toler2 rdirec}
-# feff.fms{9.0  0    0    0.0    0.0    40.0}
-# rfms: cluster radius to use for fms
+feff.fms{3.0  0    0    0.0    0.0    40.0}
+# rfms: cluster radius to use for fms. Not the setting of 3.0 above is fast, but not large enough.
+#       Just comment that line out to use the default, which is likely good enough.
 # imol: Keep this as 0 for solids.
 # minv: Keep this at 0.
 # toler1: Keep this at 0.0
@@ -43,4 +45,4 @@ absorbing_atom_type{ Cu }
 # rdirec: Keep this at 40.0
 
 # Use multithreading with up to this number of processors
-multiprocessing_ncpu{ 2 }
+multiprocessing_ncpu{ 1 }
