@@ -1,21 +1,22 @@
-# Set target to feffXANES (we will later change this to XANES.
+# Make corvus run a loop
 target_list { loop }
-loop_target{ cfavg }
-cfavg_target{ xanes xes }
+# Set the parameter to loop over (cif_input) and it's values (one cif file per line).
 loop_parameter{
 cif_input
 CuSe2.cif
 CuSe.cif
 Cu2Se.cif
 }
+
+# Inside the loop, run configurational averaged xanes and xes
+loop_target{ cfavg }
+cfavg_target{ xanes xes }
+
+# Set the edge
 feff.edge{ K }
+
+# Set the absorbing atom type
 absorbing_atom_type{ Cu }
 #write_input_only{ True }
 
-# Make Corvus use FEFF for XANES.
-#cif_input{corvus.cif}
-#vasp_xdatcar{XDATCAR}
 multiprocessing_ncpu{ 1 }
-feff.MPI.CMD{ mpirun }
-feff.MPI.ARGS{ -n 40 }
-#feff.equivalence{ 0 }
