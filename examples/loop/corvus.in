@@ -22,7 +22,7 @@ absorbing_atom_type{ Cu }
 # but not run feff.
 #write_input_only{ True }
 
-# Other useful cards
+# Other useful cards with explanation of the options.
 #
 # feff.scf{ rscf  imol   nscf  ca   nmix
 # feff.scf{ 9.0   0     100   0.05 0   }
