@@ -73,6 +73,7 @@ class helper(Handler):
 
     @staticmethod
     def prep(config):
+       return
        if 'xcLabel' in config:
            subdir = config['pathprefix'] + str(config['xcIndex']) + config['xcLabel'] + '_helper'
        else:
@@ -108,208 +109,220 @@ class helper(Handler):
         if check_abort(None,'helper.run'): return
         #print('Inside helper')
         from corvus.controls import generateAndRunWorkflow
-        dir = config['xcDir']
-        if "multiprocessing_ncpu" in input:
-           ncpu = input["multiprocessing_ncpu"][0][0]
-        else:
-           ncpu = mltp.cpu_count()
-
-        print("Number of cpu for multiprocessing: ", ncpu)
+        #dir = config['xcDir']
         for target in output:
             #print('Inside helper', output)
             if (target == 'cfavg'):
+                if "multiprocessing_ncpu" in input:
+                    ncpu = input["multiprocessing_ncpu"][0][0]
+                else:
+                    ncpu = mltp.cpu_count()
+
+                print("Number of threads available for multiprocessing: ", ncpu)
                 #Define the target of the average
                 targetList = input['cfavg_target']
+                for targ in targetList[0]:
+                    # Set the current working directory to the correct directory. 
+                    if 'xcLabel' in config:
+                        subdir = config['pathprefix'] + str(config['xcIndex']) + config['xcLabel'] + '_cfavg_' + targ
+                    else:
+                        subdir = config['pathprefix'] + str(config['xcIndex']) + '_cfavg_' + targ
+                    config['xcIndex'] = config['xcIndex']+1
 
-                cluster_array = input['cluster_array']
-                print("Number of absorbers:", len(cluster_array))
-                dirs=[]
-                
-                
+                    xcDir = os.path.join(config['cwd'], subdir)
+                    # Make new output directory if it doesn't exist
+                    if not os.path.exists(xcDir):
+                        os.mkdir(xcDir)
 
-                # Set total number of processes
-                if 'cfavg_max_configurations' in input and len(cluster_array) > 1:
-                    # Use nmax randomly chosen configurations
-                    totprocs = min(input['cfavg_max_configurations'][0][0],len(cluster_array))
-                    nclust=totprocs
-                    if 'cfavg_choose_random_absorbers' in input: 
-                         if input['cfavg_choose_random_absorbers'][0][0]:
-                            absorbers=random.sample(range(1, len(cluster_array)), totprocs)
-                            for iabs in absorbers:
-                               new_cluster_array = [cluster_array[i] for i in absorbers]
-
-                            cluster_array = new_cluster_array
-                else:
-                    totprocs = len(cluster_array)
-                    nclust=totprocs
-                
- 
-                outputs = []
-                numdone=0
-                while totprocs > 0:
-                    poolSize = min(ncpu,totprocs)
-                    print("Using ", poolSize, ' processors.')
-                    print("processes left to run: ", totprocs)
-                    inputs = []
-                    configs = []
-                    tLists = []
-                    arguments = []
-                    for i,clust_elem in enumerate(cluster_array[numdone:numdone+poolSize]):
-                        inputs = inputs + [copy.copy(input)]
-                        inputs[i]['absorbing_atom'] = [[clust_elem[0]]]
-                        inputs[i]['cluster'] = clust_elem[2]
-                        # Make sure we are working with absolute units.
-                        inputs[i]['feff.absolute'] = [[True]]
-                        configs = configs + [copy.copy(config)]
-                        configs[i]['cwd'] = config['xcDir']
-                        configs[i]['xcIndexStart'] = i+numdone+1
-                        
-                        # Create a safe folder name from input
-                        invalid_chars = r'[<>:"/\|?*`]'
-                        folder_name = re.sub(invalid_chars, '', clust_elem[3])
-                        folder_name = re.sub(r'[\x00-\x1f\x7f]', '', folder_name)
-                        configs[i]['xcLabel'] = folder_name
-
-                        tLists = tLists + [targetList]
-                        arguments = arguments + [(configs[i],inputs[i],targetList)]
-                        #targetList = [['xanes']]
-                    with mltp.Pool(processes=poolSize) as pool:
-                        poolout =  pool.starmap_async(multiproc_genAndRun,arguments)
-                        while not poolout.ready():
-                            sleep(1)
-                    outputs = outputs + poolout.get()
-                    numdone = numdone + poolSize
-                   
-                    #print('Check: ', len(outputs), poolSize, totprocs)
-                    pool.close()
-                    totprocs = totprocs - poolSize
-                
-                if input['write_input_only'][0][0]: 
-                    output[target] = None
-                    return
-                #print(len(outputs),len(cluster_array))
-                    #generateAndRunWorkflow(config2, input, targetList)
+                    cluster_array = input['cluster_array']
+                    print("Number of absorbers:", len(cluster_array))
+                    dirs=[]
                     
-                    #Prcs = mltp.Process(target=generateAndRunWorkflow,args=(config2,inputs[i],targetList))
-                    #Prcs.start()
-                    #tasks.append(Prcs)
-
-                #for Prcss in tasks:
-                #    Prcss.join()
-                mu_pol = []
-                data_pol = []
-                ipol = 1
-                npol =  len(outputs[0][targetList[0][0]])
-                #print(outputs[0][targetList[0][0]])
-                #print('npol=',npol)
-                #exit()
-                UnicodeEncodeError = []
-                print('Summing XAS of all unique absorbers:')
-                while ipol <= npol-1:
-                    en = []
-                    mu = []
-                    step = 1.e30
-                    totalWeight = 0.0
-                    weights = []
-                    ndim=0
                     
-                    for i,clust_elem in enumerate(cluster_array[0:nclust]):
-                        # get results from inputs.
-                        #print(targetList[0][0])
-                        #print(inputs[i])
-                        weight = clust_elem[1]
-                        if ipol == 1:
-                           print('Absorber: ', clust_elem[3])
-                           print('weight ratio: ', clust_elem[1])
-                        weights = weights + [weight]
-                        #mu0 = mu0
-                        totalWeight = totalWeight + weight
-                        data = np.array(outputs[i][targetList[0][0]])
-                        ndim = data.ndim
-                        if data.ndim == 2: # array of rows corresponding to set of 1d data 
-                            en0 = data[0]
-                            mu0 = data[ipol]
-                            # Save in array of output.
-                            en = en + [en0]
-                            step = min(step,np.amin(en0[1:]-en0[:-1]))
-                            mu = mu + [mu0]
-                            #plt.plot(en,mu)
-                        elif data.ndim == 3: # 2d data like RIXS. Assummes first two indices are x and y.
-                            # Now reform data as a 2d ndarray
-                            dataNd = dataNd + [data]
-                        
-                        
+
+                    # Set total number of processes
+                    if 'cfavg_max_configurations' in input and len(cluster_array) > 1:
+                        # Use nmax randomly chosen configurations
+                        totprocs = min(input['cfavg_max_configurations'][0][0],len(cluster_array))
+                        nclust=totprocs
+                        if 'cfavg_choose_random_absorbers' in input: 
+                             if input['cfavg_choose_random_absorbers'][0][0]:
+                                absorbers=random.sample(range(1, len(cluster_array)), totprocs)
+                                for iabs in absorbers:
+                                   new_cluster_array = [cluster_array[i] for i in absorbers]
+
+                                cluster_array = new_cluster_array
+                    else:
+                        totprocs = len(cluster_array)
+                        nclust=totprocs
                     
-                    weights = np.array(weights)/totalWeight
-                    if data.ndim == 2:
-                        en = np.array(en)
-                        mu = np.array(mu)
+     
+                    outputs = []
+                    numdone=0
+                    while totprocs > 0:
+                        poolSize = min(ncpu,totprocs)
+                        print("Using ", poolSize, ' processors.')
+                        print("processes left to run: ", totprocs)
+                        inputs = []
+                        configs = []
+                        tLists = []
+                        arguments = []
+                        for i,clust_elem in enumerate(cluster_array[numdone:numdone+poolSize]):
+                            inputs = inputs + [copy.copy(input)]
+                            inputs[i]['absorbing_atom'] = [[clust_elem[0]]]
+                            inputs[i]['cluster'] = clust_elem[2]
+                            # Make sure we are working with absolute units.
+                            inputs[i]['feff.absolute'] = [[True]]
+                            configs = configs + [copy.copy(config)]
+                            configs[i]['cwd'] = xcDir
+                            configs[i]['xcIndexStart'] = i+numdone+1
+                            
+                            # Create a safe folder name from input
+                            invalid_chars = r'[<>:"/\|?*`]'
+                            folder_name = re.sub(invalid_chars, '', clust_elem[3])
+                            folder_name = re.sub(r'[\x00-\x1f\x7f]', '', folder_name)
+                            configs[i]['xcLabel'] = folder_name
 
-                        # Make the common grid.
-                        emin=np.amin(en)
-                        emax=np.amax(en)
-                    if ipol == 1:
-                        step = max(step,0.01)
-                        egrid = np.arange(emin,emax,step)
+                            tLists = tLists + [[targ]]
+                            arguments = arguments + [(configs[i],inputs[i],[[targ]])]
+                            #targetList = [['xanes']]
+                        with mltp.Pool(processes=poolSize) as pool:
+                            poolout =  pool.starmap_async(multiproc_genAndRun,arguments)
+                            while not poolout.ready():
+                                sleep(1)
+                        outputs = outputs + poolout.get()
+                        numdone = numdone + poolSize
+                       
+                        #print('Check: ', len(outputs), poolSize, totprocs)
+                        pool.close()
+                        totprocs = totprocs - poolSize
+                    
+                    if input['write_input_only'][0][0]: 
+                        output[target] = None
+                        continue
+                    #print(len(outputs),len(cluster_array))
+                        #generateAndRunWorkflow(config2, input, targetList)
+                        
+                        #Prcs = mltp.Process(target=generateAndRunWorkflow,args=(config2,inputs[i],targetList))
+                        #Prcs.start()
+                        #tasks.append(Prcs)
 
-                    # Interpolate onto common grid.
-                    mu_interp = []
-
-                    for i,clust_elem in enumerate(cluster_array[0:nclust]):
+                    #for Prcss in tasks:
+                    #    Prcss.join()
+                    mu_pol = []
+                    data_pol = []
+                    ipol = 1
+                    npol =  len(outputs[0][targ])
+                    #print(outputs[0][targetList[0][0]])
+                    #print('npol=',npol)
+                    #exit()
+                    UnicodeEncodeError = []
+                    print('Summing XAS of all unique absorbers:')
+                    while ipol <= npol-1:
+                        en = []
+                        mu = []
+                        step = 1.e30
+                        totalWeight = 0.0
+                        weights = []
+                        ndim=0
+                        
+                        for i,clust_elem in enumerate(cluster_array[0:nclust]):
+                            # get results from inputs.
+                            #print(targetList[0][0])
+                            #print(inputs[i])
+                            weight = clust_elem[1]
+                            if ipol == 1:
+                               print('Absorber: ', clust_elem[3])
+                               print('weight ratio: ', clust_elem[1])
+                            weights = weights + [weight]
+                            #mu0 = mu0
+                            totalWeight = totalWeight + weight
+                            data = np.array(outputs[i][targ])
+                            ndim = data.ndim
+                            if data.ndim == 2: # array of rows corresponding to set of 1d data 
+                                en0 = data[0]
+                                mu0 = data[ipol]
+                                # Save in array of output.
+                                en = en + [en0]
+                                step = min(step,np.amin(en0[1:]-en0[:-1]))
+                                mu = mu + [mu0]
+                                #plt.plot(en,mu)
+                            elif data.ndim == 3: # 2d data like RIXS. Assummes first two indices are x and y.
+                                # Now reform data as a 2d ndarray
+                                dataNd = dataNd + [data]
+                            
+                            
+                        
+                        weights = np.array(weights)/totalWeight
                         if data.ndim == 2:
-                            # interpolate onto the common grid and add to total.
+                            en = np.array(en)
+                            mu = np.array(mu)
+
+                            # Make the common grid.
+                            emin=np.amin(en)
+                            emax=np.amax(en)
+                        if ipol == 1:
+                            step = max(step,0.01)
+                            egrid = np.arange(emin,emax,step)
+
+                        # Interpolate onto common grid.
+                        mu_interp = []
+
+                        for i,clust_elem in enumerate(cluster_array[0:nclust]):
+                            if data.ndim == 2:
+                                # interpolate onto the common grid and add to total.
+                            
+                                mui = np.interp(egrid, en[i], mu[i], left = 0.0)
+                                mu_interp = mu_interp + [mui]
+
+
+                            elif data.ndim == 3:
+                                # interpolate onto common 2d grid - just use the first grid
+                                print('Adding contribution from absorber ', i)
+                                datai = rgi((dataNd[i][1,:,0],dataNd[i][0,0,:]),dataNd[i][2],method='linear', bounds_error=False,fill_value=0.0)
+                                if i == 0:
+                                    data_tot = datai((dataNd[0][1],dataNd[0][0])).flatten()*weights[i]
+                                else:
+                                    data_tot = data_tot + datai((dataNd[0][1],dataNd[0][0])).flatten()*weights[i]
+                 
+
+                        if ndim == 2:
+                            # Get average and standard deviation.
+                            mu_avg,mu_stdev = weighted_avg_and_std(np.array(mu_interp), weights)
+                            mu_pol = mu_pol + [mu_avg]
+                            
+                        elif ndim == 3:
+                            data_pol = data_pol + [data_tot]
+                            break
+                        #print("mu_pol",mu_pol)
+                        #mu_avg,mu_stdev = weighted_avg_and_std(mu_interp)
+                        #mu_stdev = np.std(mu_interp,0)/totalWeight*len(cluster_array)
+                        ipol = ipol + 1
+                    dirName = os.path.join(config['cwd'], config['pathprefix'] + '.cfavg_' + targ)
+                    if data.ndim == 2: 
+                        mu_pol = [egrid] + mu_pol 
+                        output['cfavg'] = np.array(mu_pol).tolist()
+                        #print(mu_pol[0])
+                        #print(mu_pol[1])              
+                        np.savetxt(dirName + '.out',np.array(mu_pol).T)
                         
-                            mui = np.interp(egrid, en[i], mu[i], left = 0.0)
-                            mu_interp = mu_interp + [mui]
 
-
-                        elif data.ndim == 3:
-                            # interpolate onto common 2d grid - just use the first grid
-                            print('Adding contribution from absorber ', i)
-                            datai = rgi((dataNd[i][1,:,0],dataNd[i][0,0,:]),dataNd[i][2],method='linear', bounds_error=False,fill_value=0.0)
-                            if i == 0:
-                                data_tot = datai((dataNd[0][1],dataNd[0][0])).flatten()*weights[i]
-                            else:
-                                data_tot = data_tot + datai((dataNd[0][1],dataNd[0][0])).flatten()*weights[i]
-             
-
-                    if ndim == 2:
-                        # Get average and standard deviation.
-                        mu_avg,mu_stdev = weighted_avg_and_std(np.array(mu_interp), weights)
-                        mu_pol = mu_pol + [mu_avg]
+                    elif data.ndim == 3:
+                        # Transform data for output
+                        data_out = np.array([dataNd[0][0].flatten(),dataNd[0][1].flatten(),data_tot])
+                        output['cfavg'] = np.array(data_out).tolist()
                         
-                    elif ndim == 3:
-                        data_pol = data_pol + [data_tot]
-                        break
-                    #print("mu_pol",mu_pol)
-                    #mu_avg,mu_stdev = weighted_avg_and_std(mu_interp)
-                    #mu_stdev = np.std(mu_interp,0)/totalWeight*len(cluster_array)
-                    ipol = ipol + 1
-                
-                if data.ndim == 2: 
-                    mu_pol = [egrid] + mu_pol 
-                    output['cfavg'] = np.array(mu_pol).tolist()
-                    #print(mu_pol[0])
-                    #print(mu_pol[1])              
-                    np.savetxt(config['pathprefix'] + '.cfavg_' + targetList[0][0] + '.out',np.array(mu_pol).T)
-                    
+                        f = open(dirName + '.1.out', 'w')
+                        i=0
+                        nd = dataNd[0][0].shape[0]
+                        #print(nd)
+                        for row in data_out.T:
+                            if i == nd:
+                                f.write('\n')
+                                i = 0
 
-                elif data.ndim == 3:
-                    # Transform data for output
-                    data_out = np.array([dataNd[0][0].flatten(),dataNd[0][1].flatten(),data_tot])
-                    output['cfavg'] = np.array(data_out).tolist()
-                    
-                    f = open(config['pathprefix'] + '.cfavg_' + targetList[0][0] + '.1.out', 'w')
-                    i=0
-                    nd = dataNd[0][0].shape[0]
-                    print(nd)
-                    for row in data_out.T:
-                        if i == nd:
-                            f.write('\n')
-                            i = 0
-
-                        f.write('    '.join(map(str,row)) + '\n')
-                        i += 1
+                            f.write('    '.join(map(str,row)) + '\n')
+                            i += 1
 
             if (target == 'loop'):
                 #Define the target of the average
@@ -343,6 +356,7 @@ class helper(Handler):
                 arguments = []
                 for i,value in enumerate(loop_values):
                     inputs = inputs + [copy.copy(input)]
+                    #print(loop_values[i])
                     inputs[i][loop_parameter] = [loop_values[i]]
                     inputs[i]['multiprocessing_ncpu'] = [[1]]
                     del inputs[i]['target_list']
@@ -351,9 +365,9 @@ class helper(Handler):
 
                     # Set the current working directory to the correct directory. 
                     if 'xcLabel' in config:
-                        subdir = config['pathprefix'] + str(i) + config['xcLabel'] + '_loop'
+                        subdir = config['pathprefix'] + str(i+1) + config['xcLabel'] + '_loop'
                     else:
-                        subdir = config['pathprefix'] + str(i) + '_loop'
+                        subdir = config['pathprefix'] + str(i+1) + '_loop'
 
                     xcDir = os.path.join(config['cwd'], subdir)
                     # Make new output directory if it doesn't exist
@@ -365,7 +379,7 @@ class helper(Handler):
                         
                     configs[i]['xcIndexStart'] = 1
                     configs[i]['cwd'] = xcDir
-                    configs[i]['pathprefix'] = xcDir
+                    #configs[i]['pathprefix'] = xcDir
                         
                     tLists = tLists + [targetList]
                     arguments = arguments + [(configs[i],inputs[i],targetList)]

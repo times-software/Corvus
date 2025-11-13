@@ -5,6 +5,7 @@ import corvus.abort
 from importlib.util import find_spec
 DEBUG = False
 pp_debug = pprint.PrettyPrinter(indent=4)
+invisible_handlers=['helper', 'PyMatGen']
 
 # Define the available handlers by hand here
 # Note FDV: There should be a way to do this automatically, but can't think of
@@ -109,7 +110,6 @@ def availableHandlers():
             print('returning'); return []
         if DEBUG: print('DEBUG4.7.2')
         fs = find_spec("pymatgen")
-        print(fs)
         if fs is not None:
             if DEBUG: print('DEBUG4.7.3')
             from corvus.PyMatGen import PyMatGen
@@ -353,7 +353,6 @@ def initializeSystem(config, system, doc):
 
     if os.path.exists(inp):
         system.update(corvutils.parsnip.parse(conf, inp, mode=['read','UseDefaults']))
-
 
     with open(conf, 'r',encoding="utf8") as conf_file:
         doc2=corvutils.parsnip.readConfig_for_Doc(conf_file).asDict()
@@ -655,7 +654,9 @@ def generateAndRunWorkflow(config, system, targetList):
         #print 'Workflow index'
         #print config['xcIndex']
         #print config['xcIndexStart']
-        config['xcIndex'] = i + config['xcIndexStart']
+        handler=workflow.sequence[i].handler.__name__
+        if not (handler in invisible_handlers):
+            config['xcIndex'] = i + config['xcIndexStart']
         #print config['xcIndex']
         
         if corvus.abort.check_abort(None,'generateAndRunWorkflow'): return
@@ -663,14 +664,16 @@ def generateAndRunWorkflow(config, system, targetList):
         i += 1
 
     # Print output
-    print('printing output:', workflow.target)
-    for token in workflow.target:
-        if system[token] is not None:
-            prettyprint(token, config, system)
-        elif system['write_input_only']:
-            printAndExit('Input files were written. No calculations were performed.')
-        else: 
-            printAndExit('Error: target [' + token + '] not produced')
+    #print('printing output:', workflow.target)
+    #for token in workflow.target:
+    #    if system[token] is not None:
+    #        prettyprint(token, config, system)
+    #    elif system['write_input_only']:
+    #        print('Input files were written. No calculations were performed.')
+    #    else: 
+    #        printAndExit('Error: target [' + token + '] not produced')
+
+    print("Finished running workflow", workflow.target[0])
 # Handles command line arguments and runs through workflow
 
 # JK change to use of argparse in place of passing argv

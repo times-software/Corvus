@@ -123,6 +123,7 @@ class PyMatGen(Handler):
 
     @staticmethod
     def prep(config):
+        return
         subdir = config['pathprefix'] + str(config['xcIndex']) + '_PYMATGEN'
         xcDir = os.path.join(config['cwd'], subdir)
         # Make new output directory if if doesn't exist
@@ -382,7 +383,7 @@ class PyMatGen(Handler):
             #for line in cluster_array[0][2]:
             #   print(line[4])
         elif 'vasp_md_to_feff' in output:
-             print("hello")
+             print("Not available yet.")
         elif set(output.keys()).issubset(set(['supercell', 'cell_vectors', 'cell_struct_xyz_red', 'cell_scaling_iso', 'cell_scaling_abc', 'number_density'])):
         #elif 'supercell' in output:
             structure = input['mp.structure']
@@ -459,7 +460,7 @@ class PyMatGen(Handler):
                 mpr = MPRester(input['mp_apikey'][0][0])
                 struct = mpr.get_structure_by_material_id(input["mp_id"][0][0])
             elif 'cif_input' in input:
-                parser = CifParser(input.get("cif_input"))
+                parser = CifParser(input.get("cif_input")[0][0])
                 # Only take first structure for now.
                 struct = parser.parse_structures()[0]
             elif 'vasp_xml' in input:
