@@ -536,6 +536,7 @@ class Feff(Handler):
                 # Loop over edges. For now just run in the same directory. Should change this later.
                 xanes_arr = []
                 exafs_arr = []
+                ek=[]
                 for spec in ['xanes','exafs']:
                     
                     for i,edge in enumerate(input['feff.edge'][0]):
@@ -552,6 +553,7 @@ class Feff(Handler):
                                     savedfl = os.path.join(dir,spec + '_' + edge + '.dat')
                                 else:
                                     savedfl = os.path.join(dir,spec + '_' + edge + '_' + str(ipol) + '.dat')
+                                #print(savedfl,os.path.exists(savedfl))
                                 if not (os.path.exists(savedfl) and input['usesaved'][0][0]):
                                     if 'feff.polarization' not in input:
                                         if abs(pol[0])+abs(pol[1])+abs(pol[2]) == 0:
@@ -563,11 +565,13 @@ class Feff(Handler):
                                         writeXANESInput(feffInput,inpf)
                                     else:
                                         # remove fms from feff input
-                                        del feffInput['feff.fms']
-                                        del feffInput['feff.xanes']
-                                        if feffInput['feff.rpath'][0][0] < 1.0: del feffInput['feff.rpath']
-                                        feffInput['feff.control'] = [[0,0,0,1,1,1]]
+                                        if 'feff.fms' in feffInput: del feffInput['feff.fms']
+                                        if 'feff.xanes' in feffInput: del feffInput['feff.xanes']
+                                        if 'feff.rpath' in feffInput: 
+                                            if feffInput['feff.rpath'][0][0] < 1.0: del feffInput['feff.rpath']
+                                        feffInput['feff.control'] = [[0,1,1,1,1,1]]
                                         writeEXAFSInput(feffInput,inpf)
+
                                     if write_input_only: continue
 
                                     # Loop over executable: This is specific to feff. Other codes
@@ -591,6 +595,7 @@ class Feff(Handler):
 
                                 if ipol == 1:
                                     xanes = np.loadtxt(savedfl,usecols = (0,3)).T
+                                    ek = np.loadtxt(savedfl,usecols = (0,2)).T
                                 else:
                                     xanes = np.append(xanes,[np.loadtxt(savedfl,usecols = (3)).T],axis=0)
 
@@ -609,27 +614,67 @@ class Feff(Handler):
                         else:
                             exafs_arr = exafs_arr + [xanes]
 
-                    if write_input_only:
-                        output[target] = None
-                    else:
-                        # First combine the energy grids.
-                        wtot = []
-                        for xns in xanes_arr:
-                            #print("xns=",xns[0])
-                            wtot = np.append(wtot,xns[0])
-                        #print('wtot=',wtot) 
-                        wtot = np.unique(wtot)
+                if write_input_only:
+                    output[target] = None
+                else:
+                    # First combine the energy grids for all results (exafs and xanes)
+                    wtot = []
+                    for xns in xanes_arr:
+                        #print("xns=",xns[0])
+                        wtot = np.append(wtot,xns[0])
+                    for xns in exafs_arr:
+                        wtot = np.append(wtot,xns[0])
+                              
+                    wtot = np.unique(wtot)
 
-                        xanes_interp = []
-                        for xns in xanes_arr:
-                            xns_interp = []
-                            for xpol in xns[1:]:
-                                xns_interp = xns_interp + [np.interp(wtot,xns[0],xpol,left=0.0)]
-                            xanes_interp = xanes_interp + [xns_interp]
+                    # Find energy at which k=0.
+                    k2min=1.e8
+                    #print(ek)
+                    #print(ek[0][0])
+                    e0 = ek[0][0]
+                    print("Edge energy:",e0)
+                    for i,e in enumerate(ek[0]):
+                        k2=(ek[1][i])**2
+                        if k2 < k2min: 
+                            e0 = e
+                            k2min = k2
 
-                        xastot = np.sum(xanes_interp,axis=0)
+                    bohr = 0.529177249
+                    hart = 2*13.605698
+                    #print(wtot-e0)
+                    ktot = np.sign(wtot-e0)*np.sqrt(np.abs(2*(wtot-e0)/hart))/bohr
+                    xanes_interp = []
+                    for xns in xanes_arr:
+                        xns_interp = []
+                        for xpol in xns[1:]:
+                            xns_interp = xns_interp + [np.interp(wtot,xns[0],xpol,left=0.0)]
+                        xanes_interp = xanes_interp + [xns_interp]
 
-                        output[target] = [wtot.tolist()] + xastot.tolist()
+                    xanestot = np.sum(xanes_interp,axis=0)
+
+                    exafs_interp = []
+                    for xns in exafs_arr:
+                        xns_interp = []
+                        for xpol in xns[1:]:
+                            xns_interp = xns_interp + [np.interp(wtot,xns[0],xpol,left=0.0)]
+                        exafs_interp = exafs_interp + [xns_interp]
+
+                    exafstot = np.sum(exafs_interp,axis=0)
+
+                    # Now interpolate smoothly between XANES and EXAFS from k=2 to 3.
+                    # Use interpolation XANES*cos(a)^2 + EXAFS*sin(a)^2, where a=\pi/2*(k-kmin)/(kmax-kmin)
+                    kmin=2.0
+                    kmax=3.0
+                    for i,xas in enumerate(xanestot[0]):
+                        if (ktot[i] >= kmin) and (ktot[i] <= kmax): 
+                            #print('Interpolating: ktot=',ktot[i])
+                            xanestot[0][i] = xanestot[0][i]*np.cos((ktot[i]-kmin)/(kmax-kmin)*np.pi/2.0)**2+exafstot[0][i]*np.sin((ktot[i]-kmin)/(kmax-kmin)*np.pi/2)**2
+                        elif ktot[i] > kmax:
+                            #print('Using EXAFS: ktot=',ktot[i])
+                            xanestot[0][i] = exafstot[0][i]
+                   
+                    
+                    output[target] = [wtot.tolist()] + xanestot.tolist()
             elif (target == 'exafs'):
                 # Loop over edges. For now just run in the same directory. Should change this later.
                 for i,edge in enumerate(input['feff.edge'][0]):
@@ -641,6 +686,7 @@ class Feff(Handler):
 
                             # Write input file for FEFF.
                             writeEXAFSInput(feffInput,inpf)
+                            if write_input_only: continue
 
                             # Loop over executable: This is specific to feff. Other codes
                             # will more likely have only one executable. Here I am running
@@ -668,6 +714,9 @@ class Feff(Handler):
                         xmu_arr = xmu_arr + [xmu]
                         w_arr = w_arr + [w]
 
+                if write_input_only: 
+                    output[target] = None
+                    return
                 # Now combine energy grids, interpolate files, and sum.
                 wtot = np.unique(np.append(w_arr[0],w_arr[1:]))
                 xmutot = np.zeros_like(wtot)

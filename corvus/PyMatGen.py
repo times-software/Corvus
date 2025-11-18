@@ -174,15 +174,26 @@ class PyMatGen(Handler):
             # Get local denSpacegroupAnalyzersities for possible later use.
             cluster_radius = input['clusterradius'][0][0]
             getLocalDensity(structure,cluster_radius)
-            nn_getter = CrystalNN(weighted_cn=False)
+            # Is structure disordered?
+            is_disordered = False
+            for site in structure:
+                if not site.is_ordered:
+                    is_disordered = True
+                    break
+
+            if not is_disordered: nn_getter = CrystalNN(weighted_cn=False)
+
             cn_set=set()
             i_coord=1
             with open('densities.dat', 'w') as fden:
                for i,site in enumerate(structure.sites):
-                  print(site.label,site.coords.tolist()[0],site.coords.tolist()[1],site.coords.tolist()[2],site.properties["local_density"],file=fden)
-                  site.properties['cn'] = (site.label,frozenset(nn_getter.get_cn_dict(structure,i,use_weights=False).items()))
-                  #print(site.properties['cn'])
-                  cn_set.add(site.properties['cn'])
+                    print(site.label,site.coords.tolist()[0],site.coords.tolist()[1],site.coords.tolist()[2],site.properties["local_density"],file=fden)
+                    if is_disordered: 
+                        site.properties['cn'] = None 
+                    else:
+                        site.properties['cn'] = (site.label,frozenset(nn_getter.get_cn_dict(structure,i,use_weights=False).items()))
+                
+                    cn_set.add(site.properties['cn'])
             
             cn_list=sorted(cn_set)
             # Now add an coordination environment index to site properties

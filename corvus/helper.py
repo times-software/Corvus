@@ -334,7 +334,7 @@ class helper(Handler):
                 # values are on next N lines.
                 loop_values = input['loop_parameter'][1:]
                 
-                print("Number of calculations:", len(loop_values))
+                print("Number of calculations in loop:", len(loop_values))
                 dirs=[]
                 
                 
@@ -358,7 +358,7 @@ class helper(Handler):
                     inputs = inputs + [copy.copy(input)]
                     #print(loop_values[i])
                     inputs[i][loop_parameter] = [loop_values[i]]
-                    inputs[i]['multiprocessing_ncpu'] = [[1]]
+                    #inputs[i]['multiprocessing_ncpu'] = [[1]]
                     del inputs[i]['target_list']
                     del inputs[i]['loop_parameter']
                     inputs[i]['target_list'] = targetList
