@@ -5,7 +5,7 @@ import corvus.abort
 from importlib.util import find_spec
 DEBUG = False
 pp_debug = pprint.PrettyPrinter(indent=4)
-invisible_handlers=['helper', 'PyMatGen']
+invisible_handlers=['helper', 'PyMatGen','larch']
 
 # Define the available handlers by hand here
 # Note FDV: There should be a way to do this automatically, but can't think of
@@ -104,6 +104,9 @@ def availableHandlers():
         pass
     if DEBUG: print('DEBUG4.7')
     
+    #fs = find_spec("pymatgen")
+    #print(fs)
+    from corvus.PyMatGen import PyMatGen
     try:
         if DEBUG: print('DEBUG4.7.1')
         if corvus.abort.check_abort(None,'availableHandlers'): 
@@ -120,9 +123,18 @@ def availableHandlers():
         print("Warning: pymatgen not found. PyMatGen handler will be disabled.")
         pass
 
+    try:
+        if corvus.abort.check_abort(None,'availableHandlers'): 
+            print('returning'); return []
+        fs = find_spec("xraylarch")
+        if fs is not None:
+            from corvus.larch import larch
+            handlers = handlers + [larch]
+    except ImportError:
+        print("Warning: xraylarch not found. larch handler will be disabled.")
+        pass
     if DEBUG: print('DEBUG4.8')
 
-    from corvus.PyMatGen import PyMatGen
 
     return handlers
 
@@ -458,6 +470,7 @@ def generateWorkflow(target, handlers, system, config, desc=''):
     if DEBUG: print('DEBUG6')
     for t in reversed(mainTargets):
        targets = set([t])
+       print("targets in gen:", targets)
        
        while len(targets) > 0:
            noMatch = True
@@ -621,7 +634,7 @@ def generateAndRunWorkflow(config, system, targetList):
     #else:
     #  print 'Provide target properties or Workflow'
     #  sys.exit()
-
+    print('Entering gen and run:', targetList)
     if 'usehandlers' in list(system.keys()):
       handlerList = system['usehandlers'][0]
     else:

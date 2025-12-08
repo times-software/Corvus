@@ -100,7 +100,26 @@ class Exchange(object):
         self.handler.exchange(config, system, returnedOutput)
 #       print('\nsystem\n')
 #       pp_debug.pprint(system)
-        system.update(returnedOutput)
+#       JJK - System is a dictionary where the elements
+#             are lists of lists [[],[],...]
+#
+#             output of a handler is also a dictionary.
+#             If the values of that dictionary are a 
+#             dictionary, update the system with
+#             the values rather than the outer
+#             dictionary. This allows several outputs
+#             to be returned by a single target property.
+#             For example, the target might be 'exafs_chi'
+#             in which case 'exafs_chik' and 'exafs_chir'
+#             are output.
+        for key,val in returnedOutput.items():
+            if isinstance(val, dict):
+                print('updating system with:', val.keys())
+                system.update(val)
+
+            print('updating system with:', key)
+            system[key] = val
+         #system.update(returnedOutput)
 
 class Update(object):
     def __init__(self, token, newToken=None, newValue=None):

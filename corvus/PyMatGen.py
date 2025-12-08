@@ -191,11 +191,13 @@ class PyMatGen(Handler):
                     if is_disordered: 
                         site.properties['cn'] = None 
                     else:
-                        site.properties['cn'] = (site.label,frozenset(nn_getter.get_cn_dict(structure,i,use_weights=False).items()))
+                        site.properties['cn'] = re.sub(r'[^a-zA-Z0-9]','',str((site.species,sorted(list(nn_getter.get_cn_dict(structure,i,use_weights=False).items()),key=lambda x: (x[0],x[1])))))
                 
                     cn_set.add(site.properties['cn'])
-            
-            cn_list=sorted(cn_set)
+            cn_list=sorted(list(cn_set))
+            #cn_set=sorted([re.sub(r'[^a-zA-Z0-9]','',str(x)) for x in list(cn_set)])
+            #cn_list=sorted(cn_set)
+            #print('CNLIST:',len(cn_list),cn_list)
             # Now add an coordination environment index to site properties
             for i, site in enumerate(structure.sites):
                 site.properties['ce']=cn_list.index(site.properties['cn'])
@@ -495,7 +497,7 @@ class PyMatGen(Handler):
             elif 'xyz_input' in input:
                 
                 # Read the molecule from xyz
-                mol = Molecule.from_file(input['xyz_input'])
+                mol = Molecule.from_file(input['xyz_input'][0][0])
 
                 # Get the bounding box coordinates. Add 10 (angstrom?) to sizes.
                 min_x = min(site.x for site in mol)

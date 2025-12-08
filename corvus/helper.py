@@ -24,6 +24,8 @@ strlistkey = lambda L:','.join(sorted(L))
 
 implemented['cfavg'] = {'type':'Exchange','out':['cfavg'],'cost':1,'req':['cluster_array'],
 'desc':'Average over an array of clusters and absorbing atoms.'}
+#implemented['xas'] = {'type':'Exchange','out':['xas'],'cost':1,'req':['cluster_array'],
+#'desc':'Average over an array of clusters and absorbing atoms.'}
 
 implemented['loop'] = {'type':'Exchange','out':['loop'],'cost':1,'req':['loop_target'],
 'desc':'Run multiple calculations with different settings.'}
@@ -110,9 +112,11 @@ class helper(Handler):
         #print('Inside helper')
         from corvus.controls import generateAndRunWorkflow
         #dir = config['xcDir']
+
         for target in output:
             #print('Inside helper', output)
             if (target == 'cfavg'):
+                print("WI cfavg:",input['write_input_only'])
                 if "multiprocessing_ncpu" in input:
                     ncpu = input["multiprocessing_ncpu"][0][0]
                 else:
@@ -178,9 +182,10 @@ class helper(Handler):
                             configs[i]['xcIndexStart'] = i+numdone+1
                             
                             # Create a safe folder name from input
-                            invalid_chars = r'[<>:"/\|?*`]'
-                            folder_name = re.sub(invalid_chars, '', clust_elem[3])
-                            folder_name = re.sub(r'[\x00-\x1f\x7f]', '', folder_name)
+                            folder_name = safeName(clust_elem[3])
+                            #invalid_chars = r'[<>:"/\|?*`]'
+                            #folder_name = re.sub(invalid_chars, '', clust_elem[3])
+                            #folder_name = re.sub(r'[\x00-\x1f\x7f]', '', folder_name)
                             configs[i]['xcLabel'] = folder_name
 
                             tLists = tLists + [[targ]]
@@ -196,7 +201,7 @@ class helper(Handler):
                         #print('Check: ', len(outputs), poolSize, totprocs)
                         pool.close()
                         totprocs = totprocs - poolSize
-                    
+                     
                     if input['write_input_only'][0][0]: 
                         output[target] = None
                         continue
@@ -262,8 +267,13 @@ class helper(Handler):
                             emin=np.amin(en)
                             emax=np.amax(en)
                         if ipol == 1:
-                            step = max(step,0.01)
-                            egrid = np.arange(emin,emax,step)
+                            #print(input.keys())
+                            if input['cfavg_egrid'][0][0] == 'regular':
+                                step = max(step,0.01)
+                                egrid = np.arange(emin,emax,step)
+                            else:
+                                egrid = en[0]
+
 
                         # Interpolate onto common grid.
                         mu_interp = []
@@ -301,7 +311,8 @@ class helper(Handler):
                     dirName = os.path.join(config['cwd'], config['pathprefix'] + '.cfavg_' + targ)
                     if data.ndim == 2: 
                         mu_pol = [egrid] + mu_pol 
-                        output['cfavg'] = np.array(mu_pol).tolist()
+                        output['cfavg'] = {targ: np.array(mu_pol).tolist()}
+                        #output[targ] = np.array(mu_pol).tolist()
                         #print(mu_pol[0])
                         #print(mu_pol[1])              
                         np.savetxt(dirName + '.out',np.array(mu_pol).T)
@@ -310,7 +321,7 @@ class helper(Handler):
                     elif data.ndim == 3:
                         # Transform data for output
                         data_out = np.array([dataNd[0][0].flatten(),dataNd[0][1].flatten(),data_tot])
-                        output['cfavg'] = np.array(data_out).tolist()
+                        output['cfavg'] = {targ: np.array(data_out).tolist()}
                         
                         f = open(dirName + '.1.out', 'w')
                         i=0
@@ -325,6 +336,7 @@ class helper(Handler):
                             i += 1
 
             if (target == 'loop'):
+                print("WI loop:",input['write_input_only'])
                 #Define the target of the average
                 targetList = input['loop_target']
 
@@ -333,6 +345,7 @@ class helper(Handler):
                 loop_parameter = input['loop_parameter'][0][0]
                 # values are on next N lines.
                 loop_values = input['loop_parameter'][1:]
+                if "loop_labels" in input: loop_labels = input['loop_labels']
                 
                 print("Number of calculations in loop:", len(loop_values))
                 dirs=[]
@@ -357,18 +370,35 @@ class helper(Handler):
                 for i,value in enumerate(loop_values):
                     inputs = inputs + [copy.copy(input)]
                     #print(loop_values[i])
-                    inputs[i][loop_parameter] = [loop_values[i]]
-                    #inputs[i]['multiprocessing_ncpu'] = [[1]]
-                    del inputs[i]['target_list']
-                    del inputs[i]['loop_parameter']
-                    inputs[i]['target_list'] = targetList
+
+                     
+                    if loop_parameter.upper() == "FILE":
+                        import corvutils.parsnip
+                        conf = config['parsnipConf']
+                        try:
+                            inputs[i].update(corvutils.parsnip.parse(conf, loop_values[i][0], mode=['read']))
+                        except:
+                            print("Failed to load file:", loop_values[i])
+                            exit()
+                    else:
+                        inputs[i][loop_parameter] = [loop_values[i]]
+                        #inputs[i]['multiprocessing_ncpu'] = [[1]]
+                        del inputs[i]['target_list']
+                        del inputs[i]['loop_parameter']
+                        inputs[i]['target_list'] = targetList
 
                     # Set the current working directory to the correct directory. 
-                    if 'xcLabel' in config:
-                        subdir = config['pathprefix'] + str(i+1) + config['xcLabel'] + '_loop'
+                    if 'loop_labels' in input:
+                        label = safeName('_loop_' + loop_labels[i][0])
                     else:
-                        subdir = config['pathprefix'] + str(i+1) + '_loop'
-
+                        label = '_loop'
+                    if 'xcLabel' in config:
+                        subdir = config['pathprefix'] + str(i+1) + config['xcLabel'] + label
+                    else:
+                        subdir = config['pathprefix'] + str(i+1) + label
+                    print("\n\n\n")
+                    print('Loop iteration', i, ': ', label)
+                    print("\n\n\n")
                     xcDir = os.path.join(config['cwd'], subdir)
                     # Make new output directory if it doesn't exist
                     if not os.path.exists(xcDir):
@@ -388,6 +418,7 @@ class helper(Handler):
                     #    poolout =  pool.starmap_async(multiproc_genAndRun,arguments)
                     #    while not poolout.ready():
                     #        sleep(1)
+                    print("WI loop3:",inputs[i]['write_input_only'])
                     generateAndRunWorkflow(configs[i], inputs[i], targetList) 
                     outputs = outputs + [output]
                 
@@ -418,3 +449,10 @@ def weighted_avg_and_std(values, weights):
     # Fast and numerically precise:
     variance = np.average((values-average)**2, axis=0, weights=weights)
     return (average, np.sqrt(variance))
+
+def safeName(s):
+    # Create a safe folder name from input
+    invalid_chars = r'[<>:"/\|?*`]\s'
+    folder_name = re.sub(invalid_chars, '', s)
+    folder_name = re.sub(r'[\x00-\x1f\x7f]', '', folder_name)
+    return folder_name

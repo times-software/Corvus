@@ -533,6 +533,8 @@ class Feff(Handler):
                 #print output[target]
 
             elif (target == 'xas'):
+                from larch.io import read_ascii
+                from larch.xafs import pre_edge, autobk, xftf
                 # Loop over edges. For now just run in the same directory. Should change this later.
                 xanes_arr = []
                 exafs_arr = []
@@ -627,6 +629,7 @@ class Feff(Handler):
                               
                     wtot = np.unique(wtot)
 
+                    print("N-Energy:",wtot.size)
                     # Find energy at which k=0.
                     k2min=1.e8
                     #print(ek)
@@ -673,7 +676,7 @@ class Feff(Handler):
                             #print('Using EXAFS: ktot=',ktot[i])
                             xanestot[0][i] = exafstot[0][i]
                    
-                    
+                     
                     output[target] = [wtot.tolist()] + xanestot.tolist()
             elif (target == 'exafs'):
                 # Loop over edges. For now just run in the same directory. Should change this later.
@@ -1938,8 +1941,7 @@ def getFeffPotentialsFromCluster(input):
         if 'feff.spin' in input:
             uniqueAtoms = sorted(list(set([ (x[0],x[9],x[6]) for x in atoms ])),key=lambda x: x[1])
         else:
-            uniqueAtoms = sorted(list(set([ (x[0],x[9]) for x in atoms ])),key=lambda x: x[1])
-        #print(uniqueAtoms) 
+            uniqueAtoms = sorted(list(set([ (x[0],x[9]) for x in atoms ])),key=lambda x: (x[0],x[1]))
         feffPots = [[]]
         feffPots[0] = [0, ptable[abs_symb]['number'], input['cluster'][absorber][0], lfms1, lfms2, 1.0 ]
         for i,atm in enumerate(uniqueAtoms):
@@ -2647,3 +2649,7 @@ def str_f(variable):
     else:
         # Convert other types to string directly
         return str(variable)
+
+#def run_scf(
+def check_error():
+    pass 
