@@ -210,7 +210,7 @@ class PyMatGen(Handler):
                 absorber_types=[input["absorbing_atom_type"][0][0]]
                 absorber_spec = 1
             elif "absorbing_atom_by_label" in input: # Will set up calculation for atoms with label that starts with string.
-                absorber_labels = [input["absorbing_atom_by_label"][0][0]]
+                absorber_labels = input["absorbing_atom_by_label"][0]
                 absorber_spec = 2
             else:
                 # Use all elements in crystal

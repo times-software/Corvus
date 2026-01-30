@@ -9,6 +9,7 @@ opcons.usesaved{ True }
 
 # Set mpi command and flags.
 feff.MPI.CMD { mpirun }
+feff.MPI.NPTOT{ 40 }
 feff.MPI.ARGS { -n 6 }
 
 # Set cif file to use for this calculation.
