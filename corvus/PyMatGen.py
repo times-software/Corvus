@@ -165,10 +165,15 @@ class PyMatGen(Handler):
                 # Set equivelent indices arrays to single sites.
                 structure.equivalent_indices = [[i] for i,x in enumerate(structure.sites)]
             else:
-                sg_anal = SpacegroupAnalyzer(structure,symprec=symprec) 
+                try:
+                    sg_anal = SpacegroupAnalyzer(structure,symprec=symprec) 
+                    structure = sg_anal.get_symmetrized_structure()
+                except:
+                    print('Warning: SpacegroupAnalyzer was not able to find symmetry. Using P1')
+                    structure.equivalent_indices = [[i] for i,x in enumerate(structure.sites)]
+
                 #conventional_structure = sg_anal.get_conventional_standard_structure()
                 #sg_anal2 = SpacegroupAnalyzer(conventional_structure,symprec=symprec) 
-                structure = sg_anal.get_symmetrized_structure()
 
             #print('HELP2:', structure.sites[0].label)
             # Get local denSpacegroupAnalyzersities for possible later use.

@@ -420,6 +420,7 @@ class Feff(Handler):
                        elif len(feffInput["feff.potentials"][ipot]) == 7:
                            feffInput["feff.potentials"][ipot][6] = spinmom[1]
 
+        
         if "feff.ion" not in input and 'atomic_charge' in input:
             ions = []
             for pot in potentials:
@@ -429,6 +430,18 @@ class Feff(Handler):
            
             feffInput['feff.ion'] = ions 
                             
+        elif "feff.ion" not in input and 'charge' in input:
+            # Spread total charge over entire system.
+            ions = []
+            nat = len(atoms)
+            charge = input['charge'][0][0]
+            if charge != 0:
+                for i,pot in enumerate(potentials):
+                    at_charge = charge/nat
+                    ions = ions + [[pot[0],at_charge]]
+                feffInput['feff.ion'] = ions
+                
+                
 
         if "feff.potetnials" in feffInput:        
             for ipot,pot in enumerate(feffInput["feff.potentials"]):
@@ -631,7 +644,8 @@ class Feff(Handler):
                    if not (os.path.exists(savedfl) and input['usesaved'][0][0]):
                       if 'feff.ldos' not in feffInput: feffInput['feff.ldos'] = [[-30, 10, 0.3, 200]]
                 
-                      execs = ['rdinp','atomic','pot','ldos','jdos']
+                      #execs = ['rdinp','atomic','pot','ldos','jdos']
+                      execs = ['rdinp','atomic','pot','ldos']
                       writeXANESInput(feffInput,inpf)
                       if write_input_only: 
                          output[target] = [['inpf']]
@@ -679,9 +693,9 @@ class Feff(Handler):
                                 # Loop over executable: This is specific to feff. Other codes
                                 # will more likely have only one executable. 
                                 if ipol == 1:
-                                    execs = ['rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                                    execs = ['rdinp','atomic','dmdw','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                                 else:
-                                    execs = ['rdinp','xsph','mkgtr','path','genfmt','ff2x','sfconv']
+                                    execs = ['rdinp','dmdw','xsph','mkgtr','path','genfmt','ff2x','sfconv']
 
                                 for exe in execs:
                                     if 'feff.mpi.cmd' in input:
@@ -783,9 +797,9 @@ class Feff(Handler):
                                     # Loop over executable: This is specific to feff. Other codes
                                     # will more likely have only one executable. 
                                     if ipol == 1:
-                                        execs = ['rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                                        execs = ['rdinp','atomic','dmdw', 'pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                                     else:
-                                        execs = ['rdinp','xsph','mkgtr','path','genfmt','ff2x','sfconv']
+                                        execs = ['rdinp','dmdw', 'xsph','mkgtr','path','genfmt','ff2x','sfconv']
 
                                     for exe in execs:
                                         if 'feff.mpi.cmd' in input:
@@ -899,7 +913,7 @@ class Feff(Handler):
                             # will more likely have only one executable. Here I am running
                             # rdinp again since writeSCFInput may have different cards than
 
-                            execs = ['rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                            execs = ['rdinp','atomic','dmdw','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
 
                             for exe in execs:
                                 if 'feff.mpi.cmd' in input:
