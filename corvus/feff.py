@@ -453,7 +453,7 @@ class Feff(Handler):
         if 'feff.exchange' in feffInput:
             exch = feffInput['feff.exchange']
         else:
-            exch = [[0, 0.0, 0.0, 2]] 
+            exch = [[0, 0.0, 0.0, 0]] 
             if 'spectral_broadening' in input:
                 exch[0][2] = input['spectral_broadening'][0][0]
         
@@ -661,7 +661,7 @@ class Feff(Handler):
                          runExecutable('',dir,executable,args,out,err)
                                
  
-                ldos = np.loadtxt(savedfl).T
+                ldos = np.loadtxt(savedfl,usecols=(0,2)).T
                 output[target] = ldos
             elif (target == 'xanes'):
                 # Loop over edges. For now just run in the same directory. Should change this later.
@@ -693,9 +693,15 @@ class Feff(Handler):
                                 # Loop over executable: This is specific to feff. Other codes
                                 # will more likely have only one executable. 
                                 if ipol == 1:
-                                    execs = ['rdinp','atomic','dmdw','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                                    execs = ['rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                                    if 'run_dmdw' in input:
+                                        if input['run_dmdw'][0][0]:
+                                            execs = ['rdinp','atomic','dmdw','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                                 else:
-                                    execs = ['rdinp','dmdw','xsph','mkgtr','path','genfmt','ff2x','sfconv']
+                                    execs = ['rdinp','xsph','mkgtr','path','genfmt','ff2x','sfconv']
+                                    if 'run_dmdw' in input:
+                                        if input['run_dmdw'][0][0]:
+                                            execs = ['rdinp','dmdw','xsph','mkgtr','path','genfmt','ff2x','sfconv']
 
                                 for exe in execs:
                                     if 'feff.mpi.cmd' in input:
@@ -797,9 +803,15 @@ class Feff(Handler):
                                     # Loop over executable: This is specific to feff. Other codes
                                     # will more likely have only one executable. 
                                     if ipol == 1:
-                                        execs = ['rdinp','atomic','dmdw', 'pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                                        if 'run_dmdw' in input:
+                                            execs = ['rdinp','atomic', 'pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                                            if input['run_dmdw'][0][0]:
+                                                execs = ['rdinp','atomic','dmdw', 'pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
                                     else:
-                                        execs = ['rdinp','dmdw', 'xsph','mkgtr','path','genfmt','ff2x','sfconv']
+                                        execs = ['rdinp','xsph','mkgtr','path','genfmt','ff2x','sfconv']
+                                        if 'run_dmdw' in input:
+                                            if input['run_dmdw'][0][0]:
+                                                execs = ['rdinp','dmdw', 'xsph','mkgtr','path','genfmt','ff2x','sfconv']
 
                                     for exe in execs:
                                         if 'feff.mpi.cmd' in input:
@@ -906,6 +918,7 @@ class Feff(Handler):
                         with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
 
                             # Write input file for FEFF.
+                            print('writing exafs input')
                             writeEXAFSInput(feffInput,inpf)
                             if write_input_only: continue
 
@@ -913,7 +926,10 @@ class Feff(Handler):
                             # will more likely have only one executable. Here I am running
                             # rdinp again since writeSCFInput may have different cards than
 
-                            execs = ['rdinp','atomic','dmdw','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                            execs = ['rdinp','atomic','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
+                            if 'run_dmdw' in input:
+                                if input['run_dmdw'][0][0]:
+                                    execs = ['rdinp','atomic','dmdw','pot','screen','ldos','opconsat','xsph','fms','mkgtr','path','genfmt','ff2x','sfconv']
 
                             for exe in execs:
                                 if 'feff.mpi.cmd' in input:
@@ -2951,6 +2967,7 @@ def writeEXAFSInput(input, feffinp='feff.inp'):
     lines = []
     lines.append('* This feff9 input file was generated by corvus.')
     lines.append('')
+    print('Input:',input)
 
     setInput(input,'feff.control', [[1, 1, 1, 1, 1, 1]])
     setInput(input,'feff.print', [[0, 0, 0, 0, 0, 5]])

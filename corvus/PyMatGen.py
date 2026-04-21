@@ -504,13 +504,18 @@ class PyMatGen(Handler):
                 # Read the molecule from xyz
                 mol = Molecule.from_file(input['xyz_input'][0][0])
 
+                if 'molecule_vacuum_margin' in input:
+                    additional=input['molecule_vacuum_margin'][0][0]
+                else:
+                    additional=10.0
+
                 # Get the bounding box coordinates. Add 10 (angstrom?) to sizes.
                 min_x = min(site.x for site in mol)
-                max_x = max(site.x for site in mol)+10.0
+                max_x = max(site.x for site in mol)+additional
                 min_y = min(site.y for site in mol)
-                max_y = max(site.y for site in mol)+10.0
+                max_y = max(site.y for site in mol)+additional
                 min_z = min(site.z for site in mol)
-                max_z = max(site.z for site in mol)+10.0
+                max_z = max(site.z for site in mol)+additional
                 # We will create a cubic cell with cell length equal to max of the molecular sizes.
                 cell_size = max([max_x-min_x,max_y-min_y,max_z-min_z])
 
