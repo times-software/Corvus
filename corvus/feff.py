@@ -756,8 +756,8 @@ class Feff(Handler):
                 #print output[target]
 
             elif (target == 'xas'):
-                from larch.io import read_ascii
-                from larch.xafs import pre_edge, autobk, xftf
+                #from larch.io import read_ascii
+                #from larch.xafs import pre_edge, autobk, xftf
                 # Loop over edges. For now just run in the same directory. Should change this later.
                 xanes_arr = []
                 exafs_arr = []
