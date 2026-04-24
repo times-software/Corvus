@@ -5,7 +5,7 @@ import corvus.abort
 from importlib.util import find_spec
 DEBUG = False
 pp_debug = pprint.PrettyPrinter(indent=4)
-invisible_handlers=['helper', 'PyMatGen','larch']
+invisible_handlers=['helper', 'PyMatGen']
 
 # Define the available handlers by hand here
 # Note FDV: There should be a way to do this automatically, but can't think of
@@ -123,16 +123,16 @@ def availableHandlers():
         print("Warning: pymatgen not found. PyMatGen handler will be disabled.")
         pass
 
-    try:
-        if corvus.abort.check_abort(None,'availableHandlers'): 
-            print('returning'); return []
-        fs = find_spec("xraylarch")
-        if fs is not None:
-            from corvus.larch import larch
-            handlers = handlers + [larch]
-    except ImportError:
-        print("Warning: xraylarch not found. larch handler will be disabled.")
-        pass
+    #try:
+    #    if corvus.abort.check_abort(None,'availableHandlers'): 
+    #        print('returning'); return []
+        #fs = find_spec("xraylarch")
+    #    if fs is not None:
+    #        from corvus.larch import larch
+    #        handlers = handlers + [larch]
+    #except ImportError:
+    #    print("Warning: xraylarch not found. larch handler will be disabled.")
+    #    pass
     if DEBUG: print('DEBUG4.8')
 
 
