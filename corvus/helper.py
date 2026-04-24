@@ -345,6 +345,22 @@ class helper(Handler):
                 loop_parameter = input['loop_parameter'][0][0]
                 # values are on next N lines.
                 loop_values = input['loop_parameter'][1:]
+                # Check for a range line
+                vals_list=[]
+                if loop_values[0][0] == 'range':
+                    # Next line will be min max step.
+                    # These must be numerical values
+                    lvals=loop_values[1]
+                    try:
+                        vals_list = np.arange(float(lvals[0]),float(lvals[1]),float(lvals[2]))
+                    except:
+                        print("Incorrect values found after range line in loop_parameter settings")
+                        exit()
+                    
+
+                    loop_values = []
+                    for v in vals_list:
+                        loop_values = loop_values + [[v]]
                 if "loop_labels" in input: loop_labels = input['loop_labels']
                 
                 print("Number of calculations in loop:", len(loop_values))
@@ -391,7 +407,8 @@ class helper(Handler):
                     if 'loop_labels' in input:
                         label = safeName('_loop_' + loop_labels[i][0])
                     else:
-                        label = '_loop'
+                        val_str="_".join([str(v) for v in value])
+                        label = '_loop_'+loop_parameter+val_str
                     if 'xcLabel' in config:
                         subdir = config['pathprefix'] + str(i+1) + config['xcLabel'] + label
                     else:
