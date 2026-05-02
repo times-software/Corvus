@@ -489,15 +489,15 @@ class Feff(Handler):
 
                                     runExecutable('',dir,executable,args,out,err)
                                 
-                                shutil.copyfile(outFile, savedfl)
+                                if os.path.exists(outFile):
+                                    shutil.move(outFile, savedfl)
                             
                             if ipol == 1:
                                 xanes = np.loadtxt(savedfl,usecols = (0,3)).T
                             else: 
                                 xanes = np.append(xanes,[np.loadtxt(savedfl,usecols = (3)).T],axis=0)
 
-
-
+                            #if ipol == 1: exit()
                             ipol = ipol + 1
 
                     xavg = np.average(xanes[1:],axis=0)
