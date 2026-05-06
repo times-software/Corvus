@@ -13,6 +13,7 @@ from pymatgen.io.vasp import Vasprun, Outcar, Xdatcar
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.analysis.magnetism import CollinearMagneticStructureAnalyzer
 from pymatgen.analysis.local_env import CrystalNN
+from pymatgen.io.xyz import XYZ
 
 pp_debug = pprint.PrettyPrinter(indent=4)
 
@@ -502,7 +503,14 @@ class PyMatGen(Handler):
             elif 'xyz_input' in input:
                 
                 # Read the molecule from xyz
-                mol = Molecule.from_file(input['xyz_input'][0][0])
+                #mol = Molecule.from_file(input['xyz_input'][0][0])
+                # Load the entire XYZ file
+                xyz_data = XYZ.from_file(input['xyz_input'][0][0])
+
+                # Access all structures as a list of Molecule objects
+                imol=int(input['xyz_snapshot'][0][0])-1
+                print('Reading snapshot ', imol, ' from ', input['xyz_input'][0][0])
+                mol = xyz_data.all_molecules[imol]
 
                 if 'molecule_vacuum_margin' in input:
                     additional=input['molecule_vacuum_margin'][0][0]

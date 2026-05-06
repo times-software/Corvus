@@ -116,7 +116,7 @@ class helper(Handler):
         for target in output:
             #print('Inside helper', output)
             if (target == 'cfavg'):
-                print("WI cfavg:",input['write_input_only'])
+                #print("WI cfavg:",input['write_input_only'])
                 if "multiprocessing_ncpu" in input:
                     ncpu = input["multiprocessing_ncpu"][0][0]
                 else:
@@ -165,6 +165,7 @@ class helper(Handler):
                     numdone=0
                     while totprocs > 0:
                         poolSize = min(ncpu,totprocs)
+                        if input['multiprocessing_level'][0][0] != 'cfavg': poolSize = 1
                         print("Using ", poolSize, ' processors.')
                         print("processes left to run: ", totprocs)
                         inputs = []
@@ -190,16 +191,24 @@ class helper(Handler):
 
                             tLists = tLists + [[targ]]
                             arguments = arguments + [(configs[i],inputs[i],[[targ]])]
-                            #targetList = [['xanes']]
-                        with mltp.Pool(processes=poolSize) as pool:
-                            poolout =  pool.starmap_async(multiproc_genAndRun,arguments)
-                            while not poolout.ready():
-                                sleep(1)
-                        outputs = outputs + poolout.get()
+                            targetList = [[targ]]
+                            if poolSize == 1:
+                                #print('Skipping poolstar.')
+                                generateAndRunWorkflow(configs[i], inputs[i], targetList) 
+                                print(output)
+                                outputs = outputs + [inputs[i]]
+                        if poolSize > 1: #and not input['write_input_only'][0][0]:
+                            with mltp.Pool(processes=poolSize) as pool:
+                                poolout =  pool.starmap_async(multiproc_genAndRun,arguments)
+                                while not poolout.ready():
+                                    sleep(1)
+                            
+                            outputs = outputs + poolout.get()
+
                         numdone = numdone + poolSize
                        
                         #print('Check: ', len(outputs), poolSize, totprocs)
-                        pool.close()
+                        if poolSize > 1 and not input['write_input_only'][0][0]: pool.close()
                         totprocs = totprocs - poolSize
                      
                     if input['write_input_only'][0][0]: 
@@ -336,9 +345,13 @@ class helper(Handler):
                             i += 1
 
             if (target == 'loop'):
-                print("WI loop:",input['write_input_only'])
+                #print("WI loop:",input['write_input_only'])
                 #Define the target of the average
                 targetList = input['loop_target']
+                if "multiprocessing_ncpu" in input:
+                    ncpu = input["multiprocessing_ncpu"][0][0]
+                else:
+                    ncpu = mltp.cpu_count()
 
                 # Get loop parameter and loop values
                 # Parameter is on first line.
@@ -352,7 +365,7 @@ class helper(Handler):
                     # These must be numerical values
                     lvals=loop_values[1]
                     try:
-                        vals_list = np.arange(float(lvals[0]),float(lvals[1]),float(lvals[2]))
+                        vals_list = np.arange(float(lvals[0]),float(lvals[1])*1.00001,float(lvals[2]))
                     except:
                         print("Incorrect values found after range line in loop_parameter settings")
                         exit()
@@ -364,6 +377,7 @@ class helper(Handler):
                 if "loop_labels" in input: loop_labels = input['loop_labels']
                 
                 print("Number of calculations in loop:", len(loop_values))
+                print(loop_values)
                 dirs=[]
                 
                 
@@ -375,69 +389,81 @@ class helper(Handler):
  
                 outputs = []
                 numdone=0
-                #while totprocs > 0:
-                #    poolSize = min(ncpu,totprocs)
-                #    print("Using ", poolSize, ' processors.')
-                #    print("processes left to run: ", totprocs)
-                inputs = []
-                configs = []
-                tLists = []
-                arguments = []
-                for i,value in enumerate(loop_values):
-                    inputs = inputs + [copy.copy(input)]
-                    #print(loop_values[i])
+                loop_iter=0
+                while totprocs > 0:
+                    poolSize = min(ncpu,totprocs)
+                    #print("Using ", poolSize, ' processors.')
+                    print("loop processes left to run: ", totprocs)
+                    inputs = []
+                    configs = []
+                    tLists = []
+                    arguments = []
+                    for i,value in enumerate(loop_values[numdone:numdone+poolSize]):
+                        inputs = inputs + [copy.copy(input)]
+                        #print(loop_values[i])
 
                      
-                    if loop_parameter.upper() == "FILE":
-                        import corvutils.parsnip
-                        conf = config['parsnipConf']
-                        try:
-                            inputs[i].update(corvutils.parsnip.parse(conf, loop_values[i][0], mode=['read']))
-                        except:
-                            print("Failed to load file:", loop_values[i])
-                            exit()
-                    else:
-                        inputs[i][loop_parameter] = [loop_values[i]]
-                        #inputs[i]['multiprocessing_ncpu'] = [[1]]
-                        del inputs[i]['target_list']
-                        del inputs[i]['loop_parameter']
-                        inputs[i]['target_list'] = targetList
+                        if loop_parameter.upper() == "FILE":
+                            import corvutils.parsnip
+                            conf = config['parsnipConf']
+                            try:
+                                inputs[i].update(corvutils.parsnip.parse(conf, value[0], mode=['read']))
+                            except:
+                                print("Failed to load file:", value)
+                                exit()
+                        else:
+                            inputs[i][loop_parameter] = [value]
+                            if input['multiprocessing_level'][0][0] == 'loop': inputs[i]['multiprocessing_ncpu'] = [[1]]
+                            del inputs[i]['target_list']
+                            del inputs[i]['loop_parameter']
+                            inputs[i]['target_list'] = targetList
 
-                    # Set the current working directory to the correct directory. 
-                    if 'loop_labels' in input:
-                        label = safeName('_loop_' + loop_labels[i][0])
-                    else:
-                        val_str="_".join([str(v) for v in value])
-                        label = '_loop_'+loop_parameter+val_str
-                    if 'xcLabel' in config:
-                        subdir = config['pathprefix'] + str(i+1) + config['xcLabel'] + label
-                    else:
-                        subdir = config['pathprefix'] + str(i+1) + label
-                    print("\n\n\n")
-                    print('Loop iteration', i, ': ', label)
-                    print("\n\n\n")
-                    xcDir = os.path.join(config['cwd'], subdir)
-                    # Make new output directory if it doesn't exist
-                    if not os.path.exists(xcDir):
-                        os.mkdir(xcDir)
+                        print(inputs[i][loop_parameter], loop_parameter)
+                        # Set the current working directory to the correct directory. 
+                        if 'loop_labels' in input:
+                            label = safeName('_loop_' + loop_labels[i+numdone][0])
+                        else:
+                            val_str="_".join([str(v) for v in value])
+                            label = '_loop_'+loop_parameter+val_str
+                        if 'xcLabel' in config:
+                            subdir = config['pathprefix'] + str(loop_iter+1) + config['xcLabel'] + label
+                        else:
+                            subdir = config['pathprefix'] + str(loop_iter+1) + label
+                        print("\n\n\n")
+                        print('Loop iteration', loop_iter+1, ': ', label)
+                        print("\n\n\n")
+                        xcDir = os.path.join(config['cwd'], subdir)
+                        # Make new output directory if it doesn't exist
+                        if not os.path.exists(xcDir):
+                            os.mkdir(xcDir)
 
-                    dirs = dirs + [xcDir]
-                    configs = configs + [copy.copy(config)]
+                        dirs = dirs + [xcDir]
+                        configs = configs + [copy.copy(config)]
                         
-                    configs[i]['xcIndexStart'] = 1
-                    configs[i]['cwd'] = xcDir
-                    #configs[i]['pathprefix'] = xcDir
+                        configs[i]['xcIndexStart'] = 1
+                        configs[i]['cwd'] = xcDir
+                        #configs[i]['pathprefix'] = xcDir
+                        if poolSize == 1:
+                            generateAndRunWorkflow(configs[i], inputs[i], targetList) 
+                            outputs = outputs + [inputs[i]]
                         
-                    tLists = tLists + [targetList]
-                    arguments = arguments + [(configs[i],inputs[i],targetList)]
-                        #targetList = [['xanes']]
-                    #with mltp.Pool(processes=poolSize) as pool:
-                    #    poolout =  pool.starmap_async(multiproc_genAndRun,arguments)
-                    #    while not poolout.ready():
-                    #        sleep(1)
-                    print("WI loop3:",inputs[i]['write_input_only'])
-                    generateAndRunWorkflow(configs[i], inputs[i], targetList) 
-                    outputs = outputs + [output]
+                        tLists = tLists + [targetList]
+                        arguments = arguments + [(configs[i],inputs[i],tLists[i])]
+                        loop_iter = loop_iter + 1
+
+                    if poolSize > 1: # and not input['write_input_only'][0][0]:
+                        with mltp.Pool(processes=poolSize) as pool:
+                            poolout =  pool.starmap_async(multiproc_genAndRun,arguments)
+                            while not poolout.ready():
+                                sleep(1)
+                            
+                        outputs = outputs + poolout.get()
+
+                    numdone = numdone + poolSize
+                       
+                        #print('Check: ', len(outputs), poolSize, totprocs)
+                    if poolSize > 1 and not input['write_input_only'][0][0]: pool.close()
+                    totprocs = totprocs - poolSize
                 
                 if input['write_input_only'][0][0]: 
                     output[target] = None
