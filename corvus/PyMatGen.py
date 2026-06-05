@@ -527,6 +527,10 @@ class PyMatGen(Handler):
                 # We will create a cubic cell with cell length equal to max of the molecular sizes.
                 cell_size = max([max_x-min_x,max_y-min_y,max_z-min_z])
 
+                for i, site in enumerate(mol.sites):
+                    # Example: Label with element name + index
+                    site.label = f"{site.specie.symbol}_{i}"
+
                 struct = mol.get_boxed_structure(cell_size,cell_size,cell_size)
                 
 

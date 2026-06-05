@@ -460,13 +460,33 @@ class Feff(Handler):
             if 'fermi_shift' in input:
                 exch[0][1] = input['fermi_shift'][0][0]
 
+        # Set directory for this exchange
+        dir = config['xcDir']
 
         feffInput['feff.exchange'] = exch
         if debyeOpts is not None:
             setInput(feffInput,'feff.debye',debyeOpts)
-
-        # Set directory for this exchange
-        dir = config['xcDir']
+        elif 'feff.debye' in input:
+            # Split feff.debye and get options
+            debyeOpts = input['feff.debye'][0]
+            #print(debyeOpts,len(debyeOpts),debyeOpts[2])
+            #print(len(debyeOpts), debyeOpts)
+            #exit()
+            # Check if this is a dm run
+            if len(debyeOpts) >= 3:
+                print('first')
+                if int(debyeOpts[2]) == 5:
+                    print('second')
+                    if len(debyeOpts) >= 7:
+                        print('third')
+                        dymfile = debyeOpts[3]
+                        feffdym = os.path.join(dir, debyeOpts[3])
+                        print(dymfile,feffdym)
+                        try:
+                            shutil.copyfile(dymfile,feffdym)
+                        except:
+                            print('Failed to copy file ', dymfile, ' to ', feffdym)
+                            exit()
         
         # Write only the input without calculations?
         write_input_only = input['write_input_only'][0][0]

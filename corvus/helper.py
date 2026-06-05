@@ -177,7 +177,11 @@ class helper(Handler):
                             inputs[i]['absorbing_atom'] = [[clust_elem[0]]]
                             inputs[i]['cluster'] = clust_elem[2]
                             # Make sure we are working with absolute units.
-                            inputs[i]['feff.absolute'] = [[True]]
+                            if 'feff.absolute' in input:
+                                inputs[i]['feff.absolute'] = input['feff.absolute']
+                            else:
+                                inputs[i]['feff.absolute'] = [[True]]
+
                             configs = configs + [copy.copy(config)]
                             configs[i]['cwd'] = xcDir
                             configs[i]['xcIndexStart'] = i+numdone+1
@@ -201,7 +205,7 @@ class helper(Handler):
                             with mltp.Pool(processes=poolSize) as pool:
                                 poolout =  pool.starmap_async(multiproc_genAndRun,arguments)
                                 while not poolout.ready():
-                                    sleep(1)
+                                    sleep(10)
                             
                             outputs = outputs + poolout.get()
 
