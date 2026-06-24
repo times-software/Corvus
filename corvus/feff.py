@@ -2716,7 +2716,15 @@ def set_overlap(pots,input):
         ovp_dict = dict()
         if 'mt_overlap' in input:
             for ovp in input['mt_overlap']:
-                ovp_dict[ptable[ovp[0]]['number']] = ovp[1]
+                if ovp[0] == '*': 
+                   # Set overlap of all elements to this default
+                   for key,val in ptable.items():
+                      if ptable[key]['number'] not in ovp_dict: ovp_dict[ptable[key]['number']] = ovp[1]
+                elif ovp[0] in ptable: 
+                   ovp_dict[ptable[ovp[0]]['number']] = ovp[1]
+                else:
+                   print('Error in input for mt_overlap: unrecognized element name.')
+                   sys.exit()
 
             #print(pot[1], ovp_dict, pot[1] in ovp_dict)
             if pot[1] in ovp_dict: overlap = overlap + [[pot[0], ovp_dict[pot[1]]]] 
@@ -2727,6 +2735,7 @@ def set_overlap(pots,input):
         return overlap
     else:
         return None
+
 def getFeffDebyeOptions(input):
 # Now we have to make the DEBYE input line depending on what input we have
 # for the DMDW approach.
