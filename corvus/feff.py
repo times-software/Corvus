@@ -686,9 +686,15 @@ class Feff(Handler):
             elif (target == 'xanes'):
                 # Loop over edges. For now just run in the same directory. Should change this later.
                 xanes_arr = []
+                chi_arr = []
+                bkg_arr = []
+                w_arr = []
                 for i,edge in enumerate(input['feff.edge'][0]):
                     feffInput['feff.edge'] = [[edge]]
                     # Set output and error files
+                    xanes = []
+                    bkg = []
+                    chi = []
                     outFile=os.path.join(dir,'xmu.dat')
                     with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
                 
@@ -736,12 +742,16 @@ class Feff(Handler):
                                 if len(pols) > 1: shutil.copyfile(outFile, savedfl)
                             
                             if ipol == 1:
-                                xanes = np.loadtxt(savedfl,usecols = (0,3)).T
-                            else: 
-                                xanes = np.append(xanes,[np.loadtxt(savedfl,usecols = (3)).T],axis=0)
+                                xmu = np.loadtxt(savedfl,usecols = (0,1,2,3,4,5)).T
+                                xanes = xanes + [xmu[3]]
+                                bkg = [xmu[4]]
+                                chi = chi + [xmu[5]]
+                                w = xmu[0]
+                                e = xmu[1]
+                                k = xmu[2]
 
-
-
+                            # Get e0 (linearly interpolate e as a function of k to get e(0)).
+                            e0 = np.interp(0.0,k,w,left=0.0)
                             ipol = ipol + 1
 
                     if write_input_only: continue
@@ -751,28 +761,49 @@ class Feff(Handler):
                         xanes = np.append(xanes,[xavg],axis=0)
 
                     xanes_arr = xanes_arr + [xanes]
+                    chi_arr = chi_arr + [chi]
+                    bkg_arr = bkg_arr + [bkg]
+                    w_arr = w_arr + [w]
 
                 if write_input_only:
                     output[target] = None
                 else:
                     # First combine the energy grids.
                     wtot = []
-                    for xns in xanes_arr: 
+                    for w in w_arr: 
                         #print("xns=",xns[0])
-                        wtot = np.append(wtot,xns[0])
+                        wtot = np.append(wtot,w)
                     #print('wtot=',wtot) 
                     wtot = np.unique(wtot)
 
                     xanes_interp = []
+                    chi_interp = []
+                    bkg_interp = []
                     for xns in xanes_arr:
                         xns_interp = []
-                        for xpol in xns[1:]:
-                            xns_interp = xns_interp + [np.interp(wtot,xns[0],xpol,left=0.0)]
+                        for xpol in xns:
+                            xns_interp = xns_interp + [np.interp(wtot,w_arr[0],xpol,left=0.0)]
                         xanes_interp = xanes_interp + [xns_interp]
+                    for xns in chi_arr:
+                        xns_interp = []
+                        for xpol in xns:
+                            xns_interp = xns_interp + [np.interp(wtot,w_arr[0],xpol,left=0.0)]
+                        chi_interp = chi_interp + [xns_interp]
+
+                    for xns in bkg_arr:
+                        xns_interp = []
+                        for xpol in xns:
+                            xns_interp = xns_interp + [np.interp(wtot,w_arr[0],xpol,left=0.0)]
+                        bkg_interp = bkg_interp + [xns_interp]
                 
                     xastot = np.sum(xanes_interp,axis=0)
+                    chitot = np.sum(chi_interp,axis=0)
+                    if len(bkg_interp) > 1:
+                        bkgtot = np.sum(bkg_interp,axis=0)
+                    else:
+                        bkgtot = np.array(bkg_interp[0])
 
-                    output[target] = [wtot.tolist()] + xastot.tolist()
+                    output[target] = {'e0': e0, 'npol': ipol, 'type': 'xmu', 'energy': wtot.tolist(), 'mu': xastot.tolist(), 'mu0': bkgtot.tolist(), 'chi': chitot.tolist()}
                 #print output[target]
 
             elif (target == 'xas'):
@@ -887,7 +918,7 @@ class Feff(Handler):
                                     e = xmu[1]
                                     k = xmu[2]
                                 else:
-                                    xmu = np.append(xmu,[np.loadtxt(savedfl,usecols = (1,2,3,4,5)).T],axis=0)
+                                    xmu = np.loadtxt(savedfl,usecols = (0,1,2,3,4,5)).T
                                     xanes = xanes + [xmu[3]]
                                     bkg = [xmu[4]]
                                     chi = chi + [xmu[5]]
@@ -957,7 +988,6 @@ class Feff(Handler):
                     for xns in xanes_arr:
                         xns_interp = []
                         for xpol in xns:
-                            print(w_arr[0])
                             xns_interp = xns_interp + [np.interp(wtot,w_arr[0],xpol,left=0.0)]
                         xanes_interp = xanes_interp + [xns_interp]
                     for xns in chi_arr:
@@ -1095,9 +1125,15 @@ class Feff(Handler):
             elif (target == 'xes'):
                 # Loop over edges. For now just run in the same directory. Should change this later.
                 xanes_arr = []
+                chi_arr = []
+                bkg_arr = []
+                w_arr = []
                 for i,edge in enumerate(input['feff.edge'][0]):
                     feffInput['feff.edge'] = [[edge]]
                     # Set output and error files
+                    xanes = []
+                    bkg = []
+                    chi = []
                     outFile=os.path.join(dir,'xmu.dat')
                     with open(os.path.join(dir, 'corvus.FEFF.stdout'), 'w') as out, open(os.path.join(dir, 'corvus.FEFF.stderr'), 'w') as err:
                 
@@ -1139,11 +1175,17 @@ class Feff(Handler):
                                 if (len(pols)>1): shutil.copyfile(outFile, savedfl)
                             
                             if ipol == 1:
-                                xanes = np.loadtxt(savedfl,usecols = (0,3)).T
-                            else: 
-                                xanes = np.append(xanes,[np.loadtxt(savedfl,usecols = (3)).T],axis=0)
+                                xmu = np.loadtxt(savedfl,usecols = (0,1,2,3,4,5)).T
+                                xanes = xanes + [xmu[3]]
+                                bkg = [xmu[4]]
+                                chi = chi + [xmu[5]]
+                                w = xmu[0]
+                                e = xmu[1]
+                                k = xmu[2]
 
 
+                            # Get e0 (linearly interpolate e as a function of k to get e(0)).
+                            e0 = np.interp(0.0,k,w,left=0.0)
 
                             ipol = ipol + 1
 
@@ -1152,25 +1194,50 @@ class Feff(Handler):
                         xavg = np.average(xanes[1:],axis=0)
                         xanes = np.append(xanes,[xavg],axis=0)
                     xanes_arr = xanes_arr + [xanes]
+                    chi_arr = chi_arr + [chi]
+                    bkg_arr = bkg_arr + [bkg]
+                    w_arr = w_arr + [w]
 
                 if write_input_only:
                     output[target] = None
                 else:
-                    # First combind the energy grids.
+                    # First combine the energy grids.
                     wtot = []
-                    for xns in xanes_arr: wtot.append(xns[0]) 
+                    for w in w_arr:
+                        #print("xns=",xns[0])
+                        wtot = np.append(wtot,w)
+                    #print('wtot=',wtot) 
                     wtot = np.unique(wtot)
 
                     xanes_interp = []
+                    chi_interp = []
+                    bkg_interp = []
                     for xns in xanes_arr:
                         xns_interp = []
-                        for xpol in xns[1:]:
-                            xns_interp = xns_interp + [np.interp(wtot,xns[0],xpol,left=0.0)]
+                        for xpol in xns:
+                            xns_interp = xns_interp + [np.interp(wtot,w_arr[0],xpol,left=0.0)]
                         xanes_interp = xanes_interp + [xns_interp]
-                
+                    for xns in chi_arr:
+                        xns_interp = []
+                        for xpol in xns:
+                            xns_interp = xns_interp + [np.interp(wtot,w_arr[0],xpol,left=0.0)]
+                        chi_interp = chi_interp + [xns_interp]
+
+                    for xns in bkg_arr:
+                        xns_interp = []
+                        for xpol in xns:
+                            xns_interp = xns_interp + [np.interp(wtot,w_arr[0],xpol,left=0.0)]
+                        bkg_interp = bkg_interp + [xns_interp]
+
+
                     xastot = np.sum(xanes_interp,axis=0)
-                    output[target] = [wtot.tolist()] + xastot.tolist()
-                #print output[target]
+                    chitot = np.sum(chi_interp,axis=0)
+                    if len(bkg_interp) > 1:
+                        bkgtot = np.sum(bkg_interp,axis=0)
+                    else:
+                        bkgtot = np.array(bkg_interp[0])
+
+                    output[target] = {'e0': e0, 'npol': ipol, 'type': 'xmu', 'energy': wtot.tolist(), 'mu': xastot.tolist(), 'mu0': bkgtot.tolist(), 'chi': chitot.tolist()}
                     
             elif (target == 'feffRIXS'):
                 # For RIXS, need to run multiple times as follows.
