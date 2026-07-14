@@ -779,10 +779,41 @@ class Feff(Handler):
                 #from larch.io import read_ascii
                 #from larch.xafs import pre_edge, autobk, xftf
                 # Loop over edges. For now just run in the same directory. Should change this later.
+                import corvutils.parsnip
+                conf = config['parsnipConf']
+                # Make a copy of feffInput to keep the original
+                feffInput0 = feffInput.copy()
+                chi_arr = []
+                bkg_arr = []
+                echi_arr = [] 
+                ebkg_arr = []
+                w_arr = []
                 xanes_arr = []
                 exafs_arr = []
-                ek=[]
                 for spec in ['xanes','exafs']:
+                    if (spec == 'xanes') and ('xanes_input' in input):
+                        try:
+                            value = input['xanes_input'][0][0]
+                            new_input = {}
+                            new_input.update(corvutils.parsnip.parse(conf, value, mode=['read']))
+                        except:
+                            print("Failed to load file:", value)
+                            exit()
+                    elif (spec == 'exafs') and ('exafs_input' in input):
+                        try:
+                            value = input['exafs_input'][0][0]
+                            new_input = {}
+                            new_input.update(corvutils.parsnip.parse(conf, value, mode=['read']))
+                        except:
+                            print("Failed to load file:", value)
+                            exit()
+
+                    # Update feffInput with values from this input
+                    feffInput.clear()
+                    feffInput.update(feffInput0)
+                    feffInput.update(new_input)
+                    xanes = []
+                    chi = []
                     
                     for i,edge in enumerate(input['feff.edge'][0]):
                         feffInput['feff.edge'] = [[edge]]
@@ -815,9 +846,11 @@ class Feff(Handler):
                                         if 'feff.xanes' in feffInput: del feffInput['feff.xanes']
                                         if 'feff.rpath' in feffInput: 
                                             if feffInput['feff.rpath'][0][0] < 1.0: del feffInput['feff.rpath']
-                                        feffInput['feff.control'] = [[0,1,1,1,1,1]]
+                                        feffInput['feff.control'] = [[1,1,1,1,1,1]]
                                         writeEXAFSInput(feffInput,inpf)
 
+                                    infl=os.path.join(dir,'feff_'+spec+'_'+edge+'_'+str(ipol)+'.inp')
+                                    shutil.copyfile(os.path.join(dir,'feff.inp'), infl)
                                     if write_input_only: continue
 
                                     # Loop over executable: This is specific to feff. Other codes
@@ -846,88 +879,160 @@ class Feff(Handler):
                                     shutil.copyfile(outFile, savedfl)
 
                                 if ipol == 1:
-                                    xanes = np.loadtxt(savedfl,usecols = (0,3)).T
-                                    ek = np.loadtxt(savedfl,usecols = (0,2)).T
+                                    xmu = np.loadtxt(savedfl,usecols = (0,1,2,3,4,5)).T
+                                    xanes = xanes + [xmu[3]]
+                                    bkg = [xmu[4]]
+                                    chi = chi + [xmu[5]]
+                                    w = xmu[0]
+                                    e = xmu[1]
+                                    k = xmu[2]
                                 else:
-                                    xanes = np.append(xanes,[np.loadtxt(savedfl,usecols = (3)).T],axis=0)
-
-
+                                    xmu = np.append(xmu,[np.loadtxt(savedfl,usecols = (1,2,3,4,5)).T],axis=0)
+                                    xanes = xanes + [xmu[3]]
+                                    bkg = [xmu[4]]
+                                    chi = chi + [xmu[5]]
+                                    w = xmu[0]
+                                    e = xmu[1]
+                                    k = xmu[2]
 
                                 ipol = ipol + 1
 
                         if write_input_only: continue
 
+                        # Find E0 (w at k=0).
+                        if spec == 'exafs': 
+                            e0 = w[0]
+                        xavg = []
+                        cavg = []
                         if len(xanes) > 3:
                             xavg = np.average(xanes[1:],axis=0)
-                            xanes = np.append(xanes,[xavg],axis=0)
+                            #xanes = np.append(xanes,[xavg],axis=0)
+                            cavg = np.average(chi[1:],axis=0)
+                            #chi = np.append(chi,[cavg],axis=0)
 
                         if spec == 'xanes':
                             xanes_arr = xanes_arr + [xanes]
+                            if len(xanes_arr) > 2: xanes_arr = xanes_arr + [xavg]
+                            chi_arr = chi_arr + [chi]
+                            if len(chi_arr) > 2: chi_arr = chi_arr + [cavg]
+                            bkg_arr = bkg_arr + [bkg]
+                            w_arr = w_arr + [w]
                         else:
                             exafs_arr = exafs_arr + [xanes]
+                            if len(exafs_arr) > 2: exafs_arr = exafs_arr + [xavg]
+                            echi_arr = echi_arr + [chi]
+                            if len(chi_arr) > 2: chi_arr = chi_arr + [cavg]
+                            ebkg_arr = ebkg_arr + [bkg]
+                            w_arr = w_arr + [w]
+
 
                 if write_input_only:
                     output[target] = None
                 else:
                     # First combine the energy grids for all results (exafs and xanes)
-                    wtot = []
-                    for xns in xanes_arr:
-                        #print("xns=",xns[0])
-                        wtot = np.append(wtot,xns[0])
-                    for xns in exafs_arr:
-                        wtot = np.append(wtot,xns[0])
+                    #wtot = []
+                    #for xns in xanes_arr:
+                    #    #print("xns=",xns[0])
+                    #    wtot = np.append(wtot,xns[0])
+                    #for xns in exafs_arr:
+                    #    wtot = np.append(wtot,xns[0])
                               
-                    wtot = np.unique(wtot)
+                    wtot = np.unique(np.append(w_arr[0],w_arr[1]))
 
                     print("N-Energy:",wtot.size)
                     # Find energy at which k=0.
                     k2min=1.e8
                     #print(ek)
                     #print(ek[0][0])
-                    e0 = ek[0][0]
-                    print("Edge energy:",e0)
-                    for i,e in enumerate(ek[0]):
-                        k2=(ek[1][i])**2
-                        if k2 < k2min: 
-                            e0 = e
-                            k2min = k2
 
                     bohr = 0.529177249
                     hart = 2*13.605698
                     #print(wtot-e0)
                     ktot = np.sign(wtot-e0)*np.sqrt(np.abs(2*(wtot-e0)/hart))/bohr
                     xanes_interp = []
+                    chi_interp = []
+                    bkg_interp = []
+                    #print(xanes_arr)
+                    #exit()
                     for xns in xanes_arr:
                         xns_interp = []
-                        for xpol in xns[1:]:
-                            xns_interp = xns_interp + [np.interp(wtot,xns[0],xpol,left=0.0)]
+                        for xpol in xns:
+                            print(w_arr[0])
+                            xns_interp = xns_interp + [np.interp(wtot,w_arr[0],xpol,left=0.0)]
                         xanes_interp = xanes_interp + [xns_interp]
+                    for xns in chi_arr:
+                        xns_interp = []
+                        for xpol in xns:
+                            xns_interp = xns_interp + [np.interp(wtot,w_arr[0],xpol,left=0.0)]
+                        chi_interp = chi_interp + [xns_interp]
+                    
+                    for xns in bkg_arr:
+                        xns_interp = []
+                        for xpol in xns:
+                            print(w_arr[0])
+                            xns_interp = xns_interp + [np.interp(wtot,w_arr[0],xpol,left=0.0)]
+                        bkg_interp = bkg_interp + [xns_interp]
+
 
                     xanestot = np.sum(xanes_interp,axis=0)
+                    chitot = np.sum(chi_interp,axis=0)
+                    if len(bkg_interp) > 1:
+                        bkgtot = np.sum(bkg_interp,axis=0)
+                    else:
+                        bkgtot = np.array(bkg_interp[0])
 
                     exafs_interp = []
+                    echi_interp = []
+                    ebkg_interp = []
+                    xns_interp = []
                     for xns in exafs_arr:
                         xns_interp = []
-                        for xpol in xns[1:]:
-                            xns_interp = xns_interp + [np.interp(wtot,xns[0],xpol,left=0.0)]
+                        for xpol in xns:
+                            xns_interp = xns_interp + [np.interp(wtot,w_arr[1],xpol,left=0.0)]
                         exafs_interp = exafs_interp + [xns_interp]
 
+    
+                    for xns in echi_arr:
+                        xns_interp = []
+                        for xpol in xns:
+                            xns_interp = xns_interp + [np.interp(wtot,w_arr[1],xpol,left=0.0)]
+                        echi_interp = echi_interp + [xns_interp]
+                            
+
+                    for xns in ebkg_arr:
+                        xns_interp = []
+                        for xpol in xns:
+                            xns_interp = xns_interp + [np.interp(wtot,w_arr[1],xpol,left=0.0)]
+                        ebkg_interp = ebkg_interp + [xns_interp]
+
+                    print(exafs_interp)
                     exafstot = np.sum(exafs_interp,axis=0)
+                    echitot = np.sum(echi_interp,axis=0)
+                    if len(bkg_interp) > 1:
+                        ebkgtot = np.sum(ebkg_interp,axis=0)
+                    else:
+                        ebkgtot = np.array(ebkg_interp[0])
+                    print(exafstot)
 
                     # Now interpolate smoothly between XANES and EXAFS from k=2 to 3.
                     # Use interpolation XANES*cos(a)^2 + EXAFS*sin(a)^2, where a=\pi/2*(k-kmin)/(kmax-kmin)
                     kmin=2.0
                     kmax=3.0
                     for i,xas in enumerate(xanestot[0]):
+                        echitot[0][i] = echitot[0][i]*ebkgtot[0][i]
                         if (ktot[i] >= kmin) and (ktot[i] <= kmax): 
                             #print('Interpolating: ktot=',ktot[i])
                             xanestot[0][i] = xanestot[0][i]*np.cos((ktot[i]-kmin)/(kmax-kmin)*np.pi/2.0)**2+exafstot[0][i]*np.sin((ktot[i]-kmin)/(kmax-kmin)*np.pi/2)**2
+                            chitot[0][i] = chitot[0][i]*np.cos((ktot[i]-kmin)/(kmax-kmin)*np.pi/2.0)**2+echitot[0][i]*np.sin((ktot[i]-kmin)/(kmax-kmin)*np.pi/2)**2
+                            bkgtot[0][i] = bkgtot[0][i]*np.cos((ktot[i]-kmin)/(kmax-kmin)*np.pi/2.0)**2+ebkgtot[0][i]*np.sin((ktot[i]-kmin)/(kmax-kmin)*np.pi/2)**2
                         elif ktot[i] > kmax:
                             #print('Using EXAFS: ktot=',ktot[i])
                             xanestot[0][i] = exafstot[0][i]
+                            chitot[0][i] = echitot[0][i]
+                            bkgtot[0][i] = ebkgtot[0][i]
                    
                      
-                    output[target] = [wtot.tolist()] + xanestot.tolist()
+                    output[target] = {'e0': e0, 'npol': ipol, 'type': 'xmu', 'energy': wtot.tolist(), "k": ktot.tolist(), 'mu': xanestot.tolist(), 'mu0': bkgtot.tolist(), 'chi': chitot.tolist()}
             elif (target == 'exafs'):
                 # Loop over edges. For now just run in the same directory. Should change this later.
                 for i,edge in enumerate(input['feff.edge'][0]):

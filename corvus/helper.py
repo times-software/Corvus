@@ -228,17 +228,21 @@ class helper(Handler):
                     #for Prcss in tasks:
                     #    Prcss.join()
                     mu_pol = []
+                    chi_pol = []
                     data_pol = []
                     ipol = 1
-                    npol =  len(outputs[0][targ])
+                    npol =  outputs[0][targ]['npol']
                     #print(outputs[0][targetList[0][0]])
                     #print('npol=',npol)
                     #exit()
                     UnicodeEncodeError = []
                     print('Summing XAS of all unique absorbers:')
+                    e0avg = 0
                     while ipol <= npol-1:
                         en = []
                         mu = []
+                        chi = []
+                        bkg = []
                         step = 1.e30
                         totalWeight = 0.0
                         weights = []
@@ -255,26 +259,37 @@ class helper(Handler):
                             weights = weights + [weight]
                             #mu0 = mu0
                             totalWeight = totalWeight + weight
-                            data = np.array(outputs[i][targ])
-                            ndim = data.ndim
-                            if data.ndim == 2: # array of rows corresponding to set of 1d data 
-                                en0 = data[0]
-                                mu0 = data[ipol]
+                            #data = np.array(outputs[i][targ])
+                            data = outputs[i][targ]
+                            #ndim = data.ndim
+                            if data['type'] == 'xmu': # array of rows corresponding to set of 1d data 
+                                en0 = np.array(data['energy'])
+                                mu0 = data['mu'][ipol-1]
+                                chi0 = data['chi'][ipol-1]
+                                bkg0 = data['mu0']
+                                e0 = data['e0']
                                 # Save in array of output.
                                 en = en + [en0]
                                 step = min(step,np.amin(en0[1:]-en0[:-1]))
                                 mu = mu + [mu0]
+                                chi = chi + [chi0]
+                                if ipol == 1:
+                                    bkg = bkg + [bkg0]
+                                    e0avg = e0avg + weight*e0
                                 #plt.plot(en,mu)
-                            elif data.ndim == 3: # 2d data like RIXS. Assummes first two indices are x and y.
+                            elif data['type']=='rixs': # 2d data like RIXS. Assummes first two indices are x and y.
                                 # Now reform data as a 2d ndarray
                                 dataNd = dataNd + [data]
                             
                             
                         
                         weights = np.array(weights)/totalWeight
-                        if data.ndim == 2:
+                        if ipol == 1: e0avg = e0avg/totalWeight
+                        if data['type'] == 'xmu':
                             en = np.array(en)
                             mu = np.array(mu)
+                            chi = np.array(chi)
+                            bkg = np.array(bkg)
 
                             # Make the common grid.
                             emin=np.amin(en)
@@ -288,18 +303,28 @@ class helper(Handler):
                                 egrid = en[0]
 
 
+                        bohr = 0.529177249
+                        hart = 2*13.605698
+                        kgrid = np.sign(egrid-e0avg)*np.sqrt(np.abs(2*(egrid-e0avg)/hart))/bohr
+
                         # Interpolate onto common grid.
                         mu_interp = []
+                        chi_interp = []
+                        bkg_interp = []
 
                         for i,clust_elem in enumerate(cluster_array[0:nclust]):
-                            if data.ndim == 2:
+                            if data['type']=='xmu':
                                 # interpolate onto the common grid and add to total.
-                            
                                 mui = np.interp(egrid, en[i], mu[i], left = 0.0)
                                 mu_interp = mu_interp + [mui]
+                                chii = np.interp(egrid, en[i], chi[i], left = 0.0)
+                                chi_interp = chi_interp + [chii]
+                                if ipol == 1: 
+                                    bkgi = np.interp(egrid, en[i], bkg[0][i], left = 0.0)
+                                    bkg_interp = bkg_interp + [bkgi]
 
 
-                            elif data.ndim == 3:
+                            elif data['type'] == 'rixs':
                                 # interpolate onto common 2d grid - just use the first grid
                                 print('Adding contribution from absorber ', i)
                                 datai = rgi((dataNd[i][1,:,0],dataNd[i][0,0,:]),dataNd[i][2],method='linear', bounds_error=False,fill_value=0.0)
@@ -309,12 +334,15 @@ class helper(Handler):
                                     data_tot = data_tot + datai((dataNd[0][1],dataNd[0][0])).flatten()*weights[i]
                  
 
-                        if ndim == 2:
+                        if data['type'] == 'xmu':
                             # Get average and standard deviation.
                             mu_avg,mu_stdev = weighted_avg_and_std(np.array(mu_interp), weights)
+                            chi_avg,chi_stdev = weighted_avg_and_std(np.array(chi_interp), weights)
+                            if ipol == 1: bkg_avg,bkg_stdev = weighted_avg_and_std(np.array(bkg_interp), weights)
                             mu_pol = mu_pol + [mu_avg]
+                            chi_pol = chi_pol + [chi_avg]
                             
-                        elif ndim == 3:
+                        elif data['type'] == 'rixs':
                             data_pol = data_pol + [data_tot]
                             break
                         #print("mu_pol",mu_pol)
@@ -322,8 +350,8 @@ class helper(Handler):
                         #mu_stdev = np.std(mu_interp,0)/totalWeight*len(cluster_array)
                         ipol = ipol + 1
                     dirName = os.path.join(config['cwd'], config['pathprefix'] + '.cfavg_' + targ)
-                    if data.ndim == 2: 
-                        mu_pol = [egrid] + mu_pol 
+                    if data['type'] == 'xmu': 
+                        mu_pol = [egrid] + [kgrid] + mu_pol + [bkg_avg] + chi_pol
                         output['cfavg'] = {targ: np.array(mu_pol).tolist()}
                         #output[targ] = np.array(mu_pol).tolist()
                         #print(mu_pol[0])
@@ -331,7 +359,7 @@ class helper(Handler):
                         np.savetxt(dirName + '.out',np.array(mu_pol).T)
                         
 
-                    elif data.ndim == 3:
+                    elif data['type'] == 'rixs':
                         # Transform data for output
                         data_out = np.array([dataNd[0][0].flatten(),dataNd[0][1].flatten(),data_tot])
                         output['cfavg'] = {targ: np.array(data_out).tolist()}
