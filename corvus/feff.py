@@ -823,6 +823,8 @@ class Feff(Handler):
                 exafs_arr = []
                 for spec in ['xanes','exafs']:
                     if (spec == 'xanes') and ('xanes_input' in input):
+                        dir=os.path.join(config['xcDir'],'xanes')
+                        os.makedirs(dir,exist_ok=True)
                         try:
                             value = input['xanes_input'][0][0]
                             new_input = {}
@@ -831,6 +833,8 @@ class Feff(Handler):
                             print("Failed to load file:", value)
                             exit()
                     elif (spec == 'exafs') and ('exafs_input' in input):
+                        dir=os.path.join(config['xcDir'],'exafs')
+                        os.makedirs(dir,exist_ok=True)
                         try:
                             value = input['exafs_input'][0][0]
                             new_input = {}
@@ -839,6 +843,7 @@ class Feff(Handler):
                             print("Failed to load file:", value)
                             exit()
 
+                    inpf = os.path.join(dir, 'feff.inp')
                     # Update feffInput with values from this input
                     feffInput.clear()
                     feffInput.update(feffInput0)
