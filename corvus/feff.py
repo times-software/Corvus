@@ -825,6 +825,12 @@ class Feff(Handler):
                     if (spec == 'xanes') and ('xanes_input' in input):
                         dir=os.path.join(config['xcDir'],'xanes')
                         os.makedirs(dir,exist_ok=True)
+                        feffdym = os.path.join(dir, debyeOpts[3])
+                        try:
+                            shutil.copyfile(dymfile,feffdym)
+                        except:
+                            print('Failed to copy file ', dymfile, ' to ', feffdym)
+                            exit()
                         try:
                             value = input['xanes_input'][0][0]
                             new_input = {}
@@ -835,6 +841,12 @@ class Feff(Handler):
                     elif (spec == 'exafs') and ('exafs_input' in input):
                         dir=os.path.join(config['xcDir'],'exafs')
                         os.makedirs(dir,exist_ok=True)
+                        feffdym = os.path.join(dir, debyeOpts[3])
+                        try:
+                            shutil.copyfile(dymfile,feffdym)
+                        except:
+                            print('Failed to copy file ', dymfile, ' to ', feffdym)
+                            exit()
                         try:
                             value = input['exafs_input'][0][0]
                             new_input = {}
