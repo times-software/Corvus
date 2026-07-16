@@ -751,7 +751,8 @@ class Feff(Handler):
                                 k = xmu[2]
 
                             # Get e0 (linearly interpolate e as a function of k to get e(0)).
-                            e0 = np.interp(0.0,k,w,left=0.0)
+                            w0 = np.interp(0.0,k,w,left=0.0)
+                            e0 = np.interp(0.0,k,e,left=0.0)
                             ipol = ipol + 1
 
                     if write_input_only: continue
@@ -803,7 +804,7 @@ class Feff(Handler):
                     else:
                         bkgtot = np.array(bkg_interp[0])
 
-                    output[target] = {'e0': e0, 'npol': ipol, 'type': 'xmu', 'energy': wtot.tolist(), 'mu': xastot.tolist(), 'mu0': bkgtot.tolist(), 'chi': chitot.tolist()}
+                    output[target] = {'e0': w0, 'npol': ipol, 'type': 'xmu', 'energy': wtot.tolist(), 'pe0':e0, 'mu': xastot.tolist(), 'mu0': bkgtot.tolist(), 'chi': chitot.tolist()}
                 #print output[target]
 
             elif (target == 'xas'):
@@ -825,12 +826,14 @@ class Feff(Handler):
                     if (spec == 'xanes') and ('xanes_input' in input):
                         dir=os.path.join(config['xcDir'],'xanes')
                         os.makedirs(dir,exist_ok=True)
-                        feffdym = os.path.join(dir, debyeOpts[3])
-                        try:
-                            shutil.copyfile(dymfile,feffdym)
-                        except:
-                            print('Failed to copy file ', dymfile, ' to ', feffdym)
-                            exit()
+                        if debyeOpts is not None:
+                            if len(debyeOpts) >= 7:
+                                feffdym = os.path.join(dir, debyeOpts[3])
+                                try:
+                                    shutil.copyfile(dymfile,feffdym)
+                                except:
+                                    print('Failed to copy file ', dymfile, ' to ', feffdym)
+                                    exit()
                         try:
                             value = input['xanes_input'][0][0]
                             new_input = {}
@@ -841,12 +844,14 @@ class Feff(Handler):
                     elif (spec == 'exafs') and ('exafs_input' in input):
                         dir=os.path.join(config['xcDir'],'exafs')
                         os.makedirs(dir,exist_ok=True)
-                        feffdym = os.path.join(dir, debyeOpts[3])
-                        try:
-                            shutil.copyfile(dymfile,feffdym)
-                        except:
-                            print('Failed to copy file ', dymfile, ' to ', feffdym)
-                            exit()
+                        if debyeOpts is not None:
+                            if len(debyeOpts) >= 7:
+                                feffdym = os.path.join(dir, debyeOpts[3])
+                                try:
+                                    shutil.copyfile(dymfile,feffdym)
+                                except:
+                                    print('Failed to copy file ', dymfile, ' to ', feffdym)
+                                    exit()
                         try:
                             value = input['exafs_input'][0][0]
                             new_input = {}
@@ -863,6 +868,9 @@ class Feff(Handler):
                     xanes = []
                     chi = []
                     
+                    if len(input['feff.edge'][0])>1: 
+                        print('Multple edges does not work with "xas" target.')
+                        exit()
                     for i,edge in enumerate(input['feff.edge'][0]):
                         feffInput['feff.edge'] = [[edge]]
                         # Set output and error files
@@ -949,7 +957,8 @@ class Feff(Handler):
 
                         # Find E0 (w at k=0).
                         if spec == 'exafs': 
-                            e0 = w[0]
+                            w0 = w[0]
+                            e0 = e[0]
                         xavg = []
                         cavg = []
                         if len(xanes) > 3:
@@ -964,16 +973,17 @@ class Feff(Handler):
                             chi_arr = chi_arr + [chi]
                             if len(chi_arr) > 2: chi_arr = chi_arr + [cavg]
                             bkg_arr = bkg_arr + [bkg]
-                            w_arr = w_arr + [w]
+                            w_arr = w_arr + [e]
                         else:
                             exafs_arr = exafs_arr + [xanes]
                             if len(exafs_arr) > 2: exafs_arr = exafs_arr + [xavg]
                             echi_arr = echi_arr + [chi]
                             if len(chi_arr) > 2: chi_arr = chi_arr + [cavg]
                             ebkg_arr = ebkg_arr + [bkg]
-                            w_arr = w_arr + [w]
+                            w_arr = w_arr + [e]
 
 
+                print('E0',w0,e0,w_arr[1])
                 if write_input_only:
                     output[target] = None
                 else:
@@ -985,7 +995,7 @@ class Feff(Handler):
                     #for xns in exafs_arr:
                     #    wtot = np.append(wtot,xns[0])
                               
-                    wtot = np.unique(np.append(w_arr[0],w_arr[1]))
+                    wtot = np.unique(np.append(w_arr[0],w_arr[1])) 
 
                     print("N-Energy:",wtot.size)
                     # Find energy at which k=0.
@@ -1016,7 +1026,6 @@ class Feff(Handler):
                     for xns in bkg_arr:
                         xns_interp = []
                         for xpol in xns:
-                            print(w_arr[0])
                             xns_interp = xns_interp + [np.interp(wtot,w_arr[0],xpol,left=0.0)]
                         bkg_interp = bkg_interp + [xns_interp]
 
@@ -1052,19 +1061,19 @@ class Feff(Handler):
                             xns_interp = xns_interp + [np.interp(wtot,w_arr[1],xpol,left=0.0)]
                         ebkg_interp = ebkg_interp + [xns_interp]
 
-                    print(exafs_interp)
                     exafstot = np.sum(exafs_interp,axis=0)
                     echitot = np.sum(echi_interp,axis=0)
                     if len(bkg_interp) > 1:
                         ebkgtot = np.sum(ebkg_interp,axis=0)
                     else:
                         ebkgtot = np.array(ebkg_interp[0])
-                    print(exafstot)
 
                     # Now interpolate smoothly between XANES and EXAFS from k=2 to 3.
                     # Use interpolation XANES*cos(a)^2 + EXAFS*sin(a)^2, where a=\pi/2*(k-kmin)/(kmax-kmin)
                     kmin=2.0
                     kmax=3.0
+                    wtot = wtot - e0 + w0
+                    print('w0',w0,wtot[0])
                     for i,xas in enumerate(xanestot[0]):
                         echitot[0][i] = echitot[0][i]*ebkgtot[0][i]
                         if (ktot[i] >= kmin) and (ktot[i] <= kmax): 
@@ -1079,7 +1088,7 @@ class Feff(Handler):
                             bkgtot[0][i] = ebkgtot[0][i]
                    
                      
-                    output[target] = {'e0': e0, 'npol': ipol, 'type': 'xmu', 'energy': wtot.tolist(), "k": ktot.tolist(), 'mu': xanestot.tolist(), 'mu0': bkgtot.tolist(), 'chi': chitot.tolist()}
+                    output[target] = {'e0': w0, 'npol': ipol, 'type': 'xmu', 'energy': wtot.tolist(), 'pe0': e0, "k": ktot.tolist(), 'mu': xanestot.tolist(), 'mu0': bkgtot.tolist(), 'chi': chitot.tolist()}
             elif (target == 'exafs'):
                 # Loop over edges. For now just run in the same directory. Should change this later.
                 for i,edge in enumerate(input['feff.edge'][0]):
@@ -1202,7 +1211,8 @@ class Feff(Handler):
 
 
                             # Get e0 (linearly interpolate e as a function of k to get e(0)).
-                            e0 = np.interp(0.0,k,w,left=0.0)
+                            w0 = np.interp(0.0,k,w,left=0.0)
+                            e0 = np.interp(0.0,k,e,left=0.0)
 
                             ipol = ipol + 1
 
@@ -1254,7 +1264,7 @@ class Feff(Handler):
                     else:
                         bkgtot = np.array(bkg_interp[0])
 
-                    output[target] = {'e0': e0, 'npol': ipol, 'type': 'xmu', 'energy': wtot.tolist(), 'mu': xastot.tolist(), 'mu0': bkgtot.tolist(), 'chi': chitot.tolist()}
+                    output[target] = {'e0': w0, 'npol': ipol, 'type': 'xmu', 'energy': wtot.tolist(),'pe0': e0, 'mu': xastot.tolist(), 'mu0': bkgtot.tolist(), 'chi': chitot.tolist()}
                     
             elif (target == 'feffRIXS'):
                 # For RIXS, need to run multiple times as follows.

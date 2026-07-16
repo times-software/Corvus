@@ -238,6 +238,7 @@ class helper(Handler):
                     UnicodeEncodeError = []
                     print('Summing XAS of all unique absorbers:')
                     e0avg = 0
+                    pe0avg = 0
                     while ipol <= npol-1:
                         en = []
                         mu = []
@@ -266,8 +267,9 @@ class helper(Handler):
                                 en0 = np.array(data['energy'])
                                 mu0 = data['mu'][ipol-1]
                                 chi0 = data['chi'][ipol-1]
-                                bkg0 = data['mu0']
+                                bkg0 = data['mu0'][0]
                                 e0 = data['e0']
+                                pe0 = data['pe0']
                                 # Save in array of output.
                                 en = en + [en0]
                                 step = min(step,np.amin(en0[1:]-en0[:-1]))
@@ -276,6 +278,7 @@ class helper(Handler):
                                 if ipol == 1:
                                     bkg = bkg + [bkg0]
                                     e0avg = e0avg + weight*e0
+                                    pe0avg = pe0avg + weight*pe0
                                 #plt.plot(en,mu)
                             elif data['type']=='rixs': # 2d data like RIXS. Assummes first two indices are x and y.
                                 # Now reform data as a 2d ndarray
@@ -284,7 +287,9 @@ class helper(Handler):
                             
                         
                         weights = np.array(weights)/totalWeight
-                        if ipol == 1: e0avg = e0avg/totalWeight
+                        if ipol == 1: 
+                            e0avg = e0avg/totalWeight
+                            pe0avg = pe0avg/totalWeight
                         if data['type'] == 'xmu':
                             en = np.array(en)
                             mu = np.array(mu)
@@ -320,7 +325,7 @@ class helper(Handler):
                                 chii = np.interp(egrid, en[i], chi[i], left = 0.0)
                                 chi_interp = chi_interp + [chii]
                                 if ipol == 1: 
-                                    bkgi = np.interp(egrid, en[i], bkg[0][i], left = 0.0)
+                                    bkgi = np.interp(egrid, en[i], bkg[i], left = 0.0)
                                     bkg_interp = bkg_interp + [bkgi]
 
 
@@ -351,7 +356,7 @@ class helper(Handler):
                         ipol = ipol + 1
                     dirName = os.path.join(config['cwd'], config['pathprefix'] + '.cfavg_' + targ)
                     if data['type'] == 'xmu': 
-                        mu_pol = [egrid] + [kgrid] + mu_pol + [bkg_avg] + chi_pol
+                        mu_pol = [egrid] + [egrid - e0 + pe0] + [kgrid] + mu_pol + [bkg_avg] + chi_pol
                         output['cfavg'] = {targ: np.array(mu_pol).tolist()}
                         #output[targ] = np.array(mu_pol).tolist()
                         #print(mu_pol[0])
