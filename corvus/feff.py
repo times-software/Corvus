@@ -956,9 +956,9 @@ class Feff(Handler):
                         if write_input_only: continue
 
                         # Find E0 (w at k=0).
-                        if spec == 'exafs': 
-                            w0 = w[0]
-                            e0 = e[0]
+                        if spec == 'xanes': 
+                            w0 = np.interp(0.0,k,w,left=0.0)
+                            e0 = np.interp(0.0,k,e,left=0.0)
                         xavg = []
                         cavg = []
                         if len(xanes) > 3:
@@ -1070,8 +1070,8 @@ class Feff(Handler):
 
                     # Now interpolate smoothly between XANES and EXAFS from k=2 to 3.
                     # Use interpolation XANES*cos(a)^2 + EXAFS*sin(a)^2, where a=\pi/2*(k-kmin)/(kmax-kmin)
-                    kmin=2.0
-                    kmax=3.0
+                    kmin=input['xas_kmin'][0][0]
+                    kmax=input['xas_kmax'][0][0]
                     wtot = wtot - e0 + w0
                     print('w0',w0,wtot[0])
                     for i,xas in enumerate(xanestot[0]):

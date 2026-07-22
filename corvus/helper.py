@@ -361,7 +361,9 @@ class helper(Handler):
                         #output[targ] = np.array(mu_pol).tolist()
                         #print(mu_pol[0])
                         #print(mu_pol[1])              
-                        np.savetxt(dirName + '.out',np.array(mu_pol).T)
+                        hdrs = 'E_0 = ' + str(e0avg) + '\nE (eV), p-E (eV), k (Ang^-1), mu, mu_0, chi'
+
+                        np.savetxt(dirName + '.out',np.array(mu_pol).T,header=hdrs)
                         
 
                     elif data['type'] == 'rixs':
