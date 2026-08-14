@@ -396,6 +396,7 @@ class helper(Handler):
                 loop_iter=0
                 while totprocs > 0:
                     poolSize = min(ncpu,totprocs)
+                    if input['multiprocessing_level'][0][0] != 'loop': poolSize = 1
                     #print("Using ", poolSize, ' processors.')
                     print("loop processes left to run: ", totprocs)
                     inputs = []
