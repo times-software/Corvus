@@ -279,7 +279,7 @@ class PyMatGen(Handler):
                                  magmom = [elem[1]]
                         if occ != 1.0:
                             disordered_structure = True
-                            n_disord = input['numberofconfigurations'][0][0]
+                            n_disord = input['cfavg_max_configurations'][0][0]
                         i_spec += 1
 
                     structure.sites[ind].properties['magmom'] = magmom

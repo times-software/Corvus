@@ -166,7 +166,7 @@ class helper(Handler):
                     while totprocs > 0:
                         poolSize = min(ncpu,totprocs)
                         if input['multiprocessing_level'][0][0] != 'cfavg': poolSize = 1
-                        print("Using ", poolSize, ' processors.')
+                        print("Using ", poolSize, ' processors in cfavg.')
                         print("processes left to run: ", totprocs)
                         inputs = []
                         configs = []
@@ -199,7 +199,7 @@ class helper(Handler):
                             if poolSize == 1:
                                 #print('Skipping poolstar.')
                                 generateAndRunWorkflow(configs[i], inputs[i], targetList) 
-                                print(output)
+                                #print(output)
                                 outputs = outputs + [inputs[i]]
                         if poolSize > 1: #and not input['write_input_only'][0][0]:
                             with mltp.Pool(processes=poolSize) as pool:
@@ -381,7 +381,7 @@ class helper(Handler):
                 if "loop_labels" in input: loop_labels = input['loop_labels']
                 
                 print("Number of calculations in loop:", len(loop_values))
-                print(loop_values)
+                #print(loop_values)
                 dirs=[]
                 
                 
@@ -397,7 +397,7 @@ class helper(Handler):
                 while totprocs > 0:
                     poolSize = min(ncpu,totprocs)
                     if input['multiprocessing_level'][0][0] != 'loop': poolSize = 1
-                    #print("Using ", poolSize, ' processors.')
+                    print("Using ", poolSize, ' processors in loop.')
                     print("loop processes left to run: ", totprocs)
                     inputs = []
                     configs = []
@@ -423,7 +423,6 @@ class helper(Handler):
                             del inputs[i]['loop_parameter']
                             inputs[i]['target_list'] = targetList
 
-                        print(inputs[i][loop_parameter], loop_parameter)
                         # Set the current working directory to the correct directory. 
                         if 'loop_labels' in input:
                             label = safeName('_loop_' + loop_labels[i+numdone][0])
@@ -434,9 +433,10 @@ class helper(Handler):
                             subdir = config['pathprefix'] + str(loop_iter+1) + config['xcLabel'] + label
                         else:
                             subdir = config['pathprefix'] + str(loop_iter+1) + label
-                        print("\n\n\n")
+                        print("\n\n\n#########################################################")
                         print('Loop iteration', loop_iter+1, ': ', label)
-                        print("\n\n\n")
+                        print(loop_parameter, inputs[i][loop_parameter])
+                        print("#########################################################\n\n\n")
                         xcDir = os.path.join(config['cwd'], subdir)
                         # Make new output directory if it doesn't exist
                         if not os.path.exists(xcDir):

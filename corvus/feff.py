@@ -257,7 +257,7 @@ implemented['exafs'] = {'type':'Exchange','out':['exafs'],'cost':1,
 implemented['xes'] = {'type':'Exchange','out':['xes'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
 
-implemented['rixs'] = {'type':'Exchange','out':['feffRIXS'],'cost':1,
+implemented['rixs'] = {'type':'Exchange','out':['rixs'],'cost':1,
                         'req':['cluster','absorbing_atom'],'desc':'Calculate XANES using FEFF.'}
 
 implemented['opcons'] = {'type':'Exchange','out':['opcons'],'cost':1,
@@ -474,14 +474,14 @@ class Feff(Handler):
             #exit()
             # Check if this is a dm run
             if len(debyeOpts) >= 3:
-                print('first')
+                #print('first')
                 if int(debyeOpts[2]) == 5:
-                    print('second')
+                    #print('second')
                     if len(debyeOpts) >= 7:
-                        print('third')
+                        #print('third')
                         dymfile = debyeOpts[3]
                         feffdym = os.path.join(dir, debyeOpts[3])
-                        print(dymfile,feffdym)
+                        #print(dymfile,feffdym)
                         try:
                             shutil.copyfile(dymfile,feffdym)
                         except:
@@ -879,13 +879,13 @@ class Feff(Handler):
                               
                     wtot = np.unique(wtot)
 
-                    print("N-Energy:",wtot.size)
+                    #print("N-Energy:",wtot.size)
                     # Find energy at which k=0.
                     k2min=1.e8
                     #print(ek)
                     #print(ek[0][0])
                     e0 = ek[0][0]
-                    print("Edge energy:",e0)
+                    #print("Edge energy:",e0)
                     for i,e in enumerate(ek[0]):
                         k2=(ek[1][i])**2
                         if k2 < k2min: 
@@ -1067,7 +1067,7 @@ class Feff(Handler):
                     output[target] = [wtot.tolist()] + xastot.tolist()
                 #print output[target]
                     
-            elif (target == 'feffRIXS'):
+            elif (target == 'rixs'):
                 # For RIXS, need to run multiple times as follows.
                 
                 # Core-Core RIXS
@@ -1085,7 +1085,8 @@ class Feff(Handler):
                 # Set global settings for all runs.
                 # Set default energy grid
                 setInput(feffInput,'feff.egrid',[['e_grid', -10, 10, 0.05],['k_grid', 'last', 4, 0.025]])
-                setInput(feffInput,'feff.exchange',[[0, 0.0, -20.0, 0]])
+                if 'feff.exchange' not in input: 
+                        setInput(feffInput,'feff.exchange',[[0, 0.0, -20.0, 0]],Force=True)
                 setInput(feffInput,'feff.corehole',[['RPA']],Force=True) # maybe not this one. Need 'NONE' for valence
 
                 setInput(feffInput,'feff.edge',[['K','VAL']])
@@ -1334,7 +1335,7 @@ class Feff(Handler):
                 config2['xcIndexStart'] = -1
 
 # Use absolute units for everything.
-                config2['feff.absolute'] = [[True]]
+                #config2['feff.absolute'] = [[True]]
 
 # Initialize variables that collect results (?)
                 NumberDensity = []
@@ -1514,6 +1515,7 @@ class Feff(Handler):
                 else:
                     Ser_Frac = 0.0
                 Best_Part = Partition_Load(OC_Tot_Runs,OC_NP_Tot,PPN,Ser_Frac)
+                print("Best_Part =", Best_Part)
                 iSer = Best_Part[1]
                 iNP  = Best_Part[2]
 # Now we create a list connecting the partition to each individual absorber
@@ -1735,20 +1737,36 @@ class Feff(Handler):
 
 # Here instead of launching all the tasks, we launch according to the
 # serial/parallel partition
-#               print('FDV nTasks: ',len(Tasks))
+                #print('FDV nTasks: ',len(Tasks))
+                #print(iSer)
 # Mock run
+                if 'multiprocessing_ncpu' in input:
+                    mltp_ncpu = input['multiprocessing_ncpu'][0][0]
+                else:
+                    mltp_ncpu = 1
+                iprc=1
                 for iiSer in range(min(iSer),max(iSer+1)):
-                  print(iiSer)
+                  #print(iiSer)
                   for (iTsk,Tsk) in enumerate(Tasks):
                     if iSer[iTsk] == iiSer:
-#                     print('Start: ',iTsk)
+                      #print('Start: ',iTsk)
                       Tsk.start()
+                      # Get number of running tasks
+                      n_alive = mltp_ncpu
+                      while n_alive == mltp_ncpu:
+                          n_alive = 0
+                          for tsk in Tasks:
+                             #print("Task alive:", tsk.is_alive())
+                             if tsk.is_alive(): n_alive += 1
+                          #print("n_alive = ", n_alive)
+                          time.sleep(5)
 #                     print('Debug: sleeping 5 to stagger launch')
 #                     time.sleep(5)
 #                     print('Debug: Done sleeping')
+                for iiSer in range(min(iSer),max(iSer+1)):
                   for (iTsk,Tsk) in enumerate(Tasks):
                     if iSer[iTsk] == iiSer:
-#                     print('Join: ',iTsk)
+                      #print('Join: ',iTsk)
                       Tsk.join()
 #                     print('Debug: sleeping 5 to stagger launch')
 #                     time.sleep(5)
@@ -1804,17 +1822,27 @@ class Feff(Handler):
                         nTasks += 1
 
                 for iiSer in range(min(iSer),max(iSer+1)):
-                  print(iiSer)
+                  #print(iiSer)
                   for (iTsk,Tsk) in enumerate(Tasks):
                     if iSer[iTsk] == iiSer:
-                      print('Start: ',iTsk)
+                      #print('Start: ',iTsk)
                       Tsk.start()
+                      # Get number of running tasks
+                      n_alive = mltp_ncpu
+                      while n_alive == mltp_ncpu:
+                          n_alive = 0
+                          for tsk in Tasks:
+                             if tsk.is_alive(): n_alive += 1
+                          #print("n_alive = ", n_alive)
+                          time.sleep(5)
+
 #                     print('Debug: sleeping 5 to stagger launch')
 #                     time.sleep(5)
 #                     print('Debug: Done sleeping')
+                for iiSer in range(min(iSer),max(iSer+1)):
                   for (iTsk,Tsk) in enumerate(Tasks):
                     if iSer[iTsk] == iiSer:
-                      print('Join: ',iTsk)
+                      #print('Join: ',iTsk)
                       Tsk.join()
 #                     print('Debug: sleeping 5 to stagger launch')
 #                     time.sleep(5)
@@ -1964,7 +1992,7 @@ class Feff(Handler):
                                dos_tot = np.sum(dos_array[ipot][1:],0)
                             else:
                                dtmp = np.loadtxt(os.path.join(dos_dir,ldos_files[ipot])).T
-                               print(ipot,npot,len(NumberDensity))
+                               #print(ipot,npot,len(NumberDensity))
                                dtmp[1:] = NumberDensity[ipot-1]*dtmp[1:] 
                                dos_array = dos_array + [dtmp]
                                dos_tot = dos_tot + np.sum(dos_array[ipot][1:],0)
@@ -2154,8 +2182,8 @@ class Feff(Handler):
 #               n_eff_conv = 1.0/Total_NumberDensity*scipy.integrate.cumulative_trapezoid(w*eps2_conv, x=w, initial=0.0)
                 n_eff_conv = 1.0/Total_NumberDensity*Corvus_cumtrapz(w*eps2_conv, x=w, initial=0.0)
                 
-                print('Sumrule gives: ',1.0/Total_NumberDensity*np.trapz(w*eps2,w)/(2.0*np.pi**2))
-                print('Sumrule with convolution gives: ', 1.0/Total_NumberDensity*np.trapz(w*eps2_conv,w)/(2.0*np.pi**2))
+                print('Sumrule gives: ',1.0/Total_NumberDensity*np.trapezoid(w*eps2,w)/(2.0*np.pi**2))
+                print('Sumrule with convolution gives: ', 1.0/Total_NumberDensity*np.trapezoid(w*eps2_conv,w)/(2.0*np.pi**2))
                 n_eff = n_eff/(2.0*np.pi**2)
                 n_eff_conv = n_eff_conv/(2.0*np.pi**2)
                 print("Number Density: ",Total_NumberDensity)
@@ -3458,13 +3486,13 @@ def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in,dos_tot):
     # Redefine DOS as occupied DOS.
     dos = dos[w<EFermi]
     w = w[w<EFermi]
-    dos = dos/np.trapz(dos,w)
+    dos = dos/np.trapezoid(dos,w)
     # Make grids for dos (-100 to 100)
     e_step = 0.1
     e_grid = np.arange(-Etop+0.1,100,0.1) 
     e_grid2 = np.flip(-e_grid)
     dos_terp = np.interp(e_grid2,w,dos,left=0.0,right=0.0)
-    dos_terp = dos_terp/np.trapz(dos_terp)/0.1
+    dos_terp = dos_terp/np.trapezoid(dos_terp)/0.1
     e1_flip = np.flip(-e1)
     for i,en in enumerate(e_grid2): 
       if en >= EFermi or en >= Etop:
@@ -3478,7 +3506,7 @@ def dos_conv(e1,EFermi,E0,k,xanes,w_in, dos_in,dos_tot):
       #if i >= e_grid2.size-10:
       if False:
          import matplotlib.pyplot as plt
-         print(E0-(Etop-en), E0, Etop, en)
+         #print(E0-(Etop-en), E0, Etop, en)
          plt.plot(e1,mu_terp)
          plt.plot(e1,xanes*e1)
          #plt.plot(e1,mu_terp2)
