@@ -102,13 +102,18 @@ if [[ "$USE_CONDA" -eq 1 ]]; then
 
 else
 
-    VENV_DIR=".venv"
+    printf "Enter the name of the venv environment directory: .venv/${ENV_NAME}"
+    read -r VENV_DIR
+    if [[ -z "$VENV_DIR" ]]
+    then
+        VENV_DIR="$HOME/.venv/$ENV_NAME"
+    fi
 
     if [[ -e "$VENV_DIR" ]]; then
         echo "ERROR: $VENV_DIR already exists."
         exit 1
     fi
-
+    mkdir -p "$(dirname "$VENV_DIR")"
     PYTHON_HOST=""
 
     for py in python3.13 python3.12; do
@@ -161,7 +166,7 @@ printf "\nInstall SciGUI? ([y]/n) "
 read -r INSTALL_SCIGUI
 INSTALL_SCIGUI=${INSTALL_SCIGUI:-y}
 if [[ "$INSTALL_SCIGUI" =~ ^([Yy]|[Yy][Ee][Ss])$ ]]; then
-
+    corvus="corvus"
     SCIGUI_TMPDIR="$(mktemp -d)"
 
     cleanup() {
@@ -210,6 +215,89 @@ else
     echo "Skipping SciGUI installation."
 fi
 
+###############################################################################
+# Create desktop launcher. 
+###############################################################################
+OS="$(uname -s)"
+PROJECT_DIR="${HOME}/corvus_examples"
+if [[ "$OS" == "Darwin" ]]; then
+
+    DESKTOP_LAUNCHER="$HOME/Desktop/${ENV_NAME}.command"
+
+    if [[ "$USE_CONDA" -eq 1 ]]; then
+
+        cat > "$DESKTOP_LAUNCHER" <<EOF
+#!/usr/bin/env bash
+
+cd "$PROJECT_DIR"
+
+eval "\$(conda shell.bash hook)"
+conda activate "$ENV_NAME"
+
+echo
+echo "Activated conda environment: $ENV_NAME"
+echo
+$corvus
+exec bash -i
+EOF
+
+    else
+
+        cat > "$DESKTOP_LAUNCHER" <<EOF
+#!/usr/bin/env bash
+
+cd "$PROJECT_DIR"
+
+source "$VENV_DIR/bin/activate"
+
+echo
+echo "Activated virtual environment: $ENV_NAME"
+echo
+corvus
+exec bash -i
+EOF
+
+    fi
+
+    chmod +x "$DESKTOP_LAUNCHER"
+
+    echo "Created launcher:"
+    echo "  $DESKTOP_LAUNCHER"
+
+elif [[ "$OS" == "Linux" ]]; then
+
+    DESKTOP_LAUNCHER="$HOME/Desktop/${ENV_NAME}.desktop"
+
+    if [[ "$USE_CONDA" -eq 1 ]]; then
+
+        cat > "$DESKTOP_LAUNCHER" <<EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=$ENV_NAME
+Terminal=true
+Exec=bash -c 'cd "$PROJECT_DIR"; eval "\$(conda shell.bash hook)"; conda activate "$ENV_NAME"; corvus exec bash -i'
+EOF
+
+    else
+
+        cat > "$DESKTOP_LAUNCHER" <<EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=$ENV_NAME
+Terminal=true
+Exec=bash -c 'cd "$PROJECT_DIR"; source "$PROJECT_DIR/$VENV_DIR/bin/activate"; corvus; exec bash -i'
+EOF
+
+    fi
+
+    chmod +x "$DESKTOP_LAUNCHER"
+
+    echo "Created launcher:"
+    echo "  $DESKTOP_LAUNCHER"
+
+fi
 ###############################################################################
 # Final instructions
 ###############################################################################
