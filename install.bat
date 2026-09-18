@@ -50,10 +50,17 @@ if "!USE_CONDA!"=="1" (
     echo.
     echo Creating Conda environment "!ENV_NAME!"...
 
-    call conda create -y -n "!ENV_NAME!" python^>=3.12,^<3.14 pip
+    call conda create -n "!ENV_NAME!" "python>=3.12,<3.14" pip
 
     if errorlevel 1 (
         echo ERROR: Conda environment creation failed.
+        exit /b 1
+    )
+
+    "%PYTHON%" -c "import sys; exit(0 if (3,12) <= sys.version_info[:2] < (3,14) else 1)"
+
+    if errorlevel 1 (
+        echo ERROR: Python version is not in the range [3.12, 3.14).
         exit /b 1
     )
 
