@@ -481,7 +481,7 @@ class PyMatGen(Handler):
             elif 'cif_input' in input:
                 parser = CifParser(input.get("cif_input")[0][0])
                 # Only take first structure for now.
-                struct = parser.parse_structures()[0]
+                struct = parser.parse_structures(primitive=False)[0]
             elif 'vasp_xml' in input:
                 vr = Vasprun(input['vasp_xml'][0][0])
                 struct = vr.structures[input['vasp_snapshot'][0][0]]

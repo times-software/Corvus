@@ -50,7 +50,7 @@ copy(str(Path('./corvutils/parsnip.corvus.config')),str(util_pth))
     #copy(str(Path('./corvutils/parsnip.corvus.config')),str(util_pth))
 #
 setuptools.setup(name='corvus',
-      version='1.1.4',
+      version='1.3.0',
       python_requires=">=3.12, <3.14",
       description='Property-driven Scientific Workflow Manager',
       author='S. Story, F. D. Vila, J. J. Kas, S. D. Pemmaraju, J. J. Rehr',
