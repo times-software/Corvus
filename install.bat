@@ -1,4 +1,3 @@
-@echo off
 setlocal EnableDelayedExpansion
 
 REM ===========================================================================
@@ -45,33 +44,42 @@ REM ===========================================================================
 REM Conda path
 REM ===========================================================================
 
-if "!USE_CONDA!"=="1" (
 
-    echo.
+if "!USE_CONDA!"=="1" (
+    echo
     echo Creating Conda environment "!ENV_NAME!"...
 
     call conda create -n "!ENV_NAME!" "python>=3.12,<3.14" pip
-
     if errorlevel 1 (
         echo ERROR: Conda environment creation failed.
+        
         exit /b 1
     )
-
-    "%PYTHON%" -c "import sys; exit(0 if (3,12) <= sys.version_info[:2] < (3,14) else 1)"
-
-    if errorlevel 1 (
-        echo ERROR: Python version is not in the range [3.12, 3.14).
-        exit /b 1
-    )
-
+    @echo on
+    echo Activating environment "!ENV_NAME!"
     call conda activate "!ENV_NAME!"
+
+    call conda env list
 
     if errorlevel 1 (
         echo ERROR: Conda activation failed.
+        
         exit /b 1
     )
-
+    echo Before
     set PYTHON=python
+    echo "!PYTHON!"
+    
+    "!PYTHON!" -c "import sys; exit(0 if (3,12) <= sys.version_info[:2] < (3,14) else 1)"
+
+
+    if errorlevel 1 (
+        echo "ERROR: Python version is not in the range [3.12, 3.14)."
+        
+        exit /b 1
+    )
+    echo "After"
+    
 
 ) else (
 
@@ -83,11 +91,13 @@ REM ===========================================================================
 
     if errorlevel 1 (
         echo ERROR: Python not found.
+        
         exit /b 1
     )
 
     if exist .venv (
         echo ERROR: .venv already exists.
+        
         exit /b 1
     )
 
@@ -98,11 +108,13 @@ REM ===========================================================================
 
     if errorlevel 1 (
         echo ERROR: venv creation failed.
+        
         exit /b 1
     )
 
     if not exist .venv\Scripts\python.exe (
         echo ERROR: venv not created correctly.
+        
         exit /b 1
     )
 
@@ -116,10 +128,11 @@ REM ===========================================================================
 echo.
 echo Upgrading packaging tools...
 
-"%PYTHON%" -m pip install --upgrade pip setuptools wheel
+"!PYTHON!" -m pip install --upgrade pip setuptools wheel
 
 if errorlevel 1 (
     echo ERROR: pip upgrade failed.
+    
     exit /b 1
 )
 
@@ -130,10 +143,11 @@ REM ===========================================================================
 echo.
 echo Installing current package...
 
-"%PYTHON%" -m pip install .
+"!PYTHON!" -m pip install .
 
 if errorlevel 1 (
     echo ERROR: package installation failed.
+    
     exit /b 1
 )
 
@@ -163,6 +177,7 @@ powershell -NoProfile -ExecutionPolicy Bypass ^
 if errorlevel 1 (
     echo ERROR: download failed.
     rmdir /s /q "%TMPDIR%"
+    
     exit /b 1
 )
 
@@ -174,6 +189,7 @@ powershell -NoProfile -ExecutionPolicy Bypass ^
 if errorlevel 1 (
     echo ERROR: extraction failed.
     rmdir /s /q "%TMPDIR%"
+    
     exit /b 1
 )
 
@@ -186,6 +202,7 @@ for /f "delims=" %%F in (
 
 echo ERROR: setup.py not found.
 rmdir /s /q "%TMPDIR%"
+
 exit /b 1
 
 :FOUND_SETUP
@@ -196,12 +213,13 @@ echo Installing SciGUI...
 
 pushd "!SCIGUI_DIR!"
 
-"%PYTHON%" -m pip install .
+"!PYTHON!" -m pip install .
 
 if errorlevel 1 (
     popd
     rmdir /s /q "%TMPDIR%"
     echo ERROR: SciGUI installation failed.
+    
     exit /b 1
 )
 
