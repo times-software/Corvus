@@ -1,0 +1,20 @@
+% What is corvus
+Corvus is a scientific workflow framework built with python with 
+a focus on calculations of spectroscopy. It is written to facilitate
+advanced calculations for novice users. 
+
+Corvus is "property driven" which means that the user
+specifies a property to calculate, and Corvus figures out 
+how it can obtain that property, and what inputs are needed
+from the user. This is done by building a dependency tree, with the root
+given by the list of requested properties. The dependency tree is built
+by checking the dependencies of (other properties needed to calculate) the 
+requested property, then asking if these can be satisfied by any
+of the available codes. This procedure is repeated until either all dependency
+requirements are met, in which case a workflow is built and run. If all requirements
+are not met, the user is notivied of any necessary user input.
+
+Most of the workflows available to standard users are meant to facilitate calculations
+using the FEFF10 code. These workflows include loops over specified parameters, configurational
+averaging, RIXS, and creation of input files from multiple available structural input such as
+.cif, .xyz, materials project id, or vasp output. 

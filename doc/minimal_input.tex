@@ -1,0 +1,35 @@
+The starting point for any Corvus calculation is to request a property or list of properties to calculate.
+This is done using the keyword target\_list.
+From here, corvus will look for available codes that can calculate each target, and figure out what input is needed.
+There are many possible targets for Corvus, but here I will list a few of the most important ones for calculating spectra
+using FEFF10, and how to use them. In general, when using FEFF10 an average over unique sites in the structure must be taken
+in order to get the full spectrum. Thus in order to perform a spectral calculation using an external structure as input (the suggested method)
+you must define,
+\begin{verbatim}
+target_list{ cfavg} # Calculate the average of some property.
+cfavg_target{ xanes } # Average the XANES, could also be xes, rixs, exafs, ... or multiple properties.
+\end{verbatim}
+
+To specify the structure, you can use a variety of file formats, e.g., .xyz, .cif, XDATCAR, or you can have 
+corvus download a structure from the Materials Project.
+Example:
+\begin{verbatim}
+cif_input{ your_structure.cif }
+\end{verbatim}
+
+You will also need to specify which element and edge you want, e.g., for the Cu K-edge,
+\begin{verbatim}
+absorbing_atom_type{ Cu }
+feff.edge{ K }
+\end{verbatim}
+
+Thus a minimal input file for the Cu K-edge of CuO would look as follows:
+\begin{verbatim}
+target_list{ cfavg }
+cfavg_target{ xanes }
+cif_input{ CuO.cif }
+absorbing_atom_type{ Cu }
+feff.edge{ K }
+\end{verbatim}
+
+There are of course many useful and important options available, but this will give you a calculation that has reasonable defaults.

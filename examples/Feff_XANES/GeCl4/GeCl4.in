@@ -2,16 +2,19 @@
 target_list { xanes }
 
 # Set absorption edge.
-FEFF.Edge{ K }
+feff.edge{ K }
+
+# Set nohole
+feff.corehole{ none }
 
 # Set absorbing atom
 absorbing_atom{ 2 }
 
 # Define cluster (xyz format in angstrom)
 cluster {
-Cl 1.3100	1.3100	1.3100	
+Cl 1.2100	1.2100	1.2100	
 Ge 0.0		0.0	0.0
 Cl 1.2100	-1.2100	-1.2100	
-Cl -1.4100	1.4100	-1.4100	
-Cl -1.1100	-1.1100	1.1100	
+Cl -1.2100	1.2100	-1.2100	
+Cl -1.2100	-1.2100	1.2100	
 }

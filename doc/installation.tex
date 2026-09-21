@@ -1,0 +1,47 @@
+\subsection{Getting Corvus}
+To get corvus, go to 
+\url{https://github.com/times-software/Corvus/releases/latest}
+and download the archived .zip or .tgz file.
+
+\subsection{Installation}
+To install corvus, you will need python. Versions > 3.12 and < 3.14 are supported. Earlier versions may work as well. We also strongly suggest that you use
+an environment manager such as conda to install corvus. Our suggestion is to
+use the free miniforge package, which can be found at \url{https://conda-forge.org/download/}
+
+Python's venv environment management package can also be used.
+
+\subsubsection{Simple Installation using install script}
+Once you have a version of Corvus from the github website, you can follow the following simple directions to install. Note that in the below "version" should be
+replaced with the version that you downloaded, e.g., Corvus-3.2.0-01.zip.
+
+\paragraph{MacOS} Unzip the downloaded file. Open a terminal and navigate to the file. Run the install.sh script.
+\begin{verbatim}
+cd Downloads
+unzip Corvus-version.zip
+cd Corvus-version/
+source install.sh
+\end{verbatim}
+
+\paragraph{Windows} Unzip the download file. Open a terminal and navigate to the directory. Run the installer.bat script.
+\begin{verbatim}
+cd Downloads
+unzip Corvus-version.zip
+cd Corvus-version\Corvus-version
+./install.bat
+\end{verbatim}
+
+\subsubsection{Step-by-step instructions with conda}
+In MacOS, just open a terminal, and it will already have conda enabled if you have it installed. In windows, you will need to open a conda terminal, (Miniforge command window if you installed miniforge conda).
+\begin{enumerate}
+\item Download corvus from the github page.
+\item unzip the folder.
+\item In the terminal, navigate to the folder
+\item Create a conda environment for corvus
+\item Install corvus with pip.
+\end{enumerate}
+\begin{verbatim}
+cd Downloads/Corvus-version/
+conda create -name your_corvus_env python=">=3.12,<3.14"
+conda activate your_corvus_env
+pip install .
+\end{verbatim}

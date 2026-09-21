@@ -1,3 +1,4 @@
 #!/bin/bash
+python mkmanual.py
 pdflatex Corvus_Manual.tex
 pdflatex Corvus_Manual.tex

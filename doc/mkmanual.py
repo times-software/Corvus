@@ -635,7 +635,7 @@ def write_latex(keywords, outfile):
 \section{Introduction}
 \input{introduction}
 
-\section{installation}
+\section{Download and Installation}
 \input{installation}
 
 \section{Running Corvus}
@@ -674,6 +674,9 @@ Supported schema types:
 \item P = Free-form text
 
 \end{itemize}
+
+\section{The minimal input, and most important keywords}
+\input{minimal_input}
 
 The documentation below lists every recognized
 keyword, its expected schema, default value,

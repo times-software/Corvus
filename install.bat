@@ -236,11 +236,59 @@ echo Setup complete.
 echo.
 
 if "!USE_CONDA!"=="1" (
-    echo To activate later:
-    echo     conda activate !ENV_NAME!
+    REM ===========================================================================
+    REM Create desktop launcher
+    REM ===========================================================================
+
+    set "PROJECT_DIR=%CD%"
+    set "DESKTOP=%USERPROFILE%\Desktop"
+    set "CONDA_BAT=%USERPROFILE%\miniforge3\condabin\conda.bat"
+    set "LAUNCHER=%DESKTOP%\%ENV_NAME%.bat"
+
+    if not exist "%DESKTOP%" (
+        echo ERROR: Desktop directory not found:
+        echo   %DESKTOP%
+        exit /b 1
+    )
+    
+    (
+    echo @echo off
+    echo cd /d "%PROJECT_DIR%"
+    echo call "%CONDA_BAT%" activate "%ENV_NAME%"
+    echo.
+    echo if errorlevel 1 ^(
+    echo     echo ERROR: Failed to activate environment %ENV_NAME%
+    echo     pause
+    echo     exit /b 1
+    echo ^)
+    echo.
+    echo title %ENV_NAME%
+    echo echo Activated conda environment: %ENV_NAME%
+    echo echo.
+    echo cmd /k
+    ) > "%LAUNCHER%"
+    
+    if errorlevel 1 (
+        echo ERROR: Failed to create launcher:
+        echo   %LAUNCHER%
+        exit /b 1
+    )
+    
+    if not exist "%LAUNCHER%" (
+        echo ERROR: Launcher was not created:
+        echo   %LAUNCHER%
+        exit /b 1
+    )
+    
+    echo.
+    echo Created desktop launcher:
+    echo   %LAUNCHER%
+    echo.
 ) else (
     echo To activate later:
     echo     .venv\Scripts\activate
 )
 
+
 endlocal
+
