@@ -45,5 +45,5 @@ feff.fms{3.0  0    0    0.0    0.0    40.0}
 # rdirec: Keep this at 40.0
 
 # Use multithreading with up to this number of processors
-multiprocessing_ncpu{ 3 }
-multiprocessing_level{loop}
+#multiprocessing_ncpu{ 3 }
+#multiprocessing_level{loop}

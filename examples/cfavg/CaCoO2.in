@@ -1,12 +1,13 @@
-# Set target to feffXANES (we will later change this to XANES.
-target_list { xanes_cfavg }
+# Set target to cfavg (average over configurations).
+target_list { cfavg }
+# Set property to average (xanes).
+cfavg_target{ xanes }
 
-# Make Corvus use FEFF for XANES.
-#usehandlers { helper PyMatGen Feff }
+# Set absorbing atom type.
 absorbing_atom_type{ Co }
 
+# Use cif file as structural input.
 cif_input{ CaCoO2_dist.cif }
-# Set the mpi command and flags for feff.
 
 # Set absorption edge.
 feff.edge{ K }

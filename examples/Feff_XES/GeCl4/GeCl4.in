@@ -1,11 +1,11 @@
 # Set target property to xes
 target_list { xes }
 
-# Use feff to calculate 
-usehandlers { Feff }
-
 # Set absorbing atom to Ge
 absorbing_atom{ 2 }
+
+# Set edge
+feff.edge{ K }
 
 # Set mpi command and flags
 #feff.MPI.CMD{ mpirun }

@@ -13,4 +13,4 @@ cif_input{Diamond.cif}
 # Set FMS and SCF to small radii for faster calculation
 feff.fms{ 2.0 0 0 0.0 0.0 40.0 }
 feff.scf{ 2.0 0 30 0.1 0 }
-multiprocessing_ncpu{ 4 }
+#multiprocessing_ncpu{ 4 }
