@@ -1,5 +1,5 @@
-# Set target property to feffXES
-target_list { feffXES }
+# Set target property to xes
+target_list { xes }
 
 # Use feff to calculate 
 usehandlers { Feff }

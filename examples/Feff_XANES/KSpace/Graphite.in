@@ -1,13 +1,6 @@
 # Set tartget for corvus
 target_list { xanes }
 
-# Make corvus use feff for calculation
-# usehandlers { Feff }
-
-# Set mpi command and flags.
-#feff.MPI.CMD { mpirun }
-#feff.MPI.ARGS { -n 6 }
-
 # Make feff run in reciprocal space like KKR.
 feff.reciprocal{ T }
 

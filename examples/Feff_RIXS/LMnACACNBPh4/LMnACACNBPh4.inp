@@ -4,9 +4,6 @@ target_list{ rixs }
 charge{ 1 }
 feff.exchange{ 0 0 0 0 }
 
-# Use feff to calculate
-#usehandlers { Feff }
-
 # Set mpi command and flags
 #feff.MPI.CMD { mpirun }
 #feff.MPI.ARGS { -n 6 }
@@ -21,8 +18,8 @@ spectral_broadening{ 0.7 }
 absorbing_atom{ 1 }
 
 # Set FMS and SCF to small radii for faster calculation
-#feff.fms{ 3.0 0 0 0.0 0.0 40.0 }
-#feff.scf{ 3.0 0 30 0.1 0 }
+feff.fms{ 3.0 0 0 0.0 0.0 40.0 }
+feff.scf{ 3.0 0 30 0.1 0 }
 
 # Set cluster in xyz format (angstroms).
 cluster {
