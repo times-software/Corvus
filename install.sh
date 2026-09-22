@@ -59,7 +59,7 @@ else
         echo "https://conda-forge.org/miniforge/"
         echo
 
-        exit 1
+        return 1
     fi
 fi
 
@@ -88,14 +88,14 @@ if [[ "$USE_CONDA" -eq 1 ]]; then
 
     if [[ -z "$ENV_PREFIX" ]]; then
         echo "ERROR: Environment creation failed."
-        exit 1
+        return 1
     fi
 
     conda activate "$ENV_NAME"
 
     if [[ "${CONDA_DEFAULT_ENV:-}" != "$ENV_NAME" ]]; then
         echo "ERROR: Failed to activate Conda environment."
-        exit 1
+        return 1
     fi
 
     PYTHON="python"
@@ -111,7 +111,7 @@ else
 
     if [[ -e "$VENV_DIR" ]]; then
         echo "ERROR: $VENV_DIR already exists."
-        exit 1
+        return 1
     fi
     mkdir -p "$(dirname "$VENV_DIR")"
     PYTHON_HOST=""
@@ -125,7 +125,7 @@ else
 
     if [[ -z "$PYTHON_HOST" ]]; then
         echo "ERROR: Could not find python3.12 or python3.13."
-        exit 1
+        return 1
     fi
 
     echo
@@ -135,7 +135,7 @@ else
 
     if [[ ! -x "$VENV_DIR/bin/python" ]]; then
         echo "ERROR: Failed to create venv."
-        exit 1
+        return 1
     fi
 
     PYTHON="$VENV_DIR/bin/python"
@@ -198,7 +198,7 @@ if [[ "$INSTALL_SCIGUI" =~ ^([Yy]|[Yy][Ee][Ss])$ ]]; then
 
     if [[ -z "$SETUP_PY" ]]; then
         echo "ERROR: Could not locate SciGUI setup.py."
-        exit 1
+        return 1
     fi
 
     SCIGUI_DIR="$(dirname "$SETUP_PY")"
@@ -222,7 +222,8 @@ OS="$(uname -s)"
 PROJECT_DIR="${HOME}/corvus_examples"
 if [[ "$OS" == "Darwin" ]]; then
 
-    DESKTOP_LAUNCHER="$HOME/Desktop/${ENV_NAME}.command"
+    DESKTOP_LAUNCHER="$HOME/Desktop/${ENV_NAME}_GUI.command"
+    TERMINAL_LAUNCHER="$HOME/Desktop/${ENV_NAME}.command"
 
     if [[ "$USE_CONDA" -eq 1 ]]; then
 
@@ -237,7 +238,20 @@ conda activate "$ENV_NAME"
 echo
 echo "Activated conda environment: $ENV_NAME"
 echo
-$corvus
+corvus
+exec bash -i
+EOF
+	cat > "$TERMINAL_LAUNCHER" <<EOF
+#!/usr/bin/env bash
+
+cd "$PROJECT_DIR"
+
+eval "\$(conda shell.bash hook)"
+conda activate "$ENV_NAME"
+
+echo
+echo "Activated conda environment: $ENV_NAME"
+echo
 exec bash -i
 EOF
 
@@ -301,6 +315,20 @@ fi
 ###############################################################################
 # Final instructions
 ###############################################################################
+echo "Copying examples to $HOME/corvus_examples"
+echo
+ex_dir="$HOME/corvus_examples"
+ans=y
+if [[ -e "$ex_dir" ]]; then
+    echo "WARNING: $ex_dir already exists."
+    echo "Copy files anyway? [y/N]"
+    read ans
+fi
+if [[ "$ans" =~ ^([Yy]|[Yy][Ee][Ss])$ ]]; then
+    cp -r examples/ $HOME/corvus_examples
+else
+    echo "Will not copy example files."
+fi
 
 echo
 echo "Setup complete."
@@ -308,10 +336,13 @@ echo
 
 if [[ "$USE_CONDA" -eq 1 ]]; then
 
-    echo "To activate the environment later:"
+    echo "You can run corvus by opening a terminal and typing:"
     echo
     echo "    conda activate $ENV_NAME"
     echo
+    echo "or double clicking the ${ENV_NAME}.command or"
+    echo "${ENV_NAME}_GUI.command scripts located on your"
+    echo "desktop."
 
 else
 
