@@ -1,4 +1,4 @@
-    - name: Inject Hash into Package Init File
-      run: |
-        sed -i 's/__commit_hash__.*/__commit_hash__ = ${{ steps.vars.outputs.sha_short }}/g' corvus/__init__.py
+name: Inject Hash into Package Init File
+run: |
+    sed -i 's/__commit_hash__.*/__commit_hash__ = \"${{ steps.vars.outputs.sha_short }}\"/g' corvus/__init__.py
 
