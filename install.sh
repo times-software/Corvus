@@ -15,29 +15,30 @@ if command -v conda >/dev/null 2>&1; then
     echo
     echo "Conda detected."
     echo
-    echo "Choose environment type:"
-    echo "  1) Conda (recommended)"
-    echo "  2) venv"
-    echo
+    USE_CONDA=1
+    #echo "Choose environment type:"
+    #echo "  1) Conda (recommended)"
+    #echo "  2) venv"
+    #echo
 
-    while true; do
-        printf "Selection [1/2] (default=1): "
-        read -r CHOICE
-        CHOICE="${CHOICE:-1}"
-        case "$CHOICE" in
-            1)
-                USE_CONDA=1
-                break
-                ;;
-            2)
-                USE_VENV=1
-                break
-                ;;
-            *)
-                echo "Please enter 1 or 2."
-                ;;
-        esac
-    done
+    #while true; do
+    #    printf "Selection [1/2] (default=1): "
+    #    read -r CHOICE
+    #    CHOICE="${CHOICE:-1}"
+    #    case "$CHOICE" in
+    #        1)
+    #            USE_CONDA=1
+    #            break
+    #            ;;
+    #        2)
+    #            USE_VENV=1
+    #            break
+    #            ;;
+    #        *)
+    #            echo "Please enter 1 or 2."
+    #            ;;
+    #    esac
+    #done
 
 else
 
@@ -45,23 +46,23 @@ else
     echo "Conda was not found."
     echo
 
-    printf "Use a Python venv instead? [y/N] "
-    read -r USE_VENV_REPLY
-
-    if [[ "$USE_VENV_REPLY" =~ ^([Yy]|[Yy][Ee][Ss])$ ]]; then
-
-        USE_VENV=1
-
-    else
+    #printf "Use a Python venv instead? [y/N] "
+    #read -r USE_VENV_REPLY
+#
+#    if [[ "$USE_VENV_REPLY" =~ ^([Yy]|[Yy][Ee][Ss])$ ]]; then
+#
+#        USE_VENV=1
+#
+#    else
 
         echo
-        echo "Please install Miniforge and rerun this script."
+	echo "Please install Miniforge (or other conda) and rerun this script."
         echo
         echo "https://conda-forge.org/miniforge/"
         echo
 
         return 1
-    fi
+    #fi
 fi
 
 ###############################################################################
@@ -285,9 +286,19 @@ EOF
 
 elif [[ "$OS" == "Linux" ]]; then
 
+    DESKTOP_GUI_LAUNCHER="$HOME/Desktop/${ENV_NAME}_GUI.desktop"
     DESKTOP_LAUNCHER="$HOME/Desktop/${ENV_NAME}.desktop"
 
     if [[ "$USE_CONDA" -eq 1 ]]; then
+
+        cat > "$DESKTOP_GUI_LAUNCHER" <<EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=$ENV_NAME
+Terminal=true
+Exec=bash -c 'cd "$PROJECT_DIR"; eval "\$($CONDA_EXE shell.bash hook)"; conda activate "$ENV_NAME"; corvus exec bash -i'
+EOF
 
         cat > "$DESKTOP_LAUNCHER" <<EOF
 [Desktop Entry]
