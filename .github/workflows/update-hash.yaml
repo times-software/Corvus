@@ -1,9 +1,9 @@
-name: Update Version Hash
+name: Update Version Hash and Tag
 
 on:
   push:
     branches:
-      - master  # Verified from your previous git error log
+      - master
 
 permissions:
   contents: write
@@ -16,16 +16,24 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 0 # Required to fetch your full commit history and tags
 
-    - name: Extract Short Commit Hash
+    - name: Extract Hash and Tag
       id: vars
-      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
-    - name: Inject Hash into Package Init File
       run: |
-        # Added literal escaped quotes \" around the hash for the python assignment
+        # Extract short commit hash
+        echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        
+        # Extract closest tag in history (falls back to hash if no tags exist anywhere)
+        echo "version=$(git describe --tags --always --abbrev=0)" >> $GITHUB_OUTPUT
+
+    - name: Inject Variables into Package Init File
+      run: |
+        # Replace the commit hash line
         sed -i 's/__commit_hash__.*/__commit_hash__ = \"${{ steps.vars.outputs.sha_short }}\"/g' corvus/__init__.py
+        
+        # Replace the last tag line
+        sed -i 's/__last_tag__.*/__last_tag__ = \"${{ steps.vars.outputs.version }}\"/g' corvus/__init__.py
 
     - name: Commit and Push changes
       run: |
@@ -34,7 +42,7 @@ jobs:
         
         if ! git diff --exit-code corvus/__init__.py; then
           git add corvus/__init__.py
-          git commit -m "chore: auto-update version hash to ${{ steps.vars.outputs.sha_short }} [skip ci]"
+          git commit -m "chore: auto-update hash (${{ steps.vars.outputs.sha_short }}) and tag (${{ steps.vars.outputs.version }}) [skip ci]"
           git push origin master
         fi
 
