@@ -1,4 +1,40 @@
-name: Inject Hash into Package Init File
-run: |
-    sed -i 's/__commit_hash__.*/__commit_hash__ = \"${{ steps.vars.outputs.sha_short }}\"/g' corvus/__init__.py
+name: Update Version Hash
+
+on:
+  push:
+    branches:
+      - master  # Verified from your previous git error log
+
+permissions:
+  contents: write
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Extract Short Commit Hash
+      id: vars
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+    - name: Inject Hash into Package Init File
+      run: |
+        # Added literal escaped quotes \" around the hash for the python assignment
+        sed -i 's/__commit_hash__.*/__commit_hash__ = \"${{ steps.vars.outputs.sha_short }}\"/g' corvus/__init__.py
+
+    - name: Commit and Push changes
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "41898282+github-actions[bot]@://github.com"
+        
+        if ! git diff --exit-code corvus/__init__.py; then
+          git add corvus/__init__.py
+          git commit -m "chore: auto-update version hash to ${{ steps.vars.outputs.sha_short }} [skip ci]"
+          git push origin master
+        fi
 
