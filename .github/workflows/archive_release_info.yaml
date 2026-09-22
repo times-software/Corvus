@@ -1,0 +1,74 @@
+name: Save Metadata to Archive
+
+on:
+  release:
+    types: [published]
+  push:
+    branches:
+      - '**' # Triggers on a push to any branch
+    paths-ignore:
+      - 'archived/**' # Prevents an infinite loop when the action pushes its own changes
+
+permissions:
+  contents: write
+
+jobs:
+  archive-metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetches all history and tags (required for git describe)
+
+      - name: Extract Metadata
+        id: meta
+        run: |
+          # 1. Determine Branch Name
+          if [ "${{ github.event_name }}" = "release" ]; then
+            # Find the branch containing the release commit
+            BRANCH=$(git branch -r --contains ${{ github.sha }} | head -n 1 | sed 's/.*origin\///')
+          else
+            # Extract branch directly from the push ref (e.g., refs/heads/main -> main)
+            BRANCH=${GITHUB_REF#refs/heads/}
+          fi
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+          # 2. Determine Best Tag
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            # Look backwards for the closest tag reachable from this commit
+            TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "no-tag-found")
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Create Archive Directory and Write File
+        run: |
+          mkdir -p archived
+          
+          # Name the file based on the branch and event type to keep things organized
+          FILE_PATH="archived/meta-${{ steps.meta.outputs.branch }}.txt"
+          
+          # Write the metadata into the file
+          echo "Last Active Tag: ${{ steps.meta.outputs.tag }}" > $FILE_PATH
+          echo "Commit Hash: ${{ github.sha }}" >> $FILE_PATH
+          echo "Branch: ${{ steps.meta.outputs.branch }}" >> $FILE_PATH
+          echo "Trigger Event: ${{ github.event_name }}" >> $FILE_PATH
+          echo "Archived At: $(date -u '[%Y-%m-%d %H:%M:%S UTC]')" >> $FILE_PATH
+
+      - name: Commit and Push to Repository
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@://github.com"
+          
+          git add archived/
+          
+          # Only commit and push if the file actually changed
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update metadata archive on ${{ github.event_name }} [skip ci]"
+            git push origin HEAD:${{ steps.meta.outputs.branch }}
+          else
+            echo "No changes to metadata file. Skipping commit."
+          fi
+
