@@ -6,6 +6,7 @@ set -euo pipefail
 # Choose environment type
 ###############################################################################
 
+OS="$(uname -s)"
 USE_CONDA=0
 USE_VENV=0
 
@@ -80,6 +81,10 @@ if [[ "$USE_CONDA" -eq 1 ]]; then
         -n "$ENV_NAME" \
         "python>=3.12,<3.14" \
         pip
+
+if [[ "$OS" != "Darwin" ]]; then
+	conda install conda-forge::wxpython
+fi
 
     ENV_PREFIX="$(
         conda env list |
@@ -207,6 +212,10 @@ if [[ "$INSTALL_SCIGUI" =~ ^([Yy]|[Yy][Ee][Ss])$ ]]; then
 
     (
         cd "$SCIGUI_DIR"
+
+	if [[ "$OS" == "Linux" ]]; then
+	    conda install conda-forge::wxpython
+	fi
         "$PYTHON" -m pip install .
     )
 
@@ -218,7 +227,6 @@ fi
 ###############################################################################
 # Create desktop launcher. 
 ###############################################################################
-OS="$(uname -s)"
 PROJECT_DIR="${HOME}/corvus_examples"
 if [[ "$OS" == "Darwin" ]]; then
 
@@ -290,7 +298,7 @@ Version=1.0
 Type=Application
 Name=$ENV_NAME
 Terminal=true
-Exec=bash -c 'cd "$PROJECT_DIR"; eval "\$(conda shell.bash hook)"; conda activate "$ENV_NAME"; corvus exec bash -i'
+Exec=bash -c 'cd "$PROJECT_DIR"; eval "\$($CONDA_EXE shell.bash hook)"; conda activate "$ENV_NAME"; corvus exec bash -i'
 EOF
 
     else
