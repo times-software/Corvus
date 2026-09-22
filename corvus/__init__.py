@@ -1,1 +1,1 @@
-__commit_hash__ = "GIT_COMMIT_HASH"
+__commit_hash__ = "ff87e6b"
