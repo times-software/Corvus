@@ -82,10 +82,6 @@ if [[ "$USE_CONDA" -eq 1 ]]; then
         "python>=3.12,<3.14" \
         pip
 
-if [[ "$OS" != "Darwin" ]]; then
-	conda install conda-forge::wxpython
-fi
-
     ENV_PREFIX="$(
         conda env list |
         awk -v env="$ENV_NAME" '$1 == env {print $NF}'
@@ -180,6 +176,11 @@ if [[ "$INSTALL_SCIGUI" =~ ^([Yy]|[Yy][Ee][Ss])$ ]]; then
 
     trap cleanup EXIT
 
+    if [[ "$OS" == "Linux" ]]; then
+	    echo
+	    echo "Installing wxpython."
+	    conda install conda-forge::wxpython
+    fi
     echo
     echo "Downloading SciGUI..."
 
@@ -212,10 +213,6 @@ if [[ "$INSTALL_SCIGUI" =~ ^([Yy]|[Yy][Ee][Ss])$ ]]; then
 
     (
         cd "$SCIGUI_DIR"
-
-	if [[ "$OS" == "Linux" ]]; then
-	    conda install conda-forge::wxpython
-	fi
         "$PYTHON" -m pip install .
     )
 
