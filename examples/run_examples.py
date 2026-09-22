@@ -5,7 +5,6 @@ import subprocess
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 infiles = [
-    "./Feff_XANES/KSpace/Graphite.in",
     "./Feff_XANES/GeCl4/GeCl4.in",
     "./Feff_RIXS/LMnACACNBPh4/LMnACACNBPh4.inp",
     "./Doping/SrTixSn1-xO3/SrTiSnO3.in",
@@ -16,7 +15,6 @@ infiles = [
     "./loop/corvus.in",
 ]
 outfiles = [
-    "./Feff_XANES/KSpace/Corvus.xanes.out",
     "./Feff_XANES/GeCl4/Corvus.xanes.out",
     "./Feff_RIXS/LMnACACNBPh4/Corvus1_FEFF/rixsET-sat.dat",
     "./Doping/SrTixSn1-xO3/Corvus.cfavg_xanes.out",
