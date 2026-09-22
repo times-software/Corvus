@@ -977,12 +977,12 @@ def oneshot():
             printAndExit('Error: target [' + token + '] not produced')
 
 def print_version():
-    from corvus import __commit_hash__
+    from corvus import __commit_hash__, __last_tag__
     print('#####################################################')
     print('#                                                   #')
-    print('#          Corvus version 1.3.0')
+    print('#          Corvus version ', __last_tag__)
     print('#                                                   #')
-    print('#     commit: ', __commit_hash__)
+    print('#          commit: ', __commit_hash__)
     print('#                                                   #')
     print('#####################################################')
 
