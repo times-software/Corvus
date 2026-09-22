@@ -1,82 +1,117 @@
-import re
-import sys, os
-from contextlib import contextmanager
-from corvus.controls import oneshot
-from concurrent.futures import ThreadPoolExecutor, as_completed
-# Run corvus with --version to load the libraries. This will make the first run load faster.
-infiles=[
-"./Feff_XANES/KSpace/Graphite.in",
-"./Feff_XANES/GeCl4/GeCl4.in",
-"./Feff_RIXS/LMnACACNBPh4/LMnACACNBPh4.inp",
-"./Doping/SrTixSn1-xO3/SrTiSnO3.in",
-"./fit/GeCl4_Full/GeCl4.in",
-"./fit/GeCl4_Fast/GeCl4.in",
-"./opcons/Diamond/Diamond.in",
-"./opcons/Corundum/Corundum.in",
-"./cfavg/CaCoO2.in",
-"./Feff_XES/GeCl4/GeCl4.in",
-"./loop/corvus.in"
+#!/usr/bin/env python3
+
+import os
+import subprocess
+from concurrent.futures import ProcessPoolExecutor, as_completed
+
+infiles = [
+    "./Feff_XANES/KSpace/Graphite.in",
+    "./Feff_XANES/GeCl4/GeCl4.in",
+    "./Feff_RIXS/LMnACACNBPh4/LMnACACNBPh4.inp",
+    "./Doping/SrTixSn1-xO3/SrTiSnO3.in",
+    "./fit/GeCl4_Fast/GeCl4.in",
+    "./opcons/Diamond/Diamond.in",
+    "./cfavg/CaCoO2.in",
+    "./Feff_XES/GeCl4/GeCl4.in",
+    "./loop/corvus.in",
+]
+outfiles = [
+    "./Feff_XANES/KSpace/Corvus.xanes.out",
+    "./Feff_XANES/GeCl4/Corvus.xanes.out",
+    "./Feff_RIXS/LMnACACNBPh4/Corvus1_FEFF/rixsET-sat.dat",
+    "./Doping/SrTixSn1-xO3/Corvus.cfavg_xanes.out",
+    "./fit/GeCl4_Fast/fitconvergence.dat",
+    "./opcons/Diamond/opconsKK.dat",
+    "./cfavg/Corvus_cfavg.xanes.out",
+    "./Feff_XES/GeCl4/Corvus.xes.out",
+    "./loop/Corvus.loop.out",
 ]
 
-print('\n\n#####################################################')
-print('   Running examples. This will take time.')
-print('#####################################################\n\n')
-@contextmanager
-def redirect_fd(filename):
-    with open(filename, "w") as f:
-        old_stdout = os.dup(1)
-        old_stderr = os.dup(2)
-        os.dup2(f.fileno(), 1)
-        os.dup2(f.fileno(), 2)
-    try:
-        yield
-    finally:
-        os.dup2(old_stdout, 1)
-        os.dup2(old_stderr, 2)
-        os.close(old_stdout)
-        os.close(old_stderr)
+assert len(infiles) == len(outfiles)
+#infiles = ["./Doping/SrTixSn1-xO3/SrTiSnO3.in"]
 
 
+def process_file(rel_path, expected_output, start_dir):
+    print("   RUNNING: ", rel_path,flush=True)
+    abs_path = os.path.abspath(
+        os.path.join(start_dir, rel_path)
+    )
+
+    directory = os.path.dirname(abs_path)
+    filename = os.path.basename(abs_path)
+    outfile = filename + ".out"
+
+    expected_path = os.path.join(
+        directory,
+        expected_output
+    )
+    # Remove stale output from previous runs
+    if os.path.exists(expected_path):
+        os.remove(expected_path)
+
+    with open(os.path.join(directory, outfile), "w") as out:
+
+        result = subprocess.run(
+            ["run-corvus", "-i", filename],
+            cwd=directory,
+            stdout=out,
+            stderr=out,
+            text=True,
+        )
+    success = os.path.isfile(expected_path)
+    return rel_path, success
 
 
-def main(files,max_threads):
+def main(infiles,outfiles):
+
     start_dir = os.getcwd()
 
-    with ThreadPoolExecutor(max_workers=max_threads) as executor:
-        futures = [
-            executor.submit(process_file, f, start_dir)
-            for f in files
-        ]
+    cpu_count = os.cpu_count() or 1
+    max_workers = min(len(infiles), max(1, cpu_count - 2))
+
+    print(
+        f"Running {len(infiles)} jobs using "
+        f"{max_workers} worker processes."
+    )
+
+    with ProcessPoolExecutor(
+        max_workers=max_workers
+    ) as executor:
+
+
+        futures = {}
+
+        for infile, outfile in zip(infiles, outfiles):
+            print(f"QUEUE  {infile}")
+
+            future = executor.submit(
+                process_file,
+                infile,
+                outfile,
+                start_dir
+            )
+
+            futures[future] = infile
+
 
         for future in as_completed(futures):
+
             try:
-                completed_file = future.result()
-                print(f"Completed: {completed_file}")
+                file, rc = future.result()
+
+                if rc == 0:
+                    print(f"PASS  {file}")
+                else:
+                    print(
+                        f"FAIL  {file} "
+                        f"(return code {rc})"
+                    )
+
             except Exception as e:
-                print(f"Failed: {e}")
+                print(
+                    f"CRASH {futures[future]}: {e}"
+                )
 
-def process_file(file,start_dir):
-    os.chdir(start_dir)
-    directory = os.path.dirname(os.path.abspath(file))
-    print(directory)
-    filename = os.path.basename(file)
-    print("    File: ", file)
-    try:
-        os.chdir(directory)
-        with redirect_fd(filename + '.out'):
-            sys.argv = ['run-corvus','-i',filename]
-            sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
-            try:
-                oneshot()
-            except SystemExit:
-                print('Corvus failed for file: ', file)
-
-    except Exception as e:
-        print(f"Error processing {file}: {e}")
 
 if __name__ == "__main__":
-    # Same default logic used by ThreadPoolExecutor
-    max_threads = min(len(infiles), os.cpu_count() - 4)
-    print('Running with ', max_threads, ' processes.')
-    start_dir = os.getcwd()
-    main(infiles,max_threads)
+    main(infiles,outfiles)
