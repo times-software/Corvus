@@ -678,6 +678,9 @@ Supported schema types:
 \section{The minimal input, and most important keywords}
 \input{minimal_input}
 
+\section{Output directory structure and output files}
+\input{output_files.tex}
+
 The documentation below lists every recognized
 keyword, its expected schema, default value,
 and documentation string.

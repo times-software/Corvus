@@ -33,3 +33,40 @@ feff.edge{ K }
 \end{verbatim}
 
 There are of course many useful and important options available, but this will give you a calculation that has reasonable defaults.
+One special target to note is the "loop" target which allows the user to defined loops over the values associate with any keyword or set 
+of keywords. For single line keywords, the structure is relatively simple:
+\begin{verbatim}
+target_list{ loop } # Make corvus produce a loop over some parameters.
+loop_target{ cfavg } # The target property to calculate for each calculation is an average
+
+cfavg_target{ xanes } # Average the xanes over different unique sites in the structure.
+
+# Now define the loop:
+loop_parameter{
+single_line_keyword
+values_line1
+values_line2
+values_line3
+...
+}
+# Optionally, define labels for the loop directories. Must have the same number of entries as loop_parameter.
+# loop_labels{
+# label1
+# label2
+# label3
+# ...
+# }
+
+There are is also a special value for the first line after "loop_parameter" that loops over input files so that one can loop over 
+any defined sets of keyword->value combinations, e.g., 
+\begin{verbatim}
+loop_parameter{
+file
+file1.in
+file2.in
+file3.in
+...
+}
+\end{verbatim}
+This will cause corvus to perform calculations with all parameters loaded from the main input file + any parameters existing in fileN.in. Input in fileN.in overrides input in the 
+main input file.

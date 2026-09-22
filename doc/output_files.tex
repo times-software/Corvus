@@ -1,0 +1,17 @@
+The output file and directory structure of Corvus is as follows:
+Calculations will be run in sub-directories of your current directory named Corvus\_description
+where "description" describes what is in the directory. 
+
+Simple calculation that ask directly for a spectrum calculated by FEFF are calculated in the directory
+Corvus1\_FEFF, while asking for an average over configurations (target\_list\{ cfavg \}) produces a top-level
+directory named,
+Corvus3\_cfavg\_spectrum, where spectrum is the named spectrum that was requested by the user, e.g., 
+Corvus3\_cfavg\_xanes. Then each of the subdirectories of Corvus3\_cfavg\_xanes, will have directories named by the
+index of the absorber as it was run, a label connected to which atom is the absorber, and the code (FEFF in this case). 
+
+For the special target loop, the top level folders start with CorvusN\_loop\_loopparameter\_loopvalue. For example, if the user requests a loop over the parameter feff.corehole, with 
+values none, rpa, fsr, then Corvus produces the directories Corvus1\_loop\_feff.corehole\_none, Corvus1\_loop\_feff.corehole\_rpa, Corvus1\_loop\_feff.corehole\_fsr
+
+Finally, the main output files of Corvus are named Corvus.target\_subtarget.out. Thus for calculations that request xanes and provide the structure directly in the input file, the main output
+is in Corvus.xanes.out. For configurational averages (cfavg), the main output is in
+Corvus.cfavg\_xanes.out (for xanes calculations). Finally for loop calculations, the main output is inside the top-level loop directories, and named the same as it would be for a single calculation, e.g. Corvus.xanes.out or Corvus.cfavg\_xes.out etc. 
