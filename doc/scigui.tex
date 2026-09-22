@@ -1,0 +1,53 @@
+SciGUI is a graphical user interface that can be used for Corvus. 
+The installers (install.bat, install.sh) will install it automatically,
+or you can get it from the github page \url{https://github.com/times-software/SciGUI/releases/latest}.
+The GUI can be used to control corvus, open input files, plot output, and setup calculation
+in an easy manner. If you installed with the install scripts, there will be a launcher
+on your desktop called Corvus-version\_GUI.bat or Corvus-version\_GUI.command (windows, MacOS).
+Once launched, you should see a main window with three panels. The left panel shows keyword buttons, which 
+can be selected. The right screen shows help for the selected keyword. The top panel has some controls (run and plot) 
+as well as filters for selecting which keywords to show on the left panel.
+
+\subsection{General Use}
+The GUI shows keywords on the left panel. When a user selects a keyword, 
+the right panel shows help for that keyword, along with and "enable" checkbox,
+and fillable fields for value input. If a user want to fill a keyword, they 
+check the "enable" checkbox, then fill the fields. When the user is finished 
+filling out all of the keywords needed for their calculation, they click the run
+button. SciGUI will then write a corvus input file with all of the enabled keywords
+filled out, then run corvus on the input file. Note that there are many possible
+keywords, so there are filters to select keyword by subject or code, and also a search
+bar to search for keywords. Finally, there is a "Quick Start" button to help users
+get started with specific types of calculations.
+
+\subsection{The controls and filter panel (top panel)}
+This panel has the run button, the Quick Start selection, and a variety of ways to filter and search keywords:
+\begin{itemize}
+\item Filter by code
+Which code is this a specific keyword for, or is it a general keyword.
+\item Filter by subject
+Keywords related to a specific property of subject.
+\item Search bar
+Search for specific terms within a keyword
+\item "Only enabled" checkbox
+Show only the enabled keywords.
+\end{itemize}
+
+\subsection{The Quick Start Menu}
+If a user selects one of the options from the "Quick Start" menu, the 
+target\_list keyword (and maybe some others) will automatically be enabled and filled out.
+In addition, keywords will be colored according to importance:
+\begin{itemize} 
+\item RED: Required
+\item BLUE: Most useful
+\item GRAY: Other/Advanced
+\end{itemize}
+By default, when the "Quick Start" option is chosen, only required and useful cards are shown.
+In order to fill in the minimim requirements for this type of calculation, the user then just 
+needs to click on each of the red keywords shown in the keyword panel, and fill in the values
+for that keyword. 
+
+\subsection{Validation}
+If a user has enabled a keyword (selecting it on the left panel, then clicking the "enable" checkbox on the right)
+then they must fill all required fields or uncheck the enabled checkbox before selecting another keyword. Otherwise
+a pop-up message will warn the user, and the same keyword will be selected again.

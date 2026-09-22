@@ -678,6 +678,9 @@ Supported schema types:
 \section{The minimal input, and most important keywords}
 \input{minimal_input}
 
+\section{The corvus GUI (SciGUI)}
+\input{scigui}
+
 \section{Output directory structure and output files}
 \input{output_files.tex}
 
