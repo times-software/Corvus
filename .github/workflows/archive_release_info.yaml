@@ -48,7 +48,7 @@ jobs:
           mkdir -p archived
           
           # Name the file based on the branch and event type to keep things organized
-          FILE_PATH="archived/meta-${{ steps.meta.outputs.branch }}.txt"
+          FILE_PATH="archived/meta.txt"
           
           # Write the metadata into the file
           echo "Last Active Tag: ${{ steps.meta.outputs.tag }}" > $FILE_PATH
