@@ -12,9 +12,9 @@ def get_version_info_from_metadata(default_version="0.0.0"):
     Falls back to a default version if the file doesn't exist.
     """
     # Adjust this if your primary branch is 'main' instead of 'master'
-    meta_branch = "master_shit"
+    meta_branch = "unknown"
     setup_dir = os.path.dirname(os.path.abspath(__file__))
-    meta_path = os.path.join(setup_dir, "archived", "meta-master.txt")
+    meta_path = os.path.join(setup_dir, "archived", "meta.txt")
     meta_version=default_version
     meta_commit_hash="fuck me"
     
