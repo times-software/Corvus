@@ -1,3 +1,4 @@
+
 setlocal EnableDelayedExpansion
 
 REM ===========================================================================
@@ -10,28 +11,15 @@ if %ERRORLEVEL%==0 (
     echo.
     echo Conda detected.
     echo.
-    set /p USE_CONDA="Use Conda (recommended)? [Y/n] "
-
-    if /I "!USE_CONDA!"=="n" (
-        set USE_CONDA=0
-    ) else (
-        set USE_CONDA=1
-    )
+    set USE_CONDA=1
+    set "CONDA_BAT=!CONDA_PREFIX!\Scripts\activate.bat"
+    
 ) else (
     echo.
     echo Conda was not found.
     echo.
 
-    set /p USE_VENV="Use a Python venv instead? [Y/n] "
-
-    if /I "!USE_VENV!"=="n" (
-        echo.
-        echo Please install Miniforge:
-        echo https://conda-forge.org/miniforge/
-        exit /b 1
-    )
-
-    set USE_CONDA=0
+    exit /b 1
 )
 
 REM ===========================================================================
@@ -47,7 +35,7 @@ REM ===========================================================================
 
 
 if "!USE_CONDA!"=="1" (
-    echo
+    echo.
     echo Creating Conda environment "!ENV_NAME!"...
 
     call conda create -n "!ENV_NAME!" "python>=3.12,<3.14" pip
@@ -56,7 +44,6 @@ if "!USE_CONDA!"=="1" (
         
         exit /b 1
     )
-    @echo on
     echo Activating environment "!ENV_NAME!"
     call conda activate "!ENV_NAME!"
 
@@ -67,9 +54,7 @@ if "!USE_CONDA!"=="1" (
         
         exit /b 1
     )
-    echo Before
     set PYTHON=python
-    echo "!PYTHON!"
     
     "!PYTHON!" -c "import sys; exit(0 if (3,12) <= sys.version_info[:2] < (3,14) else 1)"
 
@@ -79,7 +64,6 @@ if "!USE_CONDA!"=="1" (
         
         exit /b 1
     )
-    echo "After"
     
 
 ) else (
@@ -222,7 +206,7 @@ goto FINISH
 
 :INSTALL_SCIGUI
 
-set TMPDIR=%TEMP%\SciGUI_%RANDOM%
+set TMPDIR=%CD%
 
 mkdir "%TMPDIR%"
 
@@ -234,56 +218,34 @@ powershell -NoProfile -ExecutionPolicy Bypass ^
 
 if errorlevel 1 (
     echo ERROR: download failed.
-    rmdir /s /q "%TMPDIR%"
-    
+        
     exit /b 1
 )
 
 echo Extracting SciGUI...
 
-powershell -NoProfile -ExecutionPolicy Bypass ^
-    -Command "Expand-Archive '%TMPDIR%\scigui.zip' '%TMPDIR%\src'"
+powershell -NoProfile -ExecutionPolicy Bypass -Force ^
+    -Command "Expand-Archive '%TMPDIR%\scigui.zip' '%TMPDIR%\'"
 
 if errorlevel 1 (
     echo ERROR: extraction failed.
-    rmdir /s /q "%TMPDIR%"
     
     exit /b 1
 )
 
-for /f "delims=" %%F in (
-    'dir /s /b "%TMPDIR%\src\setup.py"'
-) do (
-    set SETUPPY=%%F
-    goto FOUND_SETUP
-)
-
-echo ERROR: setup.py not found.
-rmdir /s /q "%TMPDIR%"
-
-exit /b 1
-
-:FOUND_SETUP
-
-for %%F in ("!SETUPPY!") do set SCIGUI_DIR=%%~dpF
+cd %TMPDIR%\scigui-main\
 
 echo Installing SciGUI...
-
-pushd "!SCIGUI_DIR!"
 
 "!PYTHON!" -m pip install .
 
 if errorlevel 1 (
-    popd
-    rmdir /s /q "%TMPDIR%"
     echo ERROR: SciGUI installation failed.
     
     exit /b 1
 )
 
-popd
-
-rmdir /s /q "%TMPDIR%"
+cd ..
 
 echo SciGUI installed successfully.
 
@@ -292,66 +254,80 @@ echo SciGUI installed successfully.
 echo.
 echo Setup complete.
 echo.
-
+ver > nul
 if "!USE_CONDA!"=="1" (
     REM ===========================================================================
     REM Create desktop launcher
     REM ===========================================================================
 
-    set "DESKTOP=!TRUE_DESKTOP!
+    set "DESKTOP=!TRUE_DESKTOP!"
+    
+    set "LAUNCHER=!TRUE_DESKTOP!\!ENV_NAME!.bat"
+    set "GLAUNCHER=!TRUE_DESKTOP!\!ENV_NAME!_GUI.bat"
+    echo "LAUNCHER: !LAUNCHER!"
+    
 
-    set "CONDA_BAT=%CONDA_PREFIX%\condabin\conda.bat"
-    set "LAUNCHER=%DESKTOP%\%ENV_NAME%.bat"
-
-    if not exist "%DESKTOP%" (
+    if not exist "!DESKTOP!" (
         echo ERROR: Desktop directory not found:
-        echo   %DESKTOP%
+        echo   !DESKTOP!
         exit /b 1
     )
     
     REM Check if a network home share exists (e.g., \\server\share)
-    if not "%HOMESHARE%"=="" (
-        set "TRUE_HOME=%HOMESHARE%"
-    ) else if not "%HOMEDRIVE%"=="" (
+    if not "!HOMESHARE!"=="" (
+        set "TRUE_HOME=!HOMESHARE!"
+    ) else if not "!HOMEDRIVE!"=="" (
         REM If it's a mapped drive letter (e.g., H:\path)
-        set "TRUE_HOME=%HOMEDRIVE%%HOMEPATH%"
+        set "TRUE_HOME=!HOMEDRIVE!!HOMEPATH!"
     ) else (
         REM Fallback to local profile if no network home is defined
-        set "TRUE_HOME=%USERPROFILE%"
+        set "TRUE_HOME=!USERPROFILE!"
     )
     set "PROJECT_DIR=!TRUE_HOME!\"
-
+   
+    (
     echo @echo off
-    echo cd /d "%PROJECT_DIR%"
-    echo call "%CONDA_BAT%" activate "%ENV_NAME%"
+    echo cd /d "!PROJECT_DIR!"
+    echo call "!CONDA_BAT!" Corvus
     echo.
     echo if errorlevel 1 ^(
-    echo     echo ERROR: Failed to activate environment %ENV_NAME%
+    echo     echo ERROR: Failed to activate environment !ENV_NAME!
     echo     pause
     echo     exit /b 1
     echo ^)
     echo.
-    echo title %ENV_NAME%
-    echo echo Activated conda environment: %ENV_NAME%
+    echo title !ENV_NAME!
+    echo echo Activated conda environment: !ENV_NAME!
     echo echo.
     echo cmd /k
-    ) > "%LAUNCHER%"
-    
+    ) > "!LAUNCHER!"
+    (
+    echo @echo off
+    echo cd /d "!PROJECT_DIR!"
+    echo call "!CONDA_BAT!" Corvus
+    echo.
+    echo if errorlevel 1 ^(
+    echo     echo ERROR: Failed to activate environment !ENV_NAME!
+    echo     pause
+    echo     exit /b 1
+    echo ^)
+    echo.
+    echo title !ENV_NAME!
+    echo echo Activated conda environment: !ENV_NAME!
+    echo echo.
+    echo call "corvus"
+    echo cmd /k
+    ) > "!GLAUNCHER!"    
+
     if errorlevel 1 (
         echo ERROR: Failed to create launcher:
-        echo   %LAUNCHER%
-        exit /b 1
-    )
-    
-    if not exist "%LAUNCHER%" (
-        echo ERROR: Launcher was not created:
-        echo   %LAUNCHER%
+        echo   !LAUNCHER!
         exit /b 1
     )
     
     echo.
     echo Created desktop launcher:
-    echo   %LAUNCHER%
+    echo   !LAUNCHER!
     echo.
 ) else (
     echo To activate later:
