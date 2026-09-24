@@ -246,8 +246,9 @@ echo
 echo "Activated conda environment: $ENV_NAME"
 echo
 corvus
-exec $SHELL -i
+exec bash -i
 EOF
+chmod u+x $DESKTOP_LAUNCHER
 	cat > "$TERMINAL_LAUNCHER" <<EOF
 #!/usr/bin/env bash
 
@@ -259,9 +260,9 @@ conda activate "$ENV_NAME"
 echo
 echo "Activated conda environment: $ENV_NAME"
 echo
-exec $SHELL -i
+exec bash -i
 EOF
-
+chmod u+x $TERMINAL_LAUNCHER
     else
 
         cat > "$DESKTOP_LAUNCHER" <<EOF
