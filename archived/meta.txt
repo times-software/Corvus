@@ -1,5 +1,5 @@
-Last Active Tag: v1.3.2-02
-Commit Hash: 4e8b7b9a217b0c11b9ab0d28f108dabfb7c39e23
+Last Active Tag: v1.3.3
+Commit Hash: 5d520d3b92759a5041c883d462593231031ae89e
 Branch: master
-Trigger Event: push
+Trigger Event: release
 Archived At: 
