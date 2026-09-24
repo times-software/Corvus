@@ -185,6 +185,7 @@ REM 5. Validation Check: Does the source "examples" folder actually exist?
 if not exist "%SOURCE_DIR%" (
     echo [ERROR] Source folder "examples" not found at: "%SOURCE_DIR%"
     echo Please ensure the "examples" directory is next to this installer script.
+    goto :EXIT_FAILURE
 )
 
 REM 6. Perform the safe copy operation using Robocopy
@@ -206,6 +207,7 @@ if %ERRORLEVEL% LSS 8 (
 )
 
 :EXIT_FAILURE
+:EXIT_SUCCESS
 
 REM ===========================================================================
 REM Optional SciGUI install
