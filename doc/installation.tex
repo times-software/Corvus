@@ -18,6 +18,8 @@ download and installation.
 \subsection{Installation}
 
 \subsubsection{Simple Installation using install script}
+Note: The best way to install Corvus + FEFF is to install FEFF10 first. See instructions above. 
+
 Once you have a version of Corvus from the github website, you can follow the following simple directions to install. Note that in the below "version" should be
 replaced with the version that you downloaded, e.g., Corvus-3.2.0-01.zip.
 
@@ -26,7 +28,8 @@ replaced with the version that you downloaded, e.g., Corvus-3.2.0-01.zip.
 cd Downloads
 unzip Corvus-version.zip
 cd Corvus-version/
-source install.sh
+chmod u+x install.sh
+./install.sh
 \end{verbatim}
 
 \paragraph{Windows} Unzip the download file. Open a terminal and navigate to the directory. Run the installer.bat script.
@@ -36,6 +39,45 @@ unzip Corvus-version.zip
 cd Corvus-version\Corvus-version
 install.bat
 \end{verbatim}
+
+Once the installer finishes successfully, you can check the installation by activating the environment,
+and running corvus.
+\begin{verbatim}
+conda activate Corvus
+run-corvus
+\end{verbatim}
+When you do this,
+Corvus will attempt to find FEFF10 in the standard FEFF10 installation directories. If corvus does not
+find FEFF10, you will see a message stating such, and you will need to edit the configuration file.
+This file is found in your home directory, 
+\begin{verbatim}
+Windows -- C:\Users\your_user_name\.Corvus\corvus.conf
+MacOS -- /Users/your_user_name/.Corvus/corvus.conf
+\end{verbatim}
+
+Please edit this file and make sure it looks as follows:
+\begin{verbatim}
+[Executables]
+dmdw     :
+feff     : path_to_your_feff10_binaries_directory
+abinit   :
+nwchem   :
+orca     :
+gaussian :
+vasp     :
+siesta   :
+ocean    :
+cif2cell :
+phsf     :
+
+[Defaults]
+prefix      : Corvus
+inputsuffix : .inp
+savesuffix  : .nest
+checkpoints : off
+parallelrun :
+\end{verbatim}
+
 
 \subsubsection{Step-by-step instructions with conda}
 In MacOS, just open a terminal, and it will already have conda enabled if you have it installed. In windows, you will need to open a conda terminal, (Miniforge command window if you installed miniforge conda).
@@ -51,4 +93,18 @@ cd Downloads/Corvus-version/
 conda create -name your_corvus_env python=">=3.12,<3.14"
 conda activate your_corvus_env
 pip install .
+\end{verbatim}
+
+If you would also like to install SciGUI (the GUI for Corvus), please go to https://github.com/times-software/SciGUI
+and download and unzip the archived source, or use git to clone the repository. Now, open a terminal if you have closed it from the previous commands,
+activate your\_corvus\_env. Navigate to the downloaded source folder and type,
+\begin{verbatim}
+pip install .
+\end{verbatim}
+
+Note that on linux, you will need to separately install the wxpython module.  
+The pip version of wxpython is not reliable on all flavors of linux. The conda version seems to be more reliable, although this has 
+not been tested extensively. 
+\begin{verbatim}
+conda install conda-forge::wxpython
 \end{verbatim}

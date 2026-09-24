@@ -69,7 +69,8 @@ fi
 # Environment creation
 ###############################################################################
 
-ENV_NAME="$(basename "$PWD")"
+#ENV_NAME="$(basename "$PWD")"
+ENV_NAME=Corvus
 
 if [[ "$USE_CONDA" -eq 1 ]]; then
 
@@ -225,7 +226,7 @@ fi
 ###############################################################################
 # Create desktop launcher. 
 ###############################################################################
-PROJECT_DIR="${HOME}/corvus_examples"
+PROJECT_DIR="${HOME}/Desktop/corvus_examples"
 if [[ "$OS" == "Darwin" ]]; then
 
     DESKTOP_LAUNCHER="$HOME/Desktop/${ENV_NAME}_GUI.command"
@@ -331,9 +332,9 @@ fi
 ###############################################################################
 # Final instructions
 ###############################################################################
-echo "Copying examples to $HOME/corvus_examples"
+echo "Copying examples to $HOME/Desktop/corvus_examples"
 echo
-ex_dir="$HOME/corvus_examples"
+ex_dir="$HOME/Desktop/corvus_examples"
 ans=y
 if [[ -e "$ex_dir" ]]; then
     echo "WARNING: $ex_dir already exists."
@@ -341,7 +342,7 @@ if [[ -e "$ex_dir" ]]; then
     read ans
 fi
 if [[ "$ans" =~ ^([Yy]|[Yy][Ee][Ss])$ ]]; then
-    cp -r examples/ $HOME/corvus_examples
+    cp -r examples/ $HOME/Desktop/corvus_examples
 else
     echo "Will not copy example files."
 fi
@@ -359,6 +360,11 @@ if [[ "$USE_CONDA" -eq 1 ]]; then
     echo "or double clicking the ${ENV_NAME}.command or"
     echo "${ENV_NAME}_GUI.command scripts located on your"
     echo "desktop."
+    echo
+    echo " To check your installation, please activate the"
+    echo " environment, and type "
+    echo "            run-corvus"
+    echo
 
 else
 

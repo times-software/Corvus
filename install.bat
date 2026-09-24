@@ -38,7 +38,8 @@ REM ===========================================================================
 REM Get environment name from current directory
 REM ===========================================================================
 
-for %%I in ("%CD%") do set ENV_NAME=%%~nxI
+REM for %%I in ("%CD%") do set ENV_NAME=%%~nxI
+set "ENV_NAME=Corvus"
 
 REM ===========================================================================
 REM Conda path
@@ -150,6 +151,61 @@ if errorlevel 1 (
     
     exit /b 1
 )
+echo.
+echo.
+REM INSTALL examples folder
+@echo off
+setlocal enabledelayedexpansion
+
+echo ===================================================
+echo   Locating Desktop and Deploying Examples Folder
+echo ===================================================
+
+REM 1. Define the source folder name (relative to where this script runs)
+set "SOURCE_DIR=%~dp0examples"
+set "TARGET_FOLDER_NAME=corvus_examples"
+
+REM 2. Query the registry for the true Desktop path (handles Network/OneDrive/Local)
+for /f "tokens=2*" %%A in ('reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" /v Desktop 2^>nul') do (
+    set "RAW_DESKTOP_PATH=%%B"
+)
+
+REM 3. Expand any nested environment variables in the registry path
+for /f "delims=" %%I in ('echo !RAW_DESKTOP_PATH!') do set "TRUE_DESKTOP=%%I"
+
+REM 4. Construct the absolute final destination path
+set "DESTINATION_DIR=!TRUE_DESKTOP!\!TARGET_FOLDER_NAME!"
+
+echo Source Directory:      "%SOURCE_DIR%"
+echo Target Desktop Path:   "%TRUE_DESKTOP%"
+echo Destination Absolute:  "%DESTINATION_DIR%"
+echo ---------------------------------------------------
+
+REM 5. Validation Check: Does the source "examples" folder actually exist?
+if not exist "%SOURCE_DIR%" (
+    echo [ERROR] Source folder "examples" not found at: "%SOURCE_DIR%"
+    echo Please ensure the "examples" directory is next to this installer script.
+)
+
+REM 6. Perform the safe copy operation using Robocopy
+echo Copying files, please wait...
+REM /E      = Copies subdirectories, including empty ones.
+REM /R:3    = Retry 3 times on failed file locks (crucial for network glitches).
+REM /W:5    = Wait 5 seconds between retries.
+REM /MT:16  = Multithreaded copy (faster over networks).
+robocopy "%SOURCE_DIR%" "%DESTINATION_DIR%" /E /R:3 /W:5 /MT:16 >nul
+
+REM 7. Evaluate the Robocopy Exit Code
+REM Robocopy exit codes below 8 indicate success (0=no changes, 1=files copied, 2/3=tweaks)
+if %ERRORLEVEL% LSS 8 (
+    echo [SUCCESS] Successfully deployed "%TARGET_FOLDER_NAME%" to the Desktop.
+    goto :EXIT_SUCCESS
+) else (
+    echo [ERROR] Robocopy failed with Exit Code %ERRORLEVEL%. 
+    echo This could be due to a disconnected network home drive or missing permissions.
+)
+
+:EXIT_FAILURE
 
 REM ===========================================================================
 REM Optional SciGUI install
@@ -240,9 +296,9 @@ if "!USE_CONDA!"=="1" (
     REM Create desktop launcher
     REM ===========================================================================
 
-    set "PROJECT_DIR=%CD%"
-    set "DESKTOP=%USERPROFILE%\Desktop"
-    set "CONDA_BAT=%USERPROFILE%\miniforge3\condabin\conda.bat"
+    set "DESKTOP=!TRUE_DESKTOP!
+
+    set "CONDA_BAT=%CONDA_PREFIX%\condabin\conda.bat"
     set "LAUNCHER=%DESKTOP%\%ENV_NAME%.bat"
 
     if not exist "%DESKTOP%" (
@@ -251,7 +307,18 @@ if "!USE_CONDA!"=="1" (
         exit /b 1
     )
     
-    (
+    REM Check if a network home share exists (e.g., \\server\share)
+    if not "%HOMESHARE%"=="" (
+        set "TRUE_HOME=%HOMESHARE%"
+    ) else if not "%HOMEDRIVE%"=="" (
+        REM If it's a mapped drive letter (e.g., H:\path)
+        set "TRUE_HOME=%HOMEDRIVE%%HOMEPATH%"
+    ) else (
+        REM Fallback to local profile if no network home is defined
+        set "TRUE_HOME=%USERPROFILE%"
+    )
+    set "PROJECT_DIR=!TRUE_HOME!\"
+
     echo @echo off
     echo cd /d "%PROJECT_DIR%"
     echo call "%CONDA_BAT%" activate "%ENV_NAME%"
