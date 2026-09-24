@@ -283,7 +283,7 @@ if "!USE_CONDA!"=="1" (
         REM Fallback to local profile if no network home is defined
         set "TRUE_HOME=!USERPROFILE!"
     )
-    set "PROJECT_DIR=!TRUE_HOME!\"
+    set "PROJECT_DIR=!DESKTOP!\corvus_examples"
    
     (
     echo @echo off
