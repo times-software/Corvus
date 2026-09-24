@@ -224,8 +224,8 @@ if errorlevel 1 (
 
 echo Extracting SciGUI...
 
-powershell -NoProfile -ExecutionPolicy Bypass -Force ^
-    -Command "Expand-Archive '%TMPDIR%\scigui.zip' '%TMPDIR%\'"
+powershell -NoProfile -ExecutionPolicy Bypass  ^
+    -Command "Expand-Archive '%TMPDIR%\scigui.zip' '%TMPDIR%\' -Force"
 
 if errorlevel 1 (
     echo ERROR: extraction failed.
