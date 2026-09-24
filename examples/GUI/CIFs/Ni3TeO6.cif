@@ -1,0 +1,293 @@
+#------------------------------------------------------------------------------
+#$Date: 2016-02-20 18:35:30 +0200 (Sat, 20 Feb 2016) $
+#$Revision: 176787 $
+#$URL: file:///home/coder/svn-repositories/_RELOADED_COD/cod-reloaded/cif/2/21/10/2211031.cif $
+#------------------------------------------------------------------------------
+#
+# This file is available in the Crystallography Open Database (COD),
+# http://www.crystallography.net/. The original data for this entry
+# were provided by IUCr Journals, http://journals.iucr.org/.
+#
+# The file may be used within the scientific community so long as
+# proper attribution is given to the journal article from which the
+# data were obtained.
+#
+data_2211031
+loop_
+_publ_author_name
+'Becker, Richard'
+'Berger, Helmuth'
+_publ_section_title
+;
+ Reinvestigation of Ni~3~TeO~6~
+;
+_journal_coeditor_code           HB2175
+_journal_issue                   11
+_journal_name_full               'Acta Crystallographica Section E'
+_journal_page_first              i222
+_journal_page_last               i223
+_journal_paper_doi               10.1107/S1600536806043042
+_journal_volume                  62
+_journal_year                    2006
+_chemical_formula_iupac          'Ni3 Te O6'
+_chemical_formula_moiety         'Ni3 O6 Te'
+_chemical_formula_sum            'Ni3 O6 Te'
+_chemical_formula_weight         399.73
+_chemical_name_systematic        'Trinickel(II) tellurium(VI) hexaoxide'
+_space_group_IT_number           146
+_symmetry_cell_setting           trigonal
+_symmetry_space_group_name_Hall  'R 3'
+_symmetry_space_group_name_H-M   'R 3 :H'
+_atom_sites_solution_primary     direct
+_atom_sites_solution_secondary   difmap
+_cell_angle_alpha                90.00
+_cell_angle_beta                 90.00
+_cell_angle_gamma                120.00
+_cell_formula_units_Z            3
+_cell_length_a                   5.1087(8)
+_cell_length_b                   5.1087(8)
+_cell_length_c                   13.767(2)
+_cell_measurement_reflns_used    2232
+_cell_measurement_temperature    292(3)
+_cell_measurement_theta_max      32.87
+_cell_measurement_theta_min      4.43
+_cell_volume                     311.17(8)
+_computing_cell_refinement       'CrysAlis RED (Oxford Diffraction, 2005)'
+_computing_data_collection       'CrysAlis CCD (Oxford Diffraction, 2005)'
+_computing_data_reduction        'CrysAlis RED'
+_computing_molecular_graphics    'DIAMOND (Brandenburg, 2001)'
+_computing_publication_material  SHELXL97
+_computing_structure_refinement  'SHELXL97 (Sheldrick, 1997)'
+_computing_structure_solution    'SHELXS97 (Sheldrick, 1997)'
+_diffrn_ambient_temperature      292(3)
+_diffrn_measured_fraction_theta_full 0.981
+_diffrn_measured_fraction_theta_max 0.981
+_diffrn_measurement_device_type  'Oxford Xcalibur'
+_diffrn_measurement_method       \w
+_diffrn_radiation_monochromator  graphite
+_diffrn_radiation_type           'Mo K\a'
+_diffrn_radiation_wavelength     0.71073
+_diffrn_reflns_av_R_equivalents  0.0785
+_diffrn_reflns_av_sigmaI/netI    0.0463
+_diffrn_reflns_limit_h_max       7
+_diffrn_reflns_limit_h_min       -7
+_diffrn_reflns_limit_k_max       7
+_diffrn_reflns_limit_k_min       -7
+_diffrn_reflns_limit_l_max       20
+_diffrn_reflns_limit_l_min       -20
+_diffrn_reflns_number            2232
+_diffrn_reflns_theta_full        32.87
+_diffrn_reflns_theta_max         32.87
+_diffrn_reflns_theta_min         4.43
+_diffrn_standards_decay_%        0
+_diffrn_standards_interval_count 0
+_diffrn_standards_interval_time  0
+_diffrn_standards_number         0
+_exptl_absorpt_coefficient_mu    20.309
+_exptl_absorpt_correction_T_max  1.000
+_exptl_absorpt_correction_T_min  0.500
+_exptl_absorpt_correction_type   numerical
+_exptl_absorpt_process_details
+;
+[X-RED (Stoe & Cie, 2001) and X-SHAPE (Stoe & Cie, 1999)]
+;
+_exptl_crystal_colour            green
+_exptl_crystal_density_diffrn    6.399
+_exptl_crystal_density_method    'not measured'
+_exptl_crystal_description       prism
+_exptl_crystal_F_000             552
+_exptl_crystal_size_max          0.085
+_exptl_crystal_size_mid          0.060
+_exptl_crystal_size_min          0.040
+_refine_diff_density_max         3.461
+_refine_diff_density_min         -0.919
+_refine_ls_abs_structure_details 'Flack (1983), with 245 Friedel pairs'
+_refine_ls_abs_structure_Flack   0.000(17)
+_refine_ls_extinction_coef       0.0070(8)
+_refine_ls_extinction_expression Fc^*^=kFc[1+0.001xFc^2^\l^3^/sin(2\q)]^-1/4^
+_refine_ls_extinction_method     'SHELXL97 (Sheldrick, 1997)'
+_refine_ls_goodness_of_fit_ref   1.077
+_refine_ls_matrix_type           full
+_refine_ls_number_parameters     33
+_refine_ls_number_reflns         514
+_refine_ls_number_restraints     1
+_refine_ls_restrained_S_all      1.076
+_refine_ls_R_factor_all          0.0247
+_refine_ls_R_factor_gt           0.0242
+_refine_ls_shift/su_max          0.000
+_refine_ls_shift/su_mean         0.000
+_refine_ls_structure_factor_coef Fsqd
+_refine_ls_weighting_details
+'calc w = 1/[\s^2^(Fo^2^)+(0.028P)^2^] where P=(Fo^2^+2Fc^2^)/3'
+_refine_ls_weighting_scheme      calc
+_refine_ls_wR_factor_gt          0.0586
+_refine_ls_wR_factor_ref         0.0588
+_reflns_number_gt                506
+_reflns_number_total             514
+_reflns_threshold_expression     I>2\s(I)
+_cod_data_source_file            hb2175.cif
+_cod_data_source_block           I
+_cod_original_sg_symbol_H-M      'R 3'
+_cod_database_code               2211031
+_cod_database_fobs_code          2211031
+loop_
+_symmetry_equiv_pos_as_xyz
+'x, y, z'
+'-y, x-y, z'
+'-x+y, -x, z'
+'x+2/3, y+1/3, z+1/3'
+'-y+2/3, x-y+1/3, z+1/3'
+'-x+y+2/3, -x+1/3, z+1/3'
+'x+1/3, y+2/3, z+2/3'
+'-y+1/3, x-y+2/3, z+2/3'
+'-x+y+1/3, -x+2/3, z+2/3'
+loop_
+_atom_site_type_symbol
+_atom_site_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_U_iso_or_equiv
+_atom_site_adp_type
+_atom_site_calc_flag
+_atom_site_refinement_flags
+_atom_site_occupancy
+Te Te1 0.3333 0.6667 0.37517(8) 0.00413(17) Uani d S 1
+Ni Ni1 0.3333 0.6667 0.17325(6) 0.0040(3) Uani d S 1
+Ni Ni2 1.0000 1.0000 0.2144(3) 0.0093(5) Uani d S 1
+Ni Ni3 0.6667 0.3333 0.34602(9) 0.0064(3) Uani d S 1
+O O1 0.6298(12) 0.6699(11) 0.2845(3) 0.0041(9) Uani d . 1
+O O2 -0.0070(10) 0.6347(13) 0.4453(4) 0.0066(10) Uani d . 1
+loop_
+_atom_site_aniso_label
+_atom_site_aniso_U_11
+_atom_site_aniso_U_22
+_atom_site_aniso_U_33
+_atom_site_aniso_U_12
+_atom_site_aniso_U_13
+_atom_site_aniso_U_23
+Te1 0.00376(19) 0.00376(19) 0.0049(3) 0.00188(9) 0.000 0.000
+Ni1 0.0046(4) 0.0046(4) 0.0027(6) 0.00231(18) 0.000 0.000
+Ni2 0.0049(3) 0.0049(3) 0.0182(13) 0.00244(14) 0.000 0.000
+Ni3 0.0041(4) 0.0041(4) 0.0111(8) 0.00205(18) 0.000 0.000
+O1 0.0015(17) 0.006(2) 0.0038(16) 0.0007(16) -0.0004(12) 0.0005(13)
+O2 0.007(2) 0.006(2) 0.0068(15) 0.0036(17) -0.0021(14) -0.0032(14)
+loop_
+_atom_type_symbol
+_atom_type_description
+_atom_type_scat_dispersion_real
+_atom_type_scat_dispersion_imag
+_atom_type_scat_source
+Ni Ni 0.3393 1.1124 'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
+Te Te -0.5308 1.6751 'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
+O O 0.0106 0.0060 'International Tables Vol C Tables 4.2.6.8 and 6.1.1.4'
+loop_
+_geom_angle_atom_site_label_1
+_geom_angle_atom_site_label_2
+_geom_angle_atom_site_label_3
+_geom_angle_site_symmetry_1
+_geom_angle_site_symmetry_3
+_geom_angle
+_geom_angle_publ_flag
+O2 Te1 O2 3_565 . 97.00(16) ?
+O2 Te1 O2 3_565 2_665 97.00(16) ?
+O2 Te1 O2 . 2_665 97.00(16) ?
+O2 Te1 O1 3_565 3_565 169.85(18) ?
+O2 Te1 O1 . 3_565 86.8(2) ?
+O2 Te1 O1 2_665 3_565 91.8(2) ?
+O2 Te1 O1 3_565 2_665 86.8(2) ?
+O2 Te1 O1 . 2_665 91.8(2) ?
+O2 Te1 O1 2_665 2_665 169.85(18) ?
+O1 Te1 O1 3_565 2_665 83.6(2) ?
+O2 Te1 O1 3_565 . 91.8(2) ?
+O2 Te1 O1 . . 169.85(18) ?
+O2 Te1 O1 2_665 . 86.8(2) ?
+O1 Te1 O1 3_565 . 83.6(2) ?
+O1 Te1 O1 2_665 . 83.6(2) ?
+O2 Ni1 O2 9_454 8_664 103.96(18) ?
+O2 Ni1 O2 9_454 7_544 103.96(18) ?
+O2 Ni1 O2 8_664 7_544 103.96(18) ?
+O2 Ni1 O1 9_454 2_665 87.87(13) ?
+O2 Ni1 O1 8_664 2_665 89.53(19) ?
+O2 Ni1 O1 7_544 2_665 159.0(3) ?
+O2 Ni1 O1 9_454 . 159.0(3) ?
+O2 Ni1 O1 8_664 . 87.87(13) ?
+O2 Ni1 O1 7_544 . 89.53(19) ?
+O1 Ni1 O1 2_665 . 74.8(2) ?
+O2 Ni1 O1 9_454 3_565 89.53(19) ?
+O2 Ni1 O1 8_664 3_565 159.0(3) ?
+O2 Ni1 O1 7_544 3_565 87.87(13) ?
+O1 Ni1 O1 2_665 3_565 74.8(2) ?
+O1 Ni1 O1 . 3_565 74.8(2) ?
+O1 Ni2 O1 3_675 . 99.5(2) ?
+O1 Ni2 O1 3_675 2_765 99.5(2) ?
+O1 Ni2 O1 . 2_765 99.5(2) ?
+O1 Ni2 O2 3_675 8_664 89.90(19) ?
+O1 Ni2 O2 . 8_664 87.9(3) ?
+O1 Ni2 O2 2_765 8_664 166.9(3) ?
+O1 Ni2 O2 3_675 7_654 87.9(3) ?
+O1 Ni2 O2 . 7_654 166.9(3) ?
+O1 Ni2 O2 2_765 7_654 89.9(2) ?
+O2 Ni2 O2 8_664 7_654 81.2(3) ?
+O1 Ni2 O2 3_675 9_554 166.9(3) ?
+O1 Ni2 O2 . 9_554 89.9(2) ?
+O1 Ni2 O2 2_765 9_554 87.9(3) ?
+O2 Ni2 O2 8_664 9_554 81.2(3) ?
+O2 Ni2 O2 7_654 9_554 81.2(3) ?
+O1 Ni3 O1 2_655 3_665 103.49(17) ?
+O1 Ni3 O1 2_655 . 103.49(17) ?
+O1 Ni3 O1 3_665 . 103.49(17) ?
+O1 Ni3 O2 2_655 1_655 162.8(3) ?
+O1 Ni3 O2 3_665 1_655 80.65(12) ?
+O1 Ni3 O2 . 1_655 91.52(18) ?
+O1 Ni3 O2 2_655 3 80.65(12) ?
+O1 Ni3 O2 3_665 3 91.52(17) ?
+O1 Ni3 O2 . 3 162.8(3) ?
+O2 Ni3 O2 1_655 3 82.6(2) ?
+O1 Ni3 O2 2_655 2_665 91.52(18) ?
+O1 Ni3 O2 3_665 2_665 162.8(3) ?
+O1 Ni3 O2 . 2_665 80.65(12) ?
+O2 Ni3 O2 1_655 2_665 82.6(2) ?
+O2 Ni3 O2 3 2_665 82.6(2) ?
+Te1 O1 Ni3 . . 97.3(2) ?
+Te1 O1 Ni2 . . 134.6(3) ?
+Te1 O1 Ni1 . . 85.1(3) >
+Ni3 O1 Ni2 . . 117.5(3) ?
+Ni3 O1 Ni1 . . 131.4(2) ?
+Ni2 O1 Ni1 . . 91.6(3) ?
+Te1 O2 Ni1 . 4_455 122.0(3) ?
+Te1 O2 Ni3 . 1_455 95.0(2) ?
+Te1 O2 Ni2 . 4_345 137.6(3) ?
+Ni1 O2 Ni3 4_455 1_455 125.7(2) ?
+Ni1 O2 Ni2 4_455 4_345 92.1(3) ?
+Ni3 O2 Ni2 1_455 4_345 81.65(18) ?
+loop_
+_geom_bond_atom_site_label_1
+_geom_bond_atom_site_label_2
+_geom_bond_site_symmetry_2
+_geom_bond_distance
+_geom_bond_publ_flag
+Te1 O2 3_565 1.923(5) n
+Te1 O2 . 1.923(5) yes
+Te1 O2 2_665 1.923(5) n
+Te1 O1 3_565 1.956(5) n
+Te1 O1 2_665 1.956(5) n
+Te1 O1 . 1.956(5) yes
+Ni1 O2 9_454 2.032(6) yes
+Ni1 O2 8_664 2.032(6) n
+Ni1 O2 7_544 2.032(6) n
+Ni1 O1 2_665 2.148(5) n
+Ni1 O1 . 2.148(5) yes
+Ni1 O1 3_565 2.148(5) n
+Ni2 O1 3_675 2.040(6) n
+Ni2 O1 . 2.040(6) yes
+Ni2 O1 2_765 2.040(6) n
+Ni2 O2 8_664 2.139(7) yes
+Ni2 O2 7_654 2.139(7) n
+Ni2 O2 9_554 2.139(7) n
+Ni3 O1 2_655 2.008(6) n
+Ni3 O1 3_665 2.008(6) n
+Ni3 O1 . 2.008(6) yes
+Ni3 O2 1_655 2.110(5) n
+Ni3 O2 3 2.110(5) yes
+Ni3 O2 2_665 2.110(5) n
