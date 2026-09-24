@@ -32,12 +32,17 @@ chmod u+x install.sh
 ./install.sh
 \end{verbatim}
 
-\paragraph{Windows} Unzip the download file. Open a terminal and navigate to the directory. Run the installer.bat script.
+\paragraph{Windows} Unzip the download file. Open a conda terminal (search for miniforge prompt in the searchbar if you installed miniforge) and navigate to the directory. Run the installer.bat script.
+The following commands will do all of this, assuming you leave the zip file in your Downloads directory.
 \begin{verbatim}
 cd Downloads
 unzip Corvus-version.zip
-cd Corvus-version\Corvus-version
+cd Corvus-version\
 install.bat
+\end{verbatim}
+Note that if you unzipped using the explorer rather than the command-line "unzip" command, you will find that you need to 
+\begin{verbatim}
+cd Corvus-version\Corvus-version
 \end{verbatim}
 
 Once the installer finishes successfully, you can check the installation by activating the environment,
