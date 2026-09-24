@@ -2364,7 +2364,7 @@ def runExecutable(execDir,workDir,executable, args,out,err):
 
     p = subprocess.Popen(execList, cwd=workDir, encoding='utf8')
     while p.poll() is None:
-        time.sleep(10)
+        time.sleep(1)
         try:
             f = open('abort_corvus.txt','r')
             line = f.readlines()[0].strip()
