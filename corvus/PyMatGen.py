@@ -5,6 +5,7 @@ import re
 import numpy as np
 # Debug: FDV
 import pprint
+from pathlib import Path
 
 from mp_api.client import MPRester
 from pymatgen.io.cif import CifParser,CifWriter
@@ -479,24 +480,29 @@ class PyMatGen(Handler):
                 mpr = MPRester(input['mp_apikey'][0][0])
                 struct = mpr.get_structure_by_material_id(input["mp_id"][0][0])
             elif 'cif_input' in input:
-                parser = CifParser(input.get("cif_input")[0][0])
+                file_path = Path(input.get("cif_input"))
+                parser = CifParser(file_path)
                 # Only take first structure for now.
                 struct = parser.parse_structures(primitive=False)[0]
             elif 'vasp_xml' in input:
-                vr = Vasprun(input['vasp_xml'][0][0])
+                file_path=Path(input['vasp_xml'])
+                vr = Vasprun(input['vasp_xml'])
                 struct = vr.structures[input['vasp_snapshot'][0][0]]
                 #print(struct)
                 if 'vasp_outcar' in input: 
-                   oc = Outcar(input['vasp_outcar'][0][0])
+                   file_path=Path(input['vasp_outcar'])
+                   oc = Outcar(file_path)
                    if len(oc.magnetization) == len(struct.sites): 
                       magmom = [m['tot'] for m in oc.magnetization]
                       struct.add_site_property("magmom",magmom)
                 #print(struct)
             elif 'vasp_xdatcar' in input:
-                xc = Xdatcar(input['vasp_xdatcar'][0][0])
+                file_path=Path(input['vasp_xdatcar'])
+                xc = Xdatcar(file_path)
                 struct = xc.structures[input['vasp_snapshot'][0][0]]
                 if 'vasp_outcar' in input: 
-                   oc = Outcar(input['vasp_outcar'][0][0])
+                   file_path=Path(input['vasp_outcar'])
+                   oc = Outcar(file_path)
                    if len(oc.magnetization) == len(struct.sites): 
                       magmom = [m['tot'] for m in oc.magnetization]
                       struct.add_site_property("magmom",magmom)
@@ -505,7 +511,8 @@ class PyMatGen(Handler):
                 # Read the molecule from xyz
                 #mol = Molecule.from_file(input['xyz_input'][0][0])
                 # Load the entire XYZ file
-                xyz_data = XYZ.from_file(input['xyz_input'][0][0])
+                file_path = Path(input['xyz_input'])
+                xyz_data = XYZ.from_file(file_path)
 
                 # Access all structures as a list of Molecule objects
                 imol=int(input['xyz_snapshot'][0][0])-1
